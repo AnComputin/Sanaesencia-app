@@ -1,69 +1,316 @@
 package com.example.sanaesenciaapp.ui.views
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.sanaesenciaapp.data.AppState
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     navController: NavController,
     appState: AppState
 ) {
 
-    val usuario =
-        appState.usuarioActual
+    val usuario = appState.usuarioActual
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
+    Scaffold(
 
-        verticalArrangement =
-            Arrangement.Center,
+        containerColor =
+            MaterialTheme.colorScheme.background,
 
-        horizontalAlignment =
-            Alignment.CenterHorizontally
-    ) {
+        topBar = {
 
-        Text(
-            text =
-                "Bienvenido a SanaEsencia",
-            fontSize = 28.sp
-        )
+            TopAppBar(
 
-        Text(
-            text =
-                "Hola, ${usuario?.nombre ?: ""}",
-            fontSize = 20.sp
-        )
+                title = {
 
-        Button(
+                    Text(
+                        text = "🌿 SanaEsencia",
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                },
 
-            onClick = {
+                actions = {
 
-                appState.logout()
+                    if (usuario == null) {
 
-                navController.navigate("login") {
+                        TextButton(
+                            onClick = {
+                                navController.navigate("login")
+                            }
+                        ) {
 
-                    popUpTo("home") {
-                        inclusive = true
+                            Text(
+                                text = "Ingresar",
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                    } else {
+
+                        Text(
+                            text = "Hola, ${usuario.nombre}",
+                            modifier = Modifier.padding(end = 16.dp),
+                            color = MaterialTheme.colorScheme.secondary
+                        )
                     }
+                }
+            )
+        }
+
+    ) { padding ->
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(20.dp)
+        ) {
+
+            // Presentación
+            Text(
+                text = "Bienestar integral",
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.secondary
+            )
+
+            Spacer(
+                modifier = Modifier.height(8.dp)
+            )
+
+            Text(
+                text = "Acompañamos tu bienestar físico, emocional y mental.",
+                fontSize = 17.sp,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+
+            Spacer(
+                modifier = Modifier.height(24.dp)
+            )
+
+            // Botón reservar
+            Button(
+                onClick = {
+
+                    if (usuario == null) {
+
+                        navController.navigate("login")
+
+                    } else {
+
+                        // Después crearemos la pantalla de reservas
+                    }
+                },
+
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(55.dp),
+
+                shape = RoundedCornerShape(18.dp),
+
+                colors = ButtonDefaults.buttonColors(
+                    containerColor =
+                        MaterialTheme.colorScheme.primary
+                )
+            ) {
+
+                Text(
+                    text = "Reservar hora",
+                    fontSize = 17.sp
+                )
+            }
+
+            Spacer(
+                modifier = Modifier.height(32.dp)
+            )
+
+            Text(
+                text = "Especialidades",
+                fontSize = 25.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.secondary
+            )
+
+            Spacer(
+                modifier = Modifier.height(16.dp)
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement =
+                    Arrangement.spacedBy(12.dp)
+            ) {
+
+                EspecialidadCard(
+                    nombre = "Psicología",
+                    icono = "🧠",
+                    modifier = Modifier.weight(1f)
+                )
+
+                EspecialidadCard(
+                    nombre = "Fonoaudiología",
+                    icono = "💬",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Spacer(
+                modifier = Modifier.height(12.dp)
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement =
+                    Arrangement.spacedBy(12.dp)
+            ) {
+
+                EspecialidadCard(
+                    nombre = "Terapia\nOcupacional",
+                    icono = "🖐️",
+                    modifier = Modifier.weight(1f)
+                )
+
+                EspecialidadCard(
+                    nombre = "Nutrición",
+                    icono = "🍏",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Spacer(
+                modifier = Modifier.height(32.dp)
+            )
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+
+                shape = RoundedCornerShape(20.dp),
+
+                colors = CardDefaults.cardColors(
+                    containerColor =
+                        MaterialTheme.colorScheme.primaryContainer
+                )
+            ) {
+
+                Column(
+                    modifier = Modifier.padding(20.dp)
+                ) {
+
+                    Text(
+                        text = "Atención presencial y online",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+
+                    Spacer(
+                        modifier = Modifier.height(6.dp)
+                    )
+
+                    Text(
+                        text = "Elige la modalidad que más se adapte a ti."
+                    )
                 }
             }
 
+            Spacer(
+                modifier = Modifier.height(24.dp)
+            )
+
+            if (usuario != null) {
+
+                TextButton(
+                    onClick = {
+
+                        appState.logout()
+
+                    },
+
+                    modifier =
+                        Modifier.align(
+                            Alignment.CenterHorizontally
+                        )
+                ) {
+
+                    Text("Cerrar sesión")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun EspecialidadCard(
+    nombre: String,
+    icono: String,
+    modifier: Modifier = Modifier
+) {
+
+    Card(
+        modifier = modifier
+            .height(125.dp),
+
+        shape =
+            RoundedCornerShape(20.dp),
+
+        colors =
+            CardDefaults.cardColors(
+                containerColor =
+                    MaterialTheme.colorScheme.surface
+            )
+    ) {
+
+        Column(
+            modifier =
+                Modifier.padding(16.dp),
+
+            verticalArrangement =
+                Arrangement.Center
         ) {
 
-            Text("Cerrar sesión")
+            Text(
+                text = icono,
+                fontSize = 30.sp
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(8.dp)
+            )
+
+            Text(
+                text = nombre,
+                fontWeight = FontWeight.Bold,
+                color =
+                    MaterialTheme.colorScheme.secondary
+            )
         }
     }
 }

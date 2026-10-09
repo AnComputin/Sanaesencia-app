@@ -9,6 +9,7 @@ import com.example.sanaesenciaapp.ui.views.HomeScreen
 import com.example.sanaesenciaapp.ui.views.InicioScreen
 import com.example.sanaesenciaapp.ui.views.LoginScreen
 import com.example.sanaesenciaapp.ui.views.RegistroScreen
+import com.example.sanaesenciaapp.ui.views.SplashScreen
 
 @Composable
 fun AppNavigation(
@@ -18,13 +19,21 @@ fun AppNavigation(
 
     NavHost(
         navController = navController,
-        startDestination = "inicio"
+        startDestination = "splash"
     ) {
 
-        composable("inicio") {
+        composable("splash") {
 
-            InicioScreen(
+            SplashScreen(
                 navController
+            )
+        }
+
+        composable("home") {
+
+            HomeScreen(
+                navController,
+                appState
             )
         }
 
@@ -39,14 +48,6 @@ fun AppNavigation(
         composable("registro") {
 
             RegistroScreen(
-                navController,
-                appState
-            )
-        }
-
-        composable("home") {
-
-            HomeScreen(
                 navController,
                 appState
             )
