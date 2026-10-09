@@ -7,30 +7,57 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.rememberNavController
+import com.example.sanaesenciaapp.data.AppState
+import com.example.sanaesenciaapp.data.room.AppDatabase
 import com.example.sanaesenciaapp.navigation.AppNavigation
 import com.example.sanaesenciaapp.ui.theme.SanaEsenciaAppTheme
 
 class MainActivity : ComponentActivity() {
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(
+        savedInstanceState: Bundle?
+    ) {
+
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge()
 
+        val db =
+            AppDatabase.getInstance(
+                applicationContext
+            )
+
+        val appState =
+            AppState(db)
+
+        appState.cargarDatos()
+
         setContent {
+
             SanaEsenciaAppTheme {
-                SanaEsenciaApp()
+
+                SanaEsenciaApp(
+                    appState
+                )
             }
         }
     }
 }
 
-@Composable
-fun SanaEsenciaApp() {
 
-    val navController = rememberNavController()
+@Composable
+fun SanaEsenciaApp(
+    appState: AppState
+) {
+
+    val navController =
+        rememberNavController()
 
     MaterialTheme {
-        AppNavigation(navController)
+
+        AppNavigation(
+            navController,
+            appState
+        )
     }
 }

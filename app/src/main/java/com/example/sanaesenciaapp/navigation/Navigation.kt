@@ -4,12 +4,17 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.sanaesenciaapp.data.AppState
+import com.example.sanaesenciaapp.ui.views.HomeScreen
 import com.example.sanaesenciaapp.ui.views.InicioScreen
 import com.example.sanaesenciaapp.ui.views.LoginScreen
 import com.example.sanaesenciaapp.ui.views.RegistroScreen
 
 @Composable
-fun AppNavigation(navController: NavHostController) {
+fun AppNavigation(
+    navController: NavHostController,
+    appState: AppState
+) {
 
     NavHost(
         navController = navController,
@@ -17,15 +22,34 @@ fun AppNavigation(navController: NavHostController) {
     ) {
 
         composable("inicio") {
-            InicioScreen(navController)
+
+            InicioScreen(
+                navController
+            )
         }
 
         composable("login") {
-            LoginScreen(navController)
+
+            LoginScreen(
+                navController,
+                appState
+            )
         }
 
         composable("registro") {
-            RegistroScreen(navController)
+
+            RegistroScreen(
+                navController,
+                appState
+            )
+        }
+
+        composable("home") {
+
+            HomeScreen(
+                navController,
+                appState
+            )
         }
     }
 }

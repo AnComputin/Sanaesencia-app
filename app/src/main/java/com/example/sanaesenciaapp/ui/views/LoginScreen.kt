@@ -21,13 +21,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.sanaesenciaapp.data.AppState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(navController: NavController) {
+fun LoginScreen(navController: NavController,
+                appState: AppState) {
 
     var email by remember {
         mutableStateOf("")
@@ -42,6 +46,9 @@ fun LoginScreen(navController: NavController) {
     }
 
     Scaffold(
+
+        containerColor =
+            MaterialTheme.colorScheme.background,
 
         topBar = {
 
@@ -63,6 +70,18 @@ fun LoginScreen(navController: NavController) {
             verticalArrangement = Arrangement.Center
         ) {
 
+            Text(
+                text = "Bienvenido nuevamente",
+                fontSize = 26.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.secondary
+            )
+
+            Text(
+                text = "Ingresa a tu cuenta SanaEsencia",
+                color = MaterialTheme.colorScheme.onBackground
+            )
+
             OutlinedTextField(
                 value = email,
 
@@ -81,6 +100,11 @@ fun LoginScreen(navController: NavController) {
 
             Spacer(
                 modifier = Modifier.height(12.dp)
+            )
+
+
+            Spacer(
+                modifier = Modifier.height(28.dp)
             )
 
             OutlinedTextField(
@@ -121,23 +145,47 @@ fun LoginScreen(navController: NavController) {
 
                 onClick = {
 
-                    if (email.isBlank() || password.isBlank()) {
+                    when {
 
-                        error = "Debe ingresar correo y contraseña"
+                        email.isBlank() ||
+                                password.isBlank() -> {
 
-                    } else {
+                            error =
+                                "Debe ingresar correo y contraseña"
+                        }
 
-                        error = ""
+                        password.length < 4 -> {
 
-                        /*
-                         * Todavía NO hacemos login real.
-                         * Más adelante irá la lógica.
-                         */
+                            error =
+                                "La contraseña debe tener al menos 4 caracteres"
+                        }
 
+                        appState.login(
+                            email.trim(),
+                            password
+                        ) -> {
+
+                            error = ""
+
+                            navController.navigate("home") {
+
+                                popUpTo("login") {
+                                    inclusive = true
+                                }
+                            }
+                        }
+
+                        else -> {
+
+                            error =
+                                "Correo o contraseña incorrectos"
+                        }
                     }
                 },
 
-                modifier = Modifier.fillMaxWidth()
+                modifier =
+                    Modifier.fillMaxWidth()
+
             ) {
 
                 Text("Iniciar sesión")

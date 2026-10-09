@@ -20,14 +20,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.sanaesenciaapp.data.AppState
 import com.example.sanaesenciaapp.utils.esEmailValido
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegistroScreen(navController: NavController) {
+fun RegistroScreen(navController: NavController,
+                   appState: AppState) {
 
     var nombre by remember {
         mutableStateOf("")
@@ -51,6 +55,9 @@ fun RegistroScreen(navController: NavController) {
 
     Scaffold(
 
+        containerColor =
+            MaterialTheme.colorScheme.background,
+
         topBar = {
 
             TopAppBar(
@@ -71,12 +78,30 @@ fun RegistroScreen(navController: NavController) {
             verticalArrangement = Arrangement.Center
         ) {
 
+            Text(
+                text = "Crear una cuenta",
+                fontSize = 26.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.secondary
+            )
+
+            Text(
+                text = "Completa tus datos para comenzar",
+                color = MaterialTheme.colorScheme.onBackground
+            )
+
+            Spacer(
+                modifier = Modifier.height(24.dp)
+            )
+
             OutlinedTextField(
                 value = nombre,
 
                 onValueChange = {
                     nombre = it
                 },
+
+
 
                 label = {
                     Text("Nombre")
@@ -194,15 +219,19 @@ fun RegistroScreen(navController: NavController) {
                                 "Las contraseñas no coinciden"
                         }
 
+                        !appState.registrarUsuario(
+                            nombre.trim(),
+                            email.trim(),
+                            password
+                        ) -> {
+
+                            error =
+                                "Ya existe una cuenta con este correo"
+                        }
+
                         else -> {
 
                             error = ""
-
-                            /*
-                             * Registro simulado.
-                             *
-                             * Todavía NO guardamos el usuario.
-                             */
 
                             navController.popBackStack()
                         }
