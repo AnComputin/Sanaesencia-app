@@ -53,7 +53,7 @@ class CitaViewModel : ViewModel() {
                 estado.errorNombre == null
     }.stateIn(
         scope = viewModelScope,
-        started = SharingStarted.Eagerly,
+        started = SharingStarted.WhileSubscribed(5_000),
         initialValue = false
     )
 
