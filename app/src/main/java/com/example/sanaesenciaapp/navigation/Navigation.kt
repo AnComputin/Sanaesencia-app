@@ -12,6 +12,9 @@ import com.example.sanaesenciaapp.ui.views.RegistroScreen
 import com.example.sanaesenciaapp.ui.views.SplashScreen
 import com.example.sanaesenciaapp.ui.views.UbicacionScreen
 import com.example.sanaesenciaapp.ui.views.catalogo.DetalleServicioScreen
+
+
+
 @Composable
 fun AppNavigation(
     navController: NavHostController,

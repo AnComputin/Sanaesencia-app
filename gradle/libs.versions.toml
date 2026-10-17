@@ -10,7 +10,10 @@ kotlin = "2.2.10"
 composeBom = "2026.02.01"
 ksp = "2.3.10"
 room = "2.8.4"
+<<<<<<< HEAD
 playServicesLocation = "21.4.0"
+=======
+>>>>>>> 0c342bb8295f777899d0c8481aac18b66bff87b5
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -30,7 +33,10 @@ androidx-compose-material3 = { group = "androidx.compose.material3", name = "mat
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+<<<<<<< HEAD
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
+=======
+>>>>>>> 0c342bb8295f777899d0c8481aac18b66bff87b5
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -45,7 +45,10 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+<<<<<<< HEAD
     implementation(libs.play.services.location)
+=======
+>>>>>>> 0c342bb8295f777899d0c8481aac18b66bff87b5
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
