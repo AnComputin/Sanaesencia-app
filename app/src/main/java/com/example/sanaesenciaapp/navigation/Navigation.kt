@@ -40,16 +40,23 @@ fun AppNavigation(
         composable("login") {
 
             LoginScreen(
-                navController,
-                appState
+                onNavigateToHome = {
+                    navController.navigate("home") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                },
+                onNavigateToRegistro = {
+                    navController.navigate("registro")
+                }
             )
         }
 
         composable("registro") {
 
             RegistroScreen(
-                navController,
-                appState
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
             )
         }
     }
