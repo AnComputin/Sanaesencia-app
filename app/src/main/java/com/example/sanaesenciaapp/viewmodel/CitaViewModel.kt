@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -61,16 +62,21 @@ class CitaViewModel : ViewModel() {
 
     val fechasDisponibles: List<Long> = generarFechasDisponibles()
 
-    // TODO: Los horarios falsos se reemplazarán por CitaRepository cuando el compañero lo publique.
-    private val _horarios = MutableStateFlow(generarHorariosFalsos(null))
-    val horarios: StateFlow<List<Horario>> = _horarios.asStateFlow()
-
     // TODO reemplazar por CitaRepository cuando Mark lo publique.
     private val _citas = MutableStateFlow<List<CitaItem>>(generarCitasFalsas())
     val citas: StateFlow<List<CitaItem>> = _citas.asStateFlow()
 
     private val _ultimaCita = MutableStateFlow<CitaItem?>(null)
     val ultimaCita: StateFlow<CitaItem?> = _ultimaCita.asStateFlow()
+
+    // TODO: Los horarios falsos se reemplazarán por CitaRepository cuando el compañero lo publique.
+    val horarios: StateFlow<List<Horario>> = combine(_uiState, _citas) { estado, listaCitas ->
+        calcularHorarios(estado.fechaMillis, listaCitas)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = generarHorariosFalsos(null)
+    )
 
     val puedeContinuar: StateFlow<Boolean> = _uiState.map { estado ->
         estado.modalidad != null &&
@@ -100,10 +106,13 @@ class CitaViewModel : ViewModel() {
         _uiState.update { estado ->
             estado.copy(fechaMillis = millis, hora = null)
         }
-        _horarios.value = generarHorariosFalsos(millis)
     }
 
     fun seleccionarHora(hora: String) {
+        val horarioObj = horarios.value.find { it.hora == hora }
+        if (horarioObj == null || !horarioObj.disponible) {
+            return
+        }
         _uiState.update { estado ->
             estado.copy(hora = hora)
         }
@@ -185,6 +194,39 @@ class CitaViewModel : ViewModel() {
 
         _citas.update { it + nuevaCita }
         _ultimaCita.value = nuevaCita
+
+        _uiState.update { actual ->
+            actual.copy(
+                modalidad = null,
+                fechaMillis = null,
+                hora = null,
+                nombrePaciente = "",
+                errorNombre = null
+            )
+        }
+    }
+
+    private fun calcularHorarios(fechaMillis: Long?, listaCitas: List<CitaItem>): List<Horario> {
+        val horariosBase = generarHorariosFalsos(fechaMillis)
+        if (fechaMillis == null) {
+            return horariosBase
+        }
+
+        val calSeleccionada = Calendar.getInstance().apply { timeInMillis = fechaMillis }
+        val calCita = Calendar.getInstance()
+
+        val horasOcupadasPorCitas = listaCitas.filter { cita ->
+            if (cita.estado != EstadoCita.CONFIRMADA) return@filter false
+            calCita.timeInMillis = cita.inicioMillis
+            calCita.get(Calendar.YEAR) == calSeleccionada.get(Calendar.YEAR) &&
+                    calCita.get(Calendar.DAY_OF_YEAR) == calSeleccionada.get(Calendar.DAY_OF_YEAR)
+        }.map { it.hora }.toSet()
+
+        return horariosBase.map { horario ->
+            val libreEnBase = horario.disponible
+            val ocupadaPorCita = horasOcupadasPorCitas.contains(horario.hora)
+            horario.copy(disponible = libreEnBase && !ocupadaPorCita)
+        }
     }
 
     private fun generarFechasDisponibles(): List<Long> {
