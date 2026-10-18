@@ -13,8 +13,6 @@ import com.example.sanaesenciaapp.ui.views.SplashScreen
 import com.example.sanaesenciaapp.ui.views.UbicacionScreen
 import com.example.sanaesenciaapp.ui.views.catalogo.DetalleServicioScreen
 
-
-
 @Composable
 fun AppNavigation(
     navController: NavHostController,
@@ -27,14 +25,15 @@ fun AppNavigation(
     ) {
 
         composable("splash") {
+            SplashScreen(navController)
+        }
 
-            SplashScreen(
-                navController
-            )
+        // 1. Ruta agregada para InicioScreen
+        composable("inicio") {
+            InicioScreen(navController)
         }
 
         composable("home") {
-
             HomeScreen(
                 navController,
                 appState
@@ -42,7 +41,6 @@ fun AppNavigation(
         }
 
         composable("login") {
-
             LoginScreen(
                 navController,
                 appState
@@ -50,20 +48,25 @@ fun AppNavigation(
         }
 
         composable("registro") {
-
             RegistroScreen(
                 navController,
                 appState
             )
         }
+
+        // 2. Le pasamos navController a UbicacionScreen para permitir volver atrás
         composable("ubicacion") {
-            UbicacionScreen()
+            UbicacionScreen(onBackClick = { navController.popBackStack() }
+            )
         }
+
+
         composable("detalle_servicio") {
             val esp = appState.especialidadSeleccionada
             if (esp != null) {
                 DetalleServicioScreen(
                     especialidad = esp,
+                    onBackClick = { navController.popBackStack() },
                     onReservarClick = { navController.navigate("home") }
                 )
             }

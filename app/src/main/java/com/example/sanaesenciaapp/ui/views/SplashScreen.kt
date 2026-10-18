@@ -46,7 +46,7 @@ fun SplashScreen(
     LaunchedEffect(key1 = true) {
         startAnimation = true
         delay(2000) // Tiempo que dura el Splash en pantalla antes de ir a home
-        navController.navigate("home") {
+        navController.navigate("inicio") {
             popUpTo("splash") {
                 inclusive = true
             }

@@ -1,6 +1,6 @@
 package com.example.sanaesenciaapp.ui.views
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -41,8 +43,7 @@ fun HomeScreen(
 
     Scaffold(
 
-        containerColor =
-            MaterialTheme.colorScheme.background,
+        containerColor = MaterialTheme.colorScheme.background,
 
         topBar = {
 
@@ -92,6 +93,7 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .padding(20.dp)
+                .verticalScroll(rememberScrollState())
         ) {
 
             // Presentación
@@ -137,8 +139,7 @@ fun HomeScreen(
                 shape = RoundedCornerShape(18.dp),
 
                 colors = ButtonDefaults.buttonColors(
-                    containerColor =
-                        MaterialTheme.colorScheme.primary
+                    containerColor = MaterialTheme.colorScheme.primary
                 )
             ) {
 
@@ -165,20 +166,27 @@ fun HomeScreen(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement =
-                    Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
 
                 EspecialidadCard(
                     nombre = "Psicología",
                     icono = "🧠",
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        appState.especialidadSeleccionada = appState.especialidades.find { it.id == 1 }
+                        navController.navigate("detalle_servicio")
+                    }
                 )
 
                 EspecialidadCard(
                     nombre = "Fonoaudiología",
                     icono = "💬",
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        appState.especialidadSeleccionada = appState.especialidades.find { it.id == 2 }
+                        navController.navigate("detalle_servicio")
+                    }
                 )
             }
 
@@ -188,20 +196,27 @@ fun HomeScreen(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement =
-                    Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
 
                 EspecialidadCard(
                     nombre = "Terapia\nOcupacional",
                     icono = "🖐️",
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        appState.especialidadSeleccionada = appState.especialidades.find { it.id == 3 }
+                        navController.navigate("detalle_servicio")
+                    }
                 )
 
                 EspecialidadCard(
                     nombre = "Nutrición",
                     icono = "🍏",
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        appState.especialidadSeleccionada = appState.especialidades.find { it.id == 4 }
+                        navController.navigate("detalle_servicio")
+                    }
                 )
             }
 
@@ -215,8 +230,7 @@ fun HomeScreen(
                 shape = RoundedCornerShape(20.dp),
 
                 colors = CardDefaults.cardColors(
-                    containerColor =
-                        MaterialTheme.colorScheme.primaryContainer
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
             ) {
 
@@ -273,10 +287,9 @@ fun HomeScreen(
 
                     },
 
-                    modifier =
-                        Modifier.align(
-                            Alignment.CenterHorizontally
-                        )
+                    modifier = Modifier.align(
+                        Alignment.CenterHorizontally
+                    )
                 ) {
 
                     Text("Cerrar sesión")
@@ -290,29 +303,26 @@ fun HomeScreen(
 fun EspecialidadCard(
     nombre: String,
     icono: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
 
     Card(
         modifier = modifier
-            .height(125.dp),
+            .height(125.dp)
+            .clickable { onClick() },
 
-        shape =
-            RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(20.dp),
 
-        colors =
-            CardDefaults.cardColors(
-                containerColor =
-                    MaterialTheme.colorScheme.surface
-            )
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
 
         Column(
-            modifier =
-                Modifier.padding(16.dp),
+            modifier = Modifier.padding(16.dp),
 
-            verticalArrangement =
-                Arrangement.Center
+            verticalArrangement = Arrangement.Center
         ) {
 
             Text(
@@ -321,15 +331,13 @@ fun EspecialidadCard(
             )
 
             Spacer(
-                modifier =
-                    Modifier.height(8.dp)
+                modifier = Modifier.height(8.dp)
             )
 
             Text(
                 text = nombre,
                 fontWeight = FontWeight.Bold,
-                color =
-                    MaterialTheme.colorScheme.secondary
+                color = MaterialTheme.colorScheme.secondary
             )
         }
     }
