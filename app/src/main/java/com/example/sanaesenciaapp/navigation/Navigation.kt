@@ -38,8 +38,7 @@ fun AppNavigation(
         }
 
         composable("ubicacion") {
-            UbicacionScreen()
-        }
+            UbicacionScreen(onBackClick = { navController.popBackStack() })        }
 
         // Pantalla de detalle de servicio
         composable("detalle_servicio") {
@@ -47,6 +46,7 @@ fun AppNavigation(
             if (esp != null) {
                 DetalleServicioScreen(
                     especialidad = esp,
+                    onBackClick = { navController.popBackStack() },
                     onReservarClick = { navController.navigate("home") }
                 )
             }
