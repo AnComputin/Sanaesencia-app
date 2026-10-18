@@ -19,9 +19,26 @@ enum class Modalidad {
     ONLINE
 }
 
+enum class EstadoCita {
+    CONFIRMADA,
+    COMPLETADA,
+    CANCELADA
+}
+
 data class Horario(
     val hora: String,
     val disponible: Boolean
+)
+
+data class CitaItem(
+    val id: Int,
+    val especialidad: String,
+    val profesional: String,
+    val modalidad: Modalidad,
+    val inicioMillis: Long,
+    val hora: String,
+    val paciente: String,
+    val estado: EstadoCita
 )
 
 data class CitaUiState(
@@ -34,6 +51,9 @@ data class CitaUiState(
     val errorNombre: String? = null
 )
 
+// TODO mover a ReglasNegocio
+private const val CANCELACION_HORAS = 24
+
 class CitaViewModel : ViewModel() {
 
     private val _uiState = MutableStateFlow(CitaUiState())
@@ -44,6 +64,13 @@ class CitaViewModel : ViewModel() {
     // TODO: Los horarios falsos se reemplazarán por CitaRepository cuando el compañero lo publique.
     private val _horarios = MutableStateFlow(generarHorariosFalsos(null))
     val horarios: StateFlow<List<Horario>> = _horarios.asStateFlow()
+
+    // TODO reemplazar por CitaRepository cuando Mark lo publique.
+    private val _citas = MutableStateFlow<List<CitaItem>>(generarCitasFalsas())
+    val citas: StateFlow<List<CitaItem>> = _citas.asStateFlow()
+
+    private val _ultimaCita = MutableStateFlow<CitaItem?>(null)
+    val ultimaCita: StateFlow<CitaItem?> = _ultimaCita.asStateFlow()
 
     val puedeContinuar: StateFlow<Boolean> = _uiState.map { estado ->
         estado.modalidad != null &&
@@ -101,6 +128,65 @@ class CitaViewModel : ViewModel() {
         return formato.format(Date(millis))
     }
 
+    fun puedeCancelar(cita: CitaItem): Boolean {
+        if (cita.estado != EstadoCita.CONFIRMADA) return false
+        val ahora = System.currentTimeMillis()
+        val horasFaltantes = (cita.inicioMillis - ahora) / (1000 * 60 * 60)
+        return horasFaltantes >= CANCELACION_HORAS
+    }
+
+    fun cancelarCita(id: Int): Boolean {
+        val citaActual = _citas.value.find { it.id == id } ?: return false
+        if (!puedeCancelar(citaActual)) return false
+
+        _citas.update { lista ->
+            lista.map { cita ->
+                if (cita.id == id) cita.copy(estado = EstadoCita.CANCELADA) else cita
+            }
+        }
+        return true
+    }
+
+    fun confirmarCita() {
+        val estado = _uiState.value
+        val especialidad = estado.especialidad
+        val profesional = estado.profesional
+        val modalidad = estado.modalidad
+        val fechaMillis = estado.fechaMillis
+        val horaStr = estado.hora
+        val paciente = estado.nombrePaciente
+
+        if (especialidad.isBlank() || profesional.isBlank() || modalidad == null || fechaMillis == null || horaStr.isNullOrBlank() || paciente.isBlank()) {
+            return
+        }
+
+        val cal = Calendar.getInstance().apply {
+            timeInMillis = fechaMillis
+            val partes = horaStr.split(":")
+            val hora = partes.getOrNull(0)?.toIntOrNull() ?: 0
+            val minuto = partes.getOrNull(1)?.toIntOrNull() ?: 0
+            set(Calendar.HOUR_OF_DAY, hora)
+            set(Calendar.MINUTE, minuto)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+
+        val nuevoId = (_citas.value.maxOfOrNull { it.id } ?: 0) + 1
+        val nuevaCita = CitaItem(
+            id = nuevoId,
+            especialidad = especialidad,
+            profesional = profesional,
+            modalidad = modalidad,
+            inicioMillis = cal.timeInMillis,
+            hora = horaStr,
+            paciente = paciente,
+            estado = EstadoCita.CONFIRMADA
+        )
+
+        _citas.update { it + nuevaCita }
+        _ultimaCita.value = nuevaCita
+    }
+
     private fun generarFechasDisponibles(): List<Long> {
         val listaFechas = mutableListOf<Long>()
         val calendario = Calendar.getInstance().apply {
@@ -142,5 +228,97 @@ class CitaViewModel : ViewModel() {
                 disponible = indice != indiceNoDisponible1 && indice != indiceNoDisponible2
             )
         }
+    }
+
+    // TODO reemplazar por CitaRepository cuando Mark lo publique.
+    private fun generarCitasFalsas(): List<CitaItem> {
+        val cal1 = Calendar.getInstance().apply {
+            add(Calendar.DAY_OF_MONTH, 3)
+            set(Calendar.HOUR_OF_DAY, 10)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val cal2 = Calendar.getInstance().apply {
+            add(Calendar.HOUR_OF_DAY, 10)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val cal3 = Calendar.getInstance().apply {
+            add(Calendar.DAY_OF_MONTH, -5)
+            set(Calendar.HOUR_OF_DAY, 11)
+            set(Calendar.MINUTE, 30)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val cal4 = Calendar.getInstance().apply {
+            add(Calendar.DAY_OF_MONTH, -10)
+            set(Calendar.HOUR_OF_DAY, 16)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val cal5 = Calendar.getInstance().apply {
+            add(Calendar.DAY_OF_MONTH, -12)
+            set(Calendar.HOUR_OF_DAY, 9)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+
+        val formatoHora = SimpleDateFormat("HH:mm", Locale.getDefault())
+
+        return listOf(
+            CitaItem(
+                id = 1,
+                especialidad = "Psicología",
+                profesional = "Dra. Ana López",
+                modalidad = Modalidad.PRESENCIAL,
+                inicioMillis = cal1.timeInMillis,
+                hora = "10:00",
+                paciente = "Juan Pérez",
+                estado = EstadoCita.CONFIRMADA
+            ),
+            CitaItem(
+                id = 2,
+                especialidad = "Nutrición",
+                profesional = "Lic. Carlos Ruiz",
+                modalidad = Modalidad.ONLINE,
+                inicioMillis = cal2.timeInMillis,
+                hora = formatoHora.format(cal2.time),
+                paciente = "Juan Pérez",
+                estado = EstadoCita.CONFIRMADA
+            ),
+            CitaItem(
+                id = 3,
+                especialidad = "Fonoaudiología",
+                profesional = "Lic. María Gómez",
+                modalidad = Modalidad.PRESENCIAL,
+                inicioMillis = cal3.timeInMillis,
+                hora = "11:30",
+                paciente = "Juan Pérez",
+                estado = EstadoCita.COMPLETADA
+            ),
+            CitaItem(
+                id = 4,
+                especialidad = "Terapia Ocupacional",
+                profesional = "Dra. Sofía Torres",
+                modalidad = Modalidad.ONLINE,
+                inicioMillis = cal4.timeInMillis,
+                hora = "16:00",
+                paciente = "Juan Pérez",
+                estado = EstadoCita.COMPLETADA
+            ),
+            CitaItem(
+                id = 5,
+                especialidad = "Psicología",
+                profesional = "Dra. Ana López",
+                modalidad = Modalidad.PRESENCIAL,
+                inicioMillis = cal5.timeInMillis,
+                hora = "09:00",
+                paciente = "Juan Pérez",
+                estado = EstadoCita.CANCELADA
+            )
+        )
     }
 }
