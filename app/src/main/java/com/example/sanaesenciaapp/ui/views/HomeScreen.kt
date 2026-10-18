@@ -16,10 +16,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-<<<<<<< HEAD
 import androidx.compose.material3.OutlinedButton
-=======
->>>>>>> 0c342bb8295f777899d0c8481aac18b66bff87b5
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -243,7 +240,6 @@ fun HomeScreen(
                     )
                 }
             }
-<<<<<<< HEAD
             Spacer(
                 modifier = Modifier.height(16.dp)
             )
@@ -262,8 +258,6 @@ fun HomeScreen(
                     color = MaterialTheme.colorScheme.secondary
                 )
             }
-=======
->>>>>>> 0c342bb8295f777899d0c8481aac18b66bff87b5
 
             Spacer(
                 modifier = Modifier.height(24.dp)

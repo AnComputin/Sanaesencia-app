@@ -1,9 +1,6 @@
 package com.example.sanaesenciaapp.ui.views
 
-<<<<<<< HEAD
 import androidx.compose.animation.core.*
-=======
->>>>>>> 0c342bb8295f777899d0c8481aac18b66bff87b5
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,18 +9,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-<<<<<<< HEAD
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
-=======
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
->>>>>>> 0c342bb8295f777899d0c8481aac18b66bff87b5
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -35,7 +25,6 @@ import kotlinx.coroutines.delay
 fun SplashScreen(
     navController: NavController
 ) {
-<<<<<<< HEAD
     // Estados para controlar la animación
     var startAnimation by remember { mutableStateOf(false) }
 
@@ -58,15 +47,6 @@ fun SplashScreen(
         startAnimation = true
         delay(2000) // Tiempo que dura el Splash en pantalla antes de ir a home
         navController.navigate("home") {
-=======
-
-    LaunchedEffect(Unit) {
-
-        delay(1000)
-
-        navController.navigate("home") {
-
->>>>>>> 0c342bb8295f777899d0c8481aac18b66bff87b5
             popUpTo("splash") {
                 inclusive = true
             }
@@ -79,7 +59,6 @@ fun SplashScreen(
             .background(
                 MaterialTheme.colorScheme.background
             ),
-<<<<<<< HEAD
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -89,16 +68,6 @@ fun SplashScreen(
             modifier = Modifier
                 .scale(scaleAnim.value)
                 .alpha(alphaAnim.value)
-=======
-
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-
-        Text(
-            text = "🌿",
-            fontSize = 72.sp
->>>>>>> 0c342bb8295f777899d0c8481aac18b66bff87b5
         )
 
         Spacer(
@@ -109,12 +78,8 @@ fun SplashScreen(
             text = "SanaEsencia",
             fontSize = 40.sp,
             fontWeight = FontWeight.Bold,
-<<<<<<< HEAD
             color = MaterialTheme.colorScheme.secondary,
             modifier = Modifier.alpha(alphaAnim.value)
-=======
-            color = MaterialTheme.colorScheme.secondary
->>>>>>> 0c342bb8295f777899d0c8481aac18b66bff87b5
         )
 
         Spacer(
@@ -125,12 +90,8 @@ fun SplashScreen(
             text = "Bienestar integral",
             fontSize = 18.sp,
             color = MaterialTheme.colorScheme.primary,
-<<<<<<< HEAD
             textAlign = TextAlign.Center,
             modifier = Modifier.alpha(alphaAnim.value)
-=======
-            textAlign = TextAlign.Center
->>>>>>> 0c342bb8295f777899d0c8481aac18b66bff87b5
         )
     }
 }

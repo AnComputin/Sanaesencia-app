@@ -1,15 +1,11 @@
 package com.example.sanaesenciaapp.data
 
 import androidx.compose.runtime.mutableStateListOf
-<<<<<<< HEAD
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.example.sanaesenciaapp.data.room.AppDatabase
 import com.example.sanaesenciaapp.data.room.EspecialidadEntity
-=======
-import com.example.sanaesenciaapp.data.room.AppDatabase
->>>>>>> 0c342bb8295f777899d0c8481aac18b66bff87b5
 import com.example.sanaesenciaapp.data.room.UsuarioEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -30,12 +26,9 @@ class AppState(
     var usuarioActual: Usuario? = null
         private set
 
-<<<<<<< HEAD
     // Lista observable de especialidades para la UI
     val especialidades = mutableStateListOf<EspecialidadEntity>()
     var especialidadSeleccionada by mutableStateOf<EspecialidadEntity?>(null)
-=======
->>>>>>> 0c342bb8295f777899d0c8481aac18b66bff87b5
     private val scope =
         CoroutineScope(Dispatchers.IO)
 
@@ -60,7 +53,6 @@ class AppState(
                     )
                 }
             )
-<<<<<<< HEAD
             // 2. Gestionar el Catálogo de Especialidades en Room
             val especialidadDao = db.especialidadDao()
             var listaEspDb = especialidadDao.obtenerTodas()
@@ -114,8 +106,6 @@ class AppState(
                 especialidades.clear()
                 especialidades.addAll(listaEspDb)
             }
-=======
->>>>>>> 0c342bb8295f777899d0c8481aac18b66bff87b5
         }
     }
 
