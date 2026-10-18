@@ -199,7 +199,10 @@ fun PagoScreen(
 
         // Botón Pagar
         Button(
-            onClick = onPagoExitoso,
+            onClick = {
+                citaViewModel.confirmarCita()
+                onPagoExitoso()
+            },
             enabled = !estaExpirado && tiempoRestante > 0,
             modifier = Modifier.fillMaxWidth()
         ) {
