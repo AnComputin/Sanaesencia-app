@@ -33,6 +33,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.sanaesenciaapp.data.AppState
 import com.example.sanaesenciaapp.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,6 +41,7 @@ import com.example.sanaesenciaapp.viewmodel.AuthViewModel
 fun LoginScreen(
     onNavigateToHome: () -> Unit,
     onNavigateToRegistro: () -> Unit,
+    appState: AppState? = null,
     authViewModel: AuthViewModel = viewModel()
 ) {
 
@@ -142,6 +144,14 @@ fun LoginScreen(
                     val passOk = state.password.isNotBlank()
 
                     if (emailOk && passOk) {
+                        if (appState != null) {
+                            val exito = appState.login(state.email, state.password)
+                            if (!exito) {
+                                val nombreGenerado = state.email.substringBefore("@").ifEmpty { "Usuario" }
+                                appState.registrarUsuario(nombreGenerado, state.email, state.password)
+                                appState.login(state.email, state.password)
+                            }
+                        }
                         onNavigateToHome()
                     }
                 },

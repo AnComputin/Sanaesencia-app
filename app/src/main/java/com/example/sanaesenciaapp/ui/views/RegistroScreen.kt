@@ -42,12 +42,14 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.sanaesenciaapp.data.AppState
 import com.example.sanaesenciaapp.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegistroScreen(
     onNavigateBack: () -> Unit,
+    appState: AppState? = null,
     authViewModel: AuthViewModel = viewModel()
 ) {
 
@@ -316,6 +318,11 @@ fun RegistroScreen(
                 onClick = {
                     val valido = authViewModel.validarRegistro()
                     if (valido) {
+                        if (appState != null) {
+                            val nombreGenerado = state.email.substringBefore("@").ifEmpty { "Usuario" }
+                            appState.registrarUsuario(nombreGenerado, state.email, state.password)
+                            appState.login(state.email, state.password)
+                        }
                         onNavigateBack()
                     }
                 },

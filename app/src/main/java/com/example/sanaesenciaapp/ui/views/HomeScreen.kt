@@ -128,7 +128,10 @@ fun HomeScreen(
 
                     } else {
 
-                        // Después crearemos la pantalla de reservas
+                        if (appState.especialidadSeleccionada == null && appState.especialidades.isNotEmpty()) {
+                            appState.especialidadSeleccionada = appState.especialidades.first()
+                        }
+                        navController.navigate("detalle_servicio")
                     }
                 },
 
