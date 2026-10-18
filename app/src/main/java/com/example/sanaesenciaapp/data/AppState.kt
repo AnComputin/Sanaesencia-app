@@ -79,7 +79,7 @@ class AppState(
                         icono = "🧩",
                         profesional = "TO. Javiera Paz",
                         modalidad = "Presencial",
-                        agendaPausada = true // Cumple con la HU-02 (agenda pausada)
+                        agendaPausada = true
                     ),
                     EspecialidadEntity(
                         id = 4,

@@ -15,6 +15,6 @@ Nancy Beatriz Bernal Sanchez
 ## Ramas
 - main: versión estable, solo se fusiona con Pull Request y la aprobacion de todo el equipo
 - develop: integración del trabajo del equipo, aqui se puden juntar las ramas con tranquilidad 
--
+- Rama-Mark: Código Base con el home realizado
 -
 -
