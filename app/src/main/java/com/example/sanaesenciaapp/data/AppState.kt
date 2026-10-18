@@ -10,6 +10,7 @@ import com.example.sanaesenciaapp.data.room.UsuarioEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 data class Usuario(
     val nombre: String,
@@ -26,26 +27,18 @@ class AppState(
     var usuarioActual: Usuario? = null
         private set
 
-    // Lista observable de especialidades para la UI
+    // Lista observable de especialidades para la UI y Room
     val especialidades = mutableStateListOf<EspecialidadEntity>()
     var especialidadSeleccionada by mutableStateOf<EspecialidadEntity?>(null)
-    private val scope =
-        CoroutineScope(Dispatchers.IO)
 
+    private val scope = CoroutineScope(Dispatchers.IO)
 
     fun cargarDatos() {
-
         scope.launch {
-
-            val usuariosDb =
-                db.usuarioDao().obtenerTodos()
-
+            val usuariosDb = db.usuarioDao().obtenerTodos()
             usuarios.clear()
-
             usuarios.addAll(
-
                 usuariosDb.map {
-
                     Usuario(
                         nombre = it.nombre,
                         email = it.email,
@@ -53,7 +46,8 @@ class AppState(
                     )
                 }
             )
-            // 2. Gestionar el Catálogo de Especialidades en Room
+
+            // Gestión del Catálogo de Especialidades en Room
             val especialidadDao = db.especialidadDao()
             var listaEspDb = especialidadDao.obtenerTodas()
 
@@ -85,7 +79,7 @@ class AppState(
                         icono = "🧩",
                         profesional = "TO. Javiera Paz",
                         modalidad = "Presencial",
-                        agendaPausada = true // ⚠️ Aquí cumplimos la HU-02 con agenda pausada
+                        agendaPausada = true
                     ),
                     EspecialidadEntity(
                         id = 4,
@@ -102,25 +96,19 @@ class AppState(
             }
 
             // Actualizamos la lista observable en el hilo principal
-            kotlinx.coroutines.withContext(Dispatchers.Main) {
+            withContext(Dispatchers.Main) {
                 especialidades.clear()
                 especialidades.addAll(listaEspDb)
             }
         }
     }
 
-
     fun registrarUsuario(
         nombre: String,
         email: String,
         password: String
     ): Boolean {
-
-        if (
-            usuarios.any {
-                it.email == email
-            }
-        ) {
+        if (usuarios.any { it.email == email }) {
             return false
         }
 
@@ -133,9 +121,7 @@ class AppState(
         usuarios.add(nuevoUsuario)
 
         scope.launch {
-
             db.usuarioDao().insertar(
-
                 UsuarioEntity(
                     nombre = nombre,
                     email = email,
@@ -147,31 +133,23 @@ class AppState(
         return true
     }
 
-
     fun login(
         email: String,
         password: String
     ): Boolean {
-
         val usuario = usuarios.find {
-
-            it.email == email &&
-                    it.password == password
+            it.email == email && it.password == password
         }
 
         if (usuario == null) {
-
             return false
         }
 
         usuarioActual = usuario
-
         return true
     }
 
-
     fun logout() {
-
         usuarioActual = null
     }
 }

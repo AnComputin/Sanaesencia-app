@@ -240,11 +240,12 @@ fun HomeScreen(
                     )
                 }
             }
+
             Spacer(
                 modifier = Modifier.height(16.dp)
             )
 
-            // 👇 AGREGAR AQUÍ EL BOTÓN DE ACCESO A LA UBICACIÓN Y GPS
+            // Botón de acceso a la ubicación y GPS
             OutlinedButton(
                 onClick = { navController.navigate("ubicacion") },
                 modifier = Modifier

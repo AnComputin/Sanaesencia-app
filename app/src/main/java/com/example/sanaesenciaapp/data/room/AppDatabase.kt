@@ -10,7 +10,6 @@ import androidx.room.RoomDatabase
     version = 2,
     exportSchema = false
 )
-
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun usuarioDao(): UsuarioDao
@@ -30,7 +29,8 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "sanaesencia_db"
                 )
-                    .fallbackToDestructiveMigration(true)                    .build()
+                    .fallbackToDestructiveMigration(true)
+                    .build()
                     .also {
                         INSTANCE = it
                     }
