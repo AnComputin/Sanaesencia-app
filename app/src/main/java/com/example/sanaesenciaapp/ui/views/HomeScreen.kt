@@ -128,10 +128,9 @@ fun HomeScreen(
 
                     } else {
 
-                        if (appState.especialidadSeleccionada == null && appState.especialidades.isNotEmpty()) {
-                            appState.especialidadSeleccionada = appState.especialidades.first()
-                        }
-                        navController.navigate("detalle_servicio")
+                        navController.navigate(
+                            "seleccionar_especialidad"
+                        )
                     }
                 },
 

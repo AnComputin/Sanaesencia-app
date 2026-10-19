@@ -18,6 +18,10 @@ import com.example.sanaesenciaapp.ui.views.terapeuta.DetalleContinuidadScreen
 import com.example.sanaesenciaapp.ui.views.terapeuta.HomeTerapeutaScreen
 import com.example.sanaesenciaapp.ui.views.terapeuta.PacientesAsignadosScreen
 import com.example.sanaesenciaapp.viewmodel.TerapeutaViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.sanaesenciaapp.ui.views.agenda.AgendarScreen
+import com.example.sanaesenciaapp.viewmodel.CitaViewModel
+import com.example.sanaesenciaapp.ui.views.SeleccionEspecialidadScreen
 
 @Composable
 fun AppNavigation(
@@ -25,6 +29,7 @@ fun AppNavigation(
     appState: AppState
 ) {
     val terapeutaViewModel: TerapeutaViewModel = viewModel()
+    val citaViewModel: CitaViewModel = viewModel()
 
     NavHost(
         navController = navController,
@@ -100,7 +105,22 @@ fun AppNavigation(
                 DetalleServicioScreen(
                     especialidad = esp,
                     onBackClick = { navController.popBackStack() },
-                    onReservarClick = { navController.navigate("home") }
+                    onReservarClick = {
+
+                        if (appState.usuarioActual == null) {
+
+                            navController.navigate("login")
+
+                        } else {
+
+                            citaViewModel.seleccionarServicio(
+                                especialidad = esp.nombre,
+                                profesional = esp.profesional
+                            )
+
+                            navController.navigate("agendar")
+                        }
+                    }
                 )
             }
         }
@@ -155,6 +175,29 @@ fun AppNavigation(
 
                 terapeutaViewModel =
                     terapeutaViewModel
+            )
+        }
+
+        composable("agendar") {
+
+            AgendarScreen(
+                citaViewModel = citaViewModel,
+
+                onContinuar = {
+                    // Después lo conectaremos con PagoScreen
+                },
+
+                onVolver = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable("seleccionar_especialidad") {
+
+            SeleccionEspecialidadScreen(
+                navController = navController,
+                appState = appState
             )
         }
 
