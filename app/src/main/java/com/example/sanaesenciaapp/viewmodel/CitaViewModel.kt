@@ -23,7 +23,12 @@ enum class Modalidad {
 enum class EstadoCita {
     CONFIRMADA,
     COMPLETADA,
-    CANCELADA
+    CANCELADA,
+    PENDIENTE,
+    ASISTIDA,
+    INASISTENTE,
+    CANCELADA_TERAPEUTA,
+    CANCELADA_PACIENTE
 }
 
 data class Horario(
@@ -78,6 +83,10 @@ class CitaViewModel : ViewModel() {
         initialValue = generarHorariosFalsos(null)
     )
 
+    // TODO mover a ReglasNegocio
+    val duracionPagoSegundos: Int = 600
+    private var pagoInicioMillis: Long? = null
+
     val puedeContinuar: StateFlow<Boolean> = _uiState.map { estado ->
         estado.modalidad != null &&
                 estado.fechaMillis != null &&
@@ -90,6 +99,22 @@ class CitaViewModel : ViewModel() {
         initialValue = false
     )
 
+    fun iniciarPago() {
+        if (pagoInicioMillis == null) {
+            pagoInicioMillis = System.currentTimeMillis()
+        }
+    }
+
+    fun segundosRestantesPago(): Int {
+        val inicio = pagoInicioMillis ?: return duracionPagoSegundos
+        val transcurridos = ((System.currentTimeMillis() - inicio) / 1000).toInt()
+        return (duracionPagoSegundos - transcurridos).coerceAtLeast(0)
+    }
+
+    fun reiniciarPago() {
+        pagoInicioMillis = null
+    }
+
     fun seleccionarServicio(especialidad: String, profesional: String) {
         _uiState.update { estado ->
             estado.copy(especialidad = especialidad, profesional = profesional)
@@ -100,12 +125,14 @@ class CitaViewModel : ViewModel() {
         _uiState.update { estado ->
             estado.copy(modalidad = m)
         }
+        reiniciarPago()
     }
 
     fun seleccionarFecha(millis: Long) {
         _uiState.update { estado ->
             estado.copy(fechaMillis = millis, hora = null)
         }
+        reiniciarPago()
     }
 
     fun seleccionarHora(hora: String) {
@@ -116,6 +143,7 @@ class CitaViewModel : ViewModel() {
         _uiState.update { estado ->
             estado.copy(hora = hora)
         }
+        reiniciarPago()
     }
 
     fun cambiarNombre(valor: String) {
@@ -158,14 +186,15 @@ class CitaViewModel : ViewModel() {
 
     fun confirmarCita() {
         val estado = _uiState.value
-        val especialidad = estado.especialidad
-        val profesional = estado.profesional
+        // TODO quitar valores por defecto cuando DetalleServicio llame a seleccionarServicio
+        val especialidad = if (estado.especialidad.isNotBlank()) estado.especialidad else "Psicología"
+        val profesional = if (estado.profesional.isNotBlank()) estado.profesional else "Por asignar"
         val modalidad = estado.modalidad
         val fechaMillis = estado.fechaMillis
         val horaStr = estado.hora
         val paciente = estado.nombrePaciente
 
-        if (especialidad.isBlank() || profesional.isBlank() || modalidad == null || fechaMillis == null || horaStr.isNullOrBlank() || paciente.isBlank()) {
+        if (modalidad == null || fechaMillis == null || horaStr.isNullOrBlank() || paciente.isBlank()) {
             return
         }
 
@@ -204,6 +233,7 @@ class CitaViewModel : ViewModel() {
                 errorNombre = null
             )
         }
+        reiniciarPago()
     }
 
     private fun calcularHorarios(fechaMillis: Long?, listaCitas: List<CitaItem>): List<Horario> {

@@ -18,26 +18,20 @@ fun AppNavigation(
     navController: NavHostController,
     appState: AppState
 ) {
-
     NavHost(
         navController = navController,
         startDestination = "splash"
     ) {
-
         composable("splash") {
             SplashScreen(navController)
         }
 
-        // 1. Ruta agregada para InicioScreen
         composable("inicio") {
             InicioScreen(navController)
         }
 
         composable("home") {
-            HomeScreen(
-                navController,
-                appState
-            )
+            HomeScreen(navController, appState)
         }
 
         composable("login") {
@@ -63,12 +57,9 @@ fun AppNavigation(
             )
         }
 
-        // 2. Le pasamos navController a UbicacionScreen para permitir volver atrás
         composable("ubicacion") {
-            UbicacionScreen(onBackClick = { navController.popBackStack() }
-            )
+            UbicacionScreen(onBackClick = { navController.popBackStack() })
         }
-
 
         composable("detalle_servicio") {
             val esp = appState.especialidadSeleccionada

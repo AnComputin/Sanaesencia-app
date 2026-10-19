@@ -257,12 +257,17 @@ private fun CitaTarjeta(
                         EstadoCita.CONFIRMADA -> "Confirmada"
                         EstadoCita.COMPLETADA -> "Completada"
                         EstadoCita.CANCELADA -> "Cancelada"
+                        EstadoCita.PENDIENTE -> "Pendiente"
+                        EstadoCita.ASISTIDA -> "Asistida"
+                        EstadoCita.INASISTENTE -> "Inasistente"
+                        EstadoCita.CANCELADA_TERAPEUTA -> "Cancelada por Terapeuta"
+                        EstadoCita.CANCELADA_PACIENTE -> "Cancelada por Paciente"
                     },
                     style = MaterialTheme.typography.labelMedium,
                     color = when (cita.estado) {
-                        EstadoCita.CONFIRMADA -> MaterialTheme.colorScheme.primary
-                        EstadoCita.COMPLETADA -> MaterialTheme.colorScheme.outline
-                        EstadoCita.CANCELADA -> MaterialTheme.colorScheme.error
+                        EstadoCita.CONFIRMADA, EstadoCita.ASISTIDA -> MaterialTheme.colorScheme.primary
+                        EstadoCita.COMPLETADA, EstadoCita.PENDIENTE -> MaterialTheme.colorScheme.outline
+                        else -> MaterialTheme.colorScheme.error
                     }
                 )
             }

@@ -38,7 +38,7 @@ import com.example.sanaesenciaapp.data.room.EspecialidadEntity
 fun DetalleServicioScreen(
     especialidad: EspecialidadEntity,
     onBackClick: () -> Unit,
-    onReservarClick: () -> Unit,
+    onReservarClick: () -> Unit
 ) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -126,7 +126,7 @@ fun DetalleServicioScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "MG",
+                            text = especialidad.profesional.take(2).uppercase(),
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSecondaryContainer
                         )
@@ -149,7 +149,6 @@ fun DetalleServicioScreen(
 
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        // Chip / Etiqueta de Modalidad
                         Card(
                             shape = RoundedCornerShape(12.dp),
                             colors = CardDefaults.cardColors(
@@ -187,22 +186,23 @@ fun DetalleServicioScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Botón inferior Agendar Cita
-            Button(
-                onClick = { onReservarClick() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(55.dp),
-                shape = RoundedCornerShape(18.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                )
-            ) {
-                Text(
-                    text = "Agendar Cita",
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold
-                )
+            if (!especialidad.agendaPausada) {
+                Button(
+                    onClick = { onReservarClick() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(55.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Text(
+                        text = "Agendar Cita",
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }
