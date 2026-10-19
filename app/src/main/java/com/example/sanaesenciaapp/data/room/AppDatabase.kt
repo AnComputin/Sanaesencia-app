@@ -6,14 +6,14 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [UsuarioEntity::class],
-    version = 1,
+    entities = [UsuarioEntity::class, EspecialidadEntity::class],
+    version = 2,
     exportSchema = false
 )
-
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun usuarioDao(): UsuarioDao
+    abstract fun especialidadDao(): EspecialidadDao
 
     companion object {
 
@@ -29,6 +29,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "sanaesencia_db"
                 )
+                    .fallbackToDestructiveMigration(true)
                     .build()
                     .also {
                         INSTANCE = it
