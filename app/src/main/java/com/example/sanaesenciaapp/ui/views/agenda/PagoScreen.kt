@@ -36,9 +36,6 @@ import com.example.sanaesenciaapp.viewmodel.Modalidad
 import kotlinx.coroutines.delay
 import java.util.Locale
 
-// TODO mover a ReglasNegocio
-private const val PAGO_SEGUNDOS = 600
-
 @Composable
 fun PagoScreen(
     citaViewModel: CitaViewModel,
@@ -47,19 +44,27 @@ fun PagoScreen(
 ) {
     val uiState by citaViewModel.uiState.collectAsState()
 
-    var tiempoRestante by remember { mutableIntStateOf(PAGO_SEGUNDOS) }
+    LaunchedEffect(Unit) {
+        citaViewModel.iniciarPago()
+    }
+
+    var tiempoRestante by remember { mutableIntStateOf(citaViewModel.segundosRestantesPago()) }
     var estaExpirado by remember { mutableStateOf(false) }
 
     LaunchedEffect(tiempoRestante) {
         if (tiempoRestante > 0) {
             delay(1000L)
-            tiempoRestante -= 1
+            val nuevoTiempo = citaViewModel.segundosRestantesPago()
+            tiempoRestante = nuevoTiempo
+            if (nuevoTiempo <= 0) {
+                estaExpirado = true
+            }
         } else {
             estaExpirado = true
         }
     }
 
-    val progreso = (tiempoRestante.toFloat() / PAGO_SEGUNDOS.toFloat()).coerceIn(0f, 1f)
+    val progreso = (tiempoRestante.toFloat() / citaViewModel.duracionPagoSegundos.toFloat()).coerceIn(0f, 1f)
     val progresoAnimado by animateFloatAsState(
         targetValue = progreso,
         label = "ProgresoTiempoPago"
@@ -217,7 +222,12 @@ fun PagoScreen(
             title = { Text("Tiempo agotado") },
             text = { Text("El tiempo para realizar el pago ha expirado.") },
             confirmButton = {
-                Button(onClick = onExpirado) {
+                Button(
+                    onClick = {
+                        citaViewModel.reiniciarPago()
+                        onExpirado()
+                    }
+                ) {
                     Text("Aceptar")
                 }
             }
