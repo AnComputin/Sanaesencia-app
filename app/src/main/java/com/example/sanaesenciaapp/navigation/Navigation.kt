@@ -10,12 +10,21 @@ import com.example.sanaesenciaapp.ui.views.InicioScreen
 import com.example.sanaesenciaapp.ui.views.LoginScreen
 import com.example.sanaesenciaapp.ui.views.RegistroScreen
 import com.example.sanaesenciaapp.ui.views.SplashScreen
+import com.example.sanaesenciaapp.ui.views.UbicacionScreen
+import com.example.sanaesenciaapp.ui.views.catalogo.DetalleServicioScreen
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.sanaesenciaapp.ui.views.terapeuta.AgendaDiaScreen
+import com.example.sanaesenciaapp.ui.views.terapeuta.DetalleContinuidadScreen
+import com.example.sanaesenciaapp.ui.views.terapeuta.HomeTerapeutaScreen
+import com.example.sanaesenciaapp.ui.views.terapeuta.PacientesAsignadosScreen
+import com.example.sanaesenciaapp.viewmodel.TerapeutaViewModel
 
 @Composable
 fun AppNavigation(
     navController: NavHostController,
     appState: AppState
 ) {
+    val terapeutaViewModel: TerapeutaViewModel = viewModel()
 
     NavHost(
         navController = navController,
@@ -23,14 +32,15 @@ fun AppNavigation(
     ) {
 
         composable("splash") {
+            SplashScreen(navController)
+        }
 
-            SplashScreen(
-                navController
-            )
+        // 1. Ruta agregada para InicioScreen
+        composable("inicio") {
+            InicioScreen(navController)
         }
 
         composable("home") {
-
             HomeScreen(
                 navController,
                 appState
@@ -38,19 +48,116 @@ fun AppNavigation(
         }
 
         composable("login") {
-
             LoginScreen(
-                navController,
-                appState
+                onNavigateToHome = {
+
+                    val destino =
+                        if (
+                            appState.usuarioActual?.rol == "TERAPEUTA"
+                        ) {
+                            "home_terapeuta"
+                        } else {
+                            "home"
+                        }
+                    navController.navigate(destino) {
+                        popUpTo("login") {
+                            inclusive = true
+                        }
+                    }
+                },
+                onNavigateToRegistro = {
+                    navController.navigate("registro")
+                },
+                appState = appState
             )
         }
 
         composable("registro") {
 
             RegistroScreen(
-                navController,
-                appState
+                onRegistroExitoso = {
+                    navController.navigate("login") {
+                        popUpTo("registro") {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
+                    }
+                },
+                appState = appState
             )
         }
+
+        // 2. Le pasamos navController a UbicacionScreen para permitir volver atrás
+        composable("ubicacion") {
+            UbicacionScreen(onBackClick = { navController.popBackStack() }
+            )
+        }
+
+
+        composable("detalle_servicio") {
+            val esp = appState.especialidadSeleccionada
+            if (esp != null) {
+                DetalleServicioScreen(
+                    especialidad = esp,
+                    onBackClick = { navController.popBackStack() },
+                    onReservarClick = { navController.navigate("home") }
+                )
+            }
+        }
+        composable("home_terapeuta") {
+
+            HomeTerapeutaScreen(
+                navController = navController,
+                appState = appState
+            )
+        }
+        composable("agenda_terapeuta") {
+
+            AgendaDiaScreen(
+                terapeutaViewModel = terapeutaViewModel
+            )
+        }
+
+        composable("pacientes_terapeuta") {
+            PacientesAsignadosScreen(
+                onPacienteClick = { pacienteId ->
+                    val paciente =
+                        terapeutaViewModel
+                            .uiState
+                            .value
+                            .pacientes
+                            .find {
+                                it.id == pacienteId
+                            }
+                    if (paciente != null) {
+                        terapeutaViewModel
+                            .seleccionarPaciente(
+                                paciente
+                            )
+                        navController.navigate(
+                            "detalle_continuidad"
+                        )
+                    }
+                },
+
+                terapeutaViewModel =
+                    terapeutaViewModel
+            )
+        }
+
+        composable("detalle_continuidad") {
+
+            DetalleContinuidadScreen(
+
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+
+                terapeutaViewModel =
+                    terapeutaViewModel
+            )
+        }
+
+
     }
 }

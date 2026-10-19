@@ -11,5 +11,15 @@ data class UsuarioEntity(
 
     val nombre: String,
 
-    val password: String
+    val password: String,
+
+    val rut: String,
+
+    val telefono: String,
+
+    val fechaNacimiento: String,
+
+    val comuna: String,
+
+    val rol: String
 )

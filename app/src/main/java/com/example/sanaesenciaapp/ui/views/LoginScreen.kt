@@ -1,5 +1,6 @@
 package com.example.sanaesenciaapp.ui.views
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -7,58 +8,52 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.sanaesenciaapp.data.AppState
+import com.example.sanaesenciaapp.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(navController: NavController,
-                appState: AppState) {
+fun LoginScreen(
+    onNavigateToHome: () -> Unit,
+    onNavigateToRegistro: () -> Unit,
+    appState: AppState? = null,
+    authViewModel: AuthViewModel = viewModel()
+) {
 
-    var email by remember {
-        mutableStateOf("")
-    }
-
-    var password by remember {
-        mutableStateOf("")
-    }
-
-    var error by remember {
-        mutableStateOf("")
-    }
+    val state by authViewModel.uiState.collectAsState()
 
     Scaffold(
-
-        containerColor =
-            MaterialTheme.colorScheme.background,
-
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-
             TopAppBar(
-                title = {
-                    Text("Iniciar sesión")
-                }
+                title = { Text("Iniciar sesión") }
             )
         }
-
     ) { padding ->
 
         Column(
@@ -66,7 +61,6 @@ fun LoginScreen(navController: NavController,
                 .fillMaxSize()
                 .padding(padding)
                 .padding(24.dp),
-
             verticalArrangement = Arrangement.Center
         ) {
 
@@ -82,124 +76,120 @@ fun LoginScreen(navController: NavController,
                 color = MaterialTheme.colorScheme.onBackground
             )
 
+            Spacer(modifier = Modifier.height(24.dp))
+
+            //campo Email
             OutlinedTextField(
-                value = email,
-
-                onValueChange = {
-                    email = it
+                value = state.email,
+                onValueChange = { authViewModel.onEmailChange(it) },
+                label = { Text("Correo electrónico") },
+                leadingIcon = {
+                    Icon(Icons.Default.Email, contentDescription = "Email")
                 },
-
-                label = {
-                    Text("Correo electrónico")
+                isError = state.errorEmail != null,
+                supportingText = {
+                    AnimatedVisibility(visible = state.errorEmail != null) {
+                        Text(
+                            text = state.errorEmail ?: "",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
                 },
-
                 singleLine = true,
-
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(
-                modifier = Modifier.height(12.dp)
-            )
+            Spacer(modifier = Modifier.height(12.dp))
 
-
-            Spacer(
-                modifier = Modifier.height(28.dp)
-            )
-
+            // Campo Contraseña
             OutlinedTextField(
-                value = password,
-
-                onValueChange = {
-                    password = it
+                value = state.password,
+                onValueChange = { authViewModel.onPasswordChange(it) },
+                label = { Text("Contraseña") },
+                leadingIcon = {
+                    Icon(Icons.Default.Lock, contentDescription = "Contraseña")
                 },
-
-                label = {
-                    Text("Contraseña")
+                trailingIcon = {
+                    IconButton(onClick = { authViewModel.togglePasswordVisibility() }) {
+                        Icon(
+                            imageVector = if (state.isPasswordVisible)
+                                Icons.Default.VisibilityOff
+                            else Icons.Default.Visibility,
+                            contentDescription = "Ver contraseña"
+                        )
+                    }
                 },
-
+                visualTransformation = if (state.isPasswordVisible)
+                    VisualTransformation.None
+                else PasswordVisualTransformation(),
+                isError = state.errorPassword != null,
+                supportingText = {
+                    AnimatedVisibility(visible = state.errorPassword != null) {
+                        Text(
+                            text = state.errorPassword ?: "",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                },
                 singleLine = true,
-
-                visualTransformation = PasswordVisualTransformation(),
-
                 modifier = Modifier.fillMaxWidth()
             )
-
-            Spacer(
-                modifier = Modifier.height(16.dp)
-            )
-
-            if (error.isNotEmpty()) {
+            AnimatedVisibility(
+                visible = state.errorGeneral != null
+            ) {
 
                 Text(
-                    text = error,
+                    text = state.errorGeneral ?: "",
                     color = MaterialTheme.colorScheme.error
-                )
-
-                Spacer(
-                    modifier = Modifier.height(8.dp)
                 )
             }
 
+            if (state.errorGeneral != null) {
+
+                Spacer(
+                    modifier = Modifier.height(12.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Botón Iniciar sesión
             Button(
-
                 onClick = {
-
                     when {
+                        state.email.isBlank() ||
+                                state.password.isBlank() -> {
 
-                        email.isBlank() ||
-                                password.isBlank() -> {
-
-                            error =
-                                "Debe ingresar correo y contraseña"
+                            authViewModel.setErrorGeneral(
+                                "Ingrese correo y contraseña"
+                            )
                         }
-
-                        password.length < 4 -> {
-
-                            error =
-                                "La contraseña debe tener al menos 4 caracteres"
-                        }
-
-                        appState.login(
-                            email.trim(),
-                            password
+                        !appState!!.existeCorreo(
+                            state.email
                         ) -> {
 
-                            error = ""
-
-                            navController.navigate("home") {
-
-                                popUpTo("login") {
-                                    inclusive = true
-                                }
-                            }
+                            authViewModel.setErrorGeneral(
+                                "No existe una cuenta con este correo"
+                            )
                         }
-
+                        !appState.login(
+                            state.email,
+                            state.password
+                        ) -> {
+                            authViewModel.setErrorGeneral(
+                                "Contraseña incorrecta"
+                            )
+                        }
                         else -> {
-
-                            error =
-                                "Correo o contraseña incorrectos"
+                            authViewModel.setErrorGeneral(null)
+                            onNavigateToHome()
                         }
                     }
                 },
-
-                modifier =
-                    Modifier.fillMaxWidth()
-
+                modifier = Modifier.fillMaxWidth()
             ) {
 
                 Text("Iniciar sesión")
-            }
-
-            TextButton(
-
-                onClick = {
-                    navController.navigate("registro")
-                }
-
-            ) {
-
-                Text("¿No tienes cuenta? Regístrate")
             }
         }
     }
