@@ -52,6 +52,10 @@ import com.example.sanaesenciaapp.viewmodel.CitaViewModel
 import com.example.sanaesenciaapp.viewmodel.EstadoCita
 import com.example.sanaesenciaapp.viewmodel.EstadoReserva
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
+import androidx.compose.ui.unit.sp
+import com.example.sanaesenciaapp.ui.components.SanaBackground
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,60 +94,155 @@ fun MisCitasScreen(
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            TabRow(selectedTabIndex = selectedTabIndex) {
-                Tab(
-                    selected = selectedTabIndex == 0,
-                    onClick = { selectedTabIndex = 0 },
-                    text = { Text("Próximas") }
-                )
-                Tab(
-                    selected = selectedTabIndex == 1,
-                    onClick = { selectedTabIndex = 1 },
-                    text = { Text("Historial") }
-                )
-            }
+        SanaBackground {
 
-            Crossfade(
-                targetState = selectedTabIndex,
-                label = "PestañasCitas"
-            ) { tabIndex ->
-                when (tabIndex) {
-                    0 -> ListaCitas(
-                        citas = proximasCitas,
-                        esProxima = true,
-                        formatearFecha = { citaViewModel.formatearFecha(it) },
-                        puedeCancelar = { citaViewModel.puedeCancelar(it) },
-                        onAgregarCalendario = { cita ->
-                            val exito = CalendarioHelper.agregarACalendario(
-                                context = context,
-                                titulo = "Cita: ${cita.especialidad}",
-                                descripcion = "Cita médica de ${cita.especialidad} con ${cita.profesional}. Paciente: ${cita.paciente}.",
-                                inicioMillis = cita.inicioMillis,
-                                ubicacion = "Modalidad: ${cita.modalidad.name}"
-                            )
-                            if (!exito) {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("No hay una app de calendario")
-                                }
-                            }
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            horizontal = 20.dp,
+                            vertical = 18.dp
+                        )
+                ) {
+
+                    Text(
+                        text = "Tus atenciones",
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+
+                    Spacer(
+                        modifier = Modifier.height(6.dp)
+                    )
+
+                    Text(
+                        text = "Revisa y administra tus próximas citas.",
+                        fontSize = 15.sp,
+                        color = MaterialTheme.colorScheme.onBackground
+                            .copy(alpha = 0.7f)
+                    )
+                }
+
+                TabRow(
+                    selectedTabIndex = selectedTabIndex,
+                    containerColor = MaterialTheme.colorScheme.background,
+                    contentColor = MaterialTheme.colorScheme.primary
+                ) {
+
+                    Tab(
+                        selected = selectedTabIndex == 0,
+                        onClick = {
+                            selectedTabIndex = 0
                         },
-                        onSolicitarCancelar = { cita ->
-                            citaACancelar = cita
+                        text = {
+                            Text(
+                                text = "Próximas",
+                                fontWeight =
+                                    if (selectedTabIndex == 0)
+                                        FontWeight.Bold
+                                    else
+                                        FontWeight.Normal
+                            )
                         }
                     )
-                    1 -> ListaCitas(
-                        citas = historialCitas,
-                        esProxima = false,
-                        formatearFecha = { citaViewModel.formatearFecha(it) },
-                        puedeCancelar = { false },
-                        onAgregarCalendario = {},
-                        onSolicitarCancelar = {}
+
+                    Tab(
+                        selected = selectedTabIndex == 1,
+                        onClick = {
+                            selectedTabIndex = 1
+                        },
+                        text = {
+                            Text(
+                                text = "Historial",
+                                fontWeight =
+                                    if (selectedTabIndex == 1)
+                                        FontWeight.Bold
+                                    else
+                                        FontWeight.Normal
+                            )
+                        }
                     )
+                }
+
+                Crossfade(
+                    targetState = selectedTabIndex,
+                    label = "PestañasCitas"
+                ) { tabIndex ->
+
+                    when (tabIndex) {
+
+                        0 -> ListaCitas(
+                            citas = proximasCitas,
+                            esProxima = true,
+
+                            formatearFecha = {
+                                citaViewModel.formatearFecha(it)
+                            },
+
+                            puedeCancelar = {
+                                citaViewModel.puedeCancelar(it)
+                            },
+
+                            onAgregarCalendario = { cita ->
+
+                                val exito =
+                                    CalendarioHelper.agregarACalendario(
+                                        context = context,
+                                        titulo =
+                                            "Cita: ${cita.especialidad}",
+
+                                        descripcion =
+                                            "Cita médica de ${cita.especialidad} " +
+                                                    "con ${cita.profesional}. " +
+                                                    "Paciente: ${cita.paciente}.",
+
+                                        inicioMillis =
+                                            cita.inicioMillis,
+
+                                        ubicacion =
+                                            "Modalidad: ${cita.modalidad.name}"
+                                    )
+
+                                if (!exito) {
+
+                                    scope.launch {
+
+                                        snackbarHostState.showSnackbar(
+                                            "No hay una app de calendario"
+                                        )
+                                    }
+                                }
+                            },
+
+                            onSolicitarCancelar = { cita ->
+                                citaACancelar = cita
+                            }
+                        )
+
+                        1 -> ListaCitas(
+                            citas = historialCitas,
+                            esProxima = false,
+
+                            formatearFecha = {
+                                citaViewModel.formatearFecha(it)
+                            },
+
+                            puedeCancelar = {
+                                false
+                            },
+
+                            onAgregarCalendario = {},
+
+                            onSolicitarCancelar = {}
+                        )
+                    }
                 }
             }
         }
@@ -230,83 +329,240 @@ private fun CitaTarjeta(
     onAgregarCalendario: () -> Unit,
     onSolicitarCancelar: () -> Unit
 ) {
+
     Card(
         modifier = Modifier.fillMaxWidth(),
+
+        shape = RoundedCornerShape(22.dp),
+
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor =
+                MaterialTheme.colorScheme.surface
+        ),
+
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp
         )
     ) {
+
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(20.dp),
+
+            verticalArrangement =
+                Arrangement.spacedBy(10.dp)
         ) {
+
+            // Especialidad + estado
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+
+                horizontalArrangement =
+                    Arrangement.SpaceBetween,
+
+                verticalAlignment =
+                    Alignment.CenterVertically
             ) {
+
                 Text(
                     text = cita.especialidad,
-                    style = MaterialTheme.typography.titleMedium,
+                    fontSize = 19.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color =
+                        MaterialTheme.colorScheme.secondary,
+
+                    modifier = Modifier.weight(1f)
                 )
-                Text(
-                    text = when (cita.estado) {
-                        EstadoReserva.CONFIRMADA -> "Confirmada"
-                        EstadoReserva.COMPLETADA -> "Completada"
-                        EstadoReserva.CANCELADA -> "Cancelada"
-                    },
-                    style = MaterialTheme.typography.labelMedium,
+
+                Surface(
+                    shape = RoundedCornerShape(50.dp),
+
                     color = when (cita.estado) {
-                        EstadoReserva.CONFIRMADA -> MaterialTheme.colorScheme.primary
-                        EstadoReserva.COMPLETADA -> MaterialTheme.colorScheme.outline
-                        EstadoReserva.CANCELADA -> MaterialTheme.colorScheme.error
+
+                        EstadoReserva.CONFIRMADA ->
+                            MaterialTheme.colorScheme
+                                .primaryContainer
+
+                        EstadoReserva.COMPLETADA ->
+                            MaterialTheme.colorScheme
+                                .surfaceVariant
+
+                        EstadoReserva.CANCELADA ->
+                            MaterialTheme.colorScheme
+                                .errorContainer
                     }
-                )
+                ) {
+
+                    Text(
+                        text = when (cita.estado) {
+
+                            EstadoReserva.CONFIRMADA ->
+                                "Confirmada"
+
+                            EstadoReserva.COMPLETADA ->
+                                "Completada"
+
+                            EstadoReserva.CANCELADA ->
+                                "Cancelada"
+                        },
+
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+
+                        color = when (cita.estado) {
+
+                            EstadoReserva.CONFIRMADA ->
+                                MaterialTheme.colorScheme
+                                    .onPrimaryContainer
+
+                            EstadoReserva.COMPLETADA ->
+                                MaterialTheme.colorScheme
+                                    .onSurfaceVariant
+
+                            EstadoReserva.CANCELADA ->
+                                MaterialTheme.colorScheme
+                                    .onErrorContainer
+                        },
+
+                        modifier = Modifier.padding(
+                            horizontal = 10.dp,
+                            vertical = 6.dp
+                        )
+                    )
+                }
+            }
+
+            Spacer(
+                modifier = Modifier.height(2.dp)
+            )
+
+            // Profesional
+            Text(
+                text = "Profesional",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Text(
+                text = cita.profesional,
+                fontSize = 15.sp,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            // Fecha y hora
+            Text(
+                text = "Fecha y hora",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Text(
+                text =
+                    "${formatearFecha(cita.inicioMillis)} · ${cita.hora}",
+
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement =
+                    Arrangement.spacedBy(8.dp)
+            ) {
+
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+
+                    color =
+                        MaterialTheme.colorScheme
+                            .primaryContainer
+                ) {
+
+                    Text(
+                        text =
+                            if (
+                                cita.modalidad.name ==
+                                "PRESENCIAL"
+                            )
+                                "📍 Presencial"
+                            else
+                                "💻 Online",
+
+                        fontSize = 13.sp,
+
+                        modifier = Modifier.padding(
+                            horizontal = 10.dp,
+                            vertical = 7.dp
+                        ),
+
+                        color =
+                            MaterialTheme.colorScheme
+                                .onPrimaryContainer
+                    )
+                }
             }
 
             Text(
-                text = "Profesional: ${cita.profesional}",
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                text = "Fecha: ${formatearFecha(cita.inicioMillis)} - ${cita.hora}",
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                text = "Modalidad: ${if (cita.modalidad.name == "PRESENCIAL") "Presencial" else "Online"}",
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
                 text = "Paciente: ${cita.paciente}",
-                style = MaterialTheme.typography.bodyMedium
+                fontSize = 14.sp,
+                color =
+                    MaterialTheme.colorScheme.onSurface
+                        .copy(alpha = 0.75f)
             )
 
             if (esProxima) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+
+                Spacer(
+                    modifier = Modifier.height(6.dp)
+                )
+
+                OutlinedButton(
+                    onClick = onAgregarCalendario,
+
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+
+                    shape = RoundedCornerShape(15.dp)
                 ) {
-                    OutlinedButton(
-                        onClick = onAgregarCalendario,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("Agregar a mi calendario")
-                    }
+
+                    Text(
+                        text = "Agregar a mi calendario"
+                    )
+                }
+
+                if (puedeCancelar) {
 
                     Button(
-                        onClick = onSolicitarCancelar,
-                        enabled = puedeCancelar,
-                        modifier = Modifier.weight(1f)
+                        onClick =
+                            onSolicitarCancelar,
+
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+
+                        shape =
+                            RoundedCornerShape(15.dp)
                     ) {
-                        Text(
-                            text = if (puedeCancelar) "Cancelar cita" else "No se puede cancelar con menos de 24 h"
-                        )
+
+                        Text("Cancelar cita")
                     }
+
+                } else {
+
+                    Text(
+                        text =
+                            "Esta cita ya no puede cancelarse porque faltan menos de 24 horas.",
+
+                        fontSize = 12.sp,
+
+                        color =
+                            MaterialTheme.colorScheme.error
+                                .copy(alpha = 0.85f)
+                    )
                 }
             }
         }

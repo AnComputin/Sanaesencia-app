@@ -22,6 +22,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.sanaesenciaapp.ui.views.agenda.AgendarScreen
 import com.example.sanaesenciaapp.viewmodel.CitaViewModel
 import com.example.sanaesenciaapp.ui.views.SeleccionEspecialidadScreen
+import com.example.sanaesenciaapp.ui.views.agenda.PagoScreen
+import com.example.sanaesenciaapp.ui.views.agenda.ConfirmacionScreen
+import com.example.sanaesenciaapp.ui.views.citas.MisCitasScreen
 
 @Composable
 fun AppNavigation(
@@ -115,7 +118,8 @@ fun AppNavigation(
 
                             citaViewModel.seleccionarServicio(
                                 especialidad = esp.nombre,
-                                profesional = esp.profesional
+                                profesional = esp.profesional,
+                                modalidadPermitida = esp.modalidad
                             )
 
                             navController.navigate("agendar")
@@ -184,7 +188,7 @@ fun AppNavigation(
                 citaViewModel = citaViewModel,
 
                 onContinuar = {
-                    // Después lo conectaremos con PagoScreen
+                    navController.navigate("pago")
                 },
 
                 onVolver = {
@@ -200,6 +204,54 @@ fun AppNavigation(
                 appState = appState
             )
         }
+
+        composable("pago") {
+
+            PagoScreen(
+                citaViewModel = citaViewModel,
+
+                onPagoExitoso = {
+                    navController.navigate("confirmacion") {
+                        popUpTo("pago") {
+                            inclusive = true
+                        }
+                    }
+                },
+
+                onExpirado = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable("confirmacion") {
+
+            ConfirmacionScreen(
+                citaViewModel = citaViewModel,
+
+                onVerMisCitas = {
+                    navController.navigate("mis_citas") {
+                        popUpTo("confirmacion") {
+                            inclusive = true
+                        }
+                    }
+                },
+
+            )
+        }
+
+        composable("mis_citas") {
+
+            MisCitasScreen(
+                citaViewModel = citaViewModel,
+
+                onVolver = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+
 
 
     }

@@ -45,11 +45,12 @@ data class CitaItem(
 data class CitaUiState(
     val especialidad: String = "",
     val profesional: String = "",
+    val modalidadPermitida: String = "Ambas",
     val modalidad: Modalidad? = null,
     val fechaMillis: Long? = null,
     val hora: String? = null,
     val nombrePaciente: String = "",
-    val errorNombre: String? = null
+    val errorNombre: String? = null,
 )
 
 // TODO mover a ReglasNegocio
@@ -110,9 +111,11 @@ class CitaViewModel : ViewModel() {
         pagoInicioMillis = null
     }
 
-    fun seleccionarServicio(especialidad: String, profesional: String) {
-        _uiState.update { estado ->
-            estado.copy(especialidad = especialidad, profesional = profesional)
+    fun seleccionarServicio(especialidad: String, profesional: String, modalidadPermitida: String
+    ) {
+        _uiState.update {
+            it.copy(especialidad = especialidad, profesional = profesional, modalidadPermitida = modalidadPermitida
+            )
         }
     }
 

@@ -1,6 +1,7 @@
 package com.example.sanaesenciaapp.ui.views.terapeuta
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -18,89 +20,425 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.sanaesenciaapp.ui.components.SanaBackground
 import com.example.sanaesenciaapp.viewmodel.EstadoCita
 import com.example.sanaesenciaapp.viewmodel.TerapeutaViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AgendaDiaScreen(terapeutaViewModel: TerapeutaViewModel = viewModel()){
+fun AgendaDiaScreen(
+    terapeutaViewModel: TerapeutaViewModel = viewModel()
+) {
+
     val state by terapeutaViewModel.uiState.collectAsState()
 
-    Scaffold(containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            TopAppBar(title = { Text("Agenda del Día") })
-        }) {padding ->
-        Column(modifier = Modifier.padding(padding)) {
-            Text(
-                text = "Fecha: ${state.fechaSeleccionada}",
-                modifier = Modifier.padding(16.dp),
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp
-            )
-            LazyColumn(modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(state.citas){cita ->
-                    Card(modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = when(cita.estado){
-                                EstadoCita.ASISTIDA ->
-                                    MaterialTheme.colorScheme.primaryContainer
-                                EstadoCita.INASISTENTE ->
-                                    MaterialTheme.colorScheme.errorContainer
-                                EstadoCita.CANCELADA_TERAPEUTA ->
-                                    MaterialTheme.colorScheme.surfaceVariant
-                                EstadoCita.PENDIENTE ->
-                                    MaterialTheme.colorScheme.surface
-                                else ->
-                                    MaterialTheme.colorScheme.surface
-                            }
-                        )) {Row(modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(text = cita.hora,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 20.sp)
-                        Text(text = cita.box)
-                    }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(text = cita.paciente)
-                        Text(text = "Estado: ${cita.estado.name}",
-                            fontSize = 12.sp)
-                        Spacer(modifier = Modifier.height(8.dp))
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
 
-                        //botones de accion
-                        if (cita.estado == EstadoCita.PENDIENTE){
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Button(onClick = {
-                                    terapeutaViewModel.actualizarEstadoCita(cita.id, EstadoCita.ASISTIDA)
-                                },
-                                    modifier = Modifier.weight(1f)) {
-                                    Text("Asistida", fontSize = 12.sp)
-                                }
-                                OutlinedButton(
-                                    onClick = {terapeutaViewModel.actualizarEstadoCita(cita.id,
-                                        EstadoCita.INASISTENTE)},
-                                    modifier = Modifier.weight(1f)
-                                ) {Text("Inasistente", fontSize = 12.sp) }
-                                OutlinedButton(
-                                    onClick = {terapeutaViewModel.actualizarEstadoCita(cita.id,
-                                        EstadoCita.CANCELADA_TERAPEUTA)},
-                                    modifier = Modifier.weight(1f),
-                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                                ) {Text("Cancelada", fontSize = 12.sp)
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Agenda del día",
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
+            )
+        }
+
+    ) { padding ->
+
+        SanaBackground {
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            ) {
+
+                // Encabezado
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            horizontal = 20.dp,
+                            vertical = 18.dp
+                        )
+                ) {
+
+                    Text(
+                        text = "Tus atenciones de hoy",
+                        fontSize = 27.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+
+                    Spacer(
+                        modifier = Modifier.height(6.dp)
+                    )
+
+                    Text(
+                        text = "Revisa tus pacientes y registra el resultado de cada atención.",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onBackground
+                            .copy(alpha = 0.70f)
+                    )
+
+                    Spacer(
+                        modifier = Modifier.height(16.dp)
+                    )
+
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+
+                        Text(
+                            text = "📅 ${state.fechaSeleccionada}",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.padding(
+                                horizontal = 14.dp,
+                                vertical = 10.dp
+                            )
+                        )
+                    }
+                }
+
+                if (state.citas.isEmpty()) {
+
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+
+                            Text(
+                                text = "🌿",
+                                fontSize = 42.sp
+                            )
+
+                            Spacer(
+                                modifier = Modifier.height(10.dp)
+                            )
+
+                            Text(
+                                text = "No tienes citas para hoy",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+
+                            Spacer(
+                                modifier = Modifier.height(4.dp)
+                            )
+
+                            Text(
+                                text = "Tu agenda está libre por el momento.",
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onBackground
+                                    .copy(alpha = 0.65f)
+                            )
+                        }
+                    }
+
+                } else {
+
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+
+                        verticalArrangement =
+                            Arrangement.spacedBy(14.dp)
+                    ) {
+
+                        items(
+                            items = state.citas,
+                            key = { it.id }
+                        ) { cita ->
+
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 20.dp),
+
+                                shape = RoundedCornerShape(22.dp),
+
+                                colors = CardDefaults.cardColors(
+                                    containerColor =
+                                        MaterialTheme.colorScheme.surface
+                                ),
+
+                                elevation = CardDefaults.cardElevation(
+                                    defaultElevation = 2.dp
+                                )
+                            ) {
+
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(20.dp)
+                                ) {
+
+                                    // Hora + estado
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+
+                                        horizontalArrangement =
+                                            Arrangement.SpaceBetween,
+
+                                        verticalAlignment =
+                                            Alignment.CenterVertically
+                                    ) {
+
+                                        Text(
+                                            text = cita.hora,
+                                            fontSize = 24.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color =
+                                                MaterialTheme.colorScheme.secondary
+                                        )
+
+                                        Surface(
+                                            shape =
+                                                RoundedCornerShape(50.dp),
+
+                                            color = when (cita.estado) {
+
+                                                EstadoCita.ASISTIDA ->
+                                                    MaterialTheme.colorScheme
+                                                        .primaryContainer
+
+                                                EstadoCita.INASISTENTE ->
+                                                    MaterialTheme.colorScheme
+                                                        .errorContainer
+
+                                                EstadoCita.CANCELADA_TERAPEUTA ->
+                                                    MaterialTheme.colorScheme
+                                                        .surfaceVariant
+
+                                                EstadoCita.PENDIENTE ->
+                                                    MaterialTheme.colorScheme
+                                                        .secondaryContainer
+
+                                                else ->
+                                                    MaterialTheme.colorScheme
+                                                        .surfaceVariant
+                                            }
+                                        ) {
+
+                                            Text(
+                                                text = when (cita.estado) {
+
+                                                    EstadoCita.ASISTIDA ->
+                                                        "Asistida"
+
+                                                    EstadoCita.INASISTENTE ->
+                                                        "Inasistente"
+
+                                                    EstadoCita.CANCELADA_TERAPEUTA ->
+                                                        "Cancelada"
+
+                                                    EstadoCita.PENDIENTE ->
+                                                        "Pendiente"
+
+                                                    else ->
+                                                        cita.estado.name
+                                                },
+
+                                                fontSize = 12.sp,
+                                                fontWeight =
+                                                    FontWeight.SemiBold,
+
+                                                modifier =
+                                                    Modifier.padding(
+                                                        horizontal = 10.dp,
+                                                        vertical = 6.dp
+                                                    )
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(
+                                        modifier = Modifier.height(14.dp)
+                                    )
+
+                                    Text(
+                                        text = "Paciente",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color =
+                                            MaterialTheme.colorScheme.primary
+                                    )
+
+                                    Text(
+                                        text = cita.paciente,
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+
+                                    Spacer(
+                                        modifier = Modifier.height(12.dp)
+                                    )
+
+                                    Text(
+                                        text = "Box de atención",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color =
+                                            MaterialTheme.colorScheme.primary
+                                    )
+
+                                    Text(
+                                        text = cita.box,
+                                        fontSize = 15.sp
+                                    )
+
+                                    // Acciones
+                                    if (
+                                        cita.estado ==
+                                        EstadoCita.PENDIENTE
+                                    ) {
+
+                                        Spacer(
+                                            modifier =
+                                                Modifier.height(20.dp)
+                                        )
+
+                                        Text(
+                                            text = "Registrar atención",
+                                            fontSize = 13.sp,
+                                            fontWeight =
+                                                FontWeight.SemiBold,
+                                            color =
+                                                MaterialTheme.colorScheme
+                                                    .onSurface
+                                                    .copy(alpha = 0.65f)
+                                        )
+
+                                        Spacer(
+                                            modifier =
+                                                Modifier.height(10.dp)
+                                        )
+
+                                        Button(
+                                            onClick = {
+
+                                                terapeutaViewModel
+                                                    .actualizarEstadoCita(
+                                                        cita.id,
+                                                        EstadoCita.ASISTIDA
+                                                    )
+                                            },
+
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(48.dp),
+
+                                            shape =
+                                                RoundedCornerShape(15.dp)
+                                        ) {
+
+                                            Text(
+                                                text = "Marcar como asistida",
+                                                fontWeight =
+                                                    FontWeight.SemiBold
+                                            )
+                                        }
+
+                                        Spacer(
+                                            modifier =
+                                                Modifier.height(8.dp)
+                                        )
+
+                                        Row(
+                                            modifier =
+                                                Modifier.fillMaxWidth(),
+
+                                            horizontalArrangement =
+                                                Arrangement.spacedBy(8.dp)
+                                        ) {
+
+                                            OutlinedButton(
+                                                onClick = {
+
+                                                    terapeutaViewModel
+                                                        .actualizarEstadoCita(
+                                                            cita.id,
+                                                            EstadoCita.INASISTENTE
+                                                        )
+                                                },
+
+                                                modifier =
+                                                    Modifier.weight(1f),
+
+                                                shape =
+                                                    RoundedCornerShape(15.dp)
+                                            ) {
+
+                                                Text(
+                                                    text = "Inasistente",
+                                                    fontSize = 12.sp
+                                                )
+                                            }
+
+                                            OutlinedButton(
+                                                onClick = {
+
+                                                    terapeutaViewModel
+                                                        .actualizarEstadoCita(
+                                                            cita.id,
+                                                            EstadoCita.CANCELADA_TERAPEUTA
+                                                        )
+                                                },
+
+                                                modifier =
+                                                    Modifier.weight(1f),
+
+                                                shape =
+                                                    RoundedCornerShape(15.dp),
+
+                                                colors =
+                                                    ButtonDefaults
+                                                        .outlinedButtonColors(
+                                                            contentColor =
+                                                                MaterialTheme
+                                                                    .colorScheme
+                                                                    .error
+                                                        )
+                                            ) {
+
+                                                Text(
+                                                    text = "Cancelar",
+                                                    fontSize = 12.sp
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
+                        }
+
+                        item {
+                            Spacer(
+                                modifier = Modifier.height(24.dp)
+                            )
                         }
                     }
                 }
