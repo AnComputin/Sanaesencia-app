@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import com.example.sanaesenciaapp.data.room.AppDatabase
 import com.example.sanaesenciaapp.data.room.EspecialidadEntity
 import com.example.sanaesenciaapp.data.room.UsuarioEntity
+import com.example.sanaesenciaapp.utils.Seguridad
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -135,10 +136,12 @@ class AppState(
             return false
         }
 
+        val passwordHasheada = Seguridad.hashear(password)
+
         val nuevoUsuario = Usuario(
             nombre = nombre.trim(),
             email = email.trim(),
-            password = password,
+            password = passwordHasheada,
             rut = rut.trim(),
             telefono = telefono.trim(),
             fechaNacimiento = fechaNacimiento.trim(),
@@ -155,7 +158,7 @@ class AppState(
                 UsuarioEntity(
                     nombre = nombre.trim(),
                     email = email.trim(),
-                    password = password,
+                    password = passwordHasheada,
                     rut = rut.trim(),
                     telefono = telefono.trim(),
                     fechaNacimiento = fechaNacimiento.trim(),
@@ -167,6 +170,7 @@ class AppState(
 
         return true
     }
+
     fun existeCorreo(email: String): Boolean {
 
         return usuarios.any {
@@ -186,7 +190,7 @@ class AppState(
             it.email.equals(
                 email.trim(),
                 ignoreCase = true
-            ) && it.password == password
+            ) && Seguridad.verificar(password, it.password)
         }
         if (usuario == null) {
             return false
