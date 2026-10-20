@@ -28,7 +28,12 @@ data class Cita(
     val notas: String = ""
 )
 
-
+enum class EstadoCita {
+    PENDIENTE,
+    ASISTIDA,
+    INASISTENTE,
+    CANCELADA_TERAPEUTA
+}
 
 //Estado de las 3 pantallas
 

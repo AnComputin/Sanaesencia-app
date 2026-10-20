@@ -20,15 +20,10 @@ enum class Modalidad {
     ONLINE
 }
 
-enum class EstadoCita {
+enum class EstadoReserva {
     CONFIRMADA,
     COMPLETADA,
-    CANCELADA,
-    PENDIENTE,
-    ASISTIDA,
-    INASISTENTE,
-    CANCELADA_TERAPEUTA,
-    CANCELADA_PACIENTE
+    CANCELADA
 }
 
 data class Horario(
@@ -44,17 +39,18 @@ data class CitaItem(
     val inicioMillis: Long,
     val hora: String,
     val paciente: String,
-    val estado: EstadoCita
+    val estado: EstadoReserva
 )
 
 data class CitaUiState(
     val especialidad: String = "",
     val profesional: String = "",
+    val modalidadPermitida: String = "Ambas",
     val modalidad: Modalidad? = null,
     val fechaMillis: Long? = null,
     val hora: String? = null,
     val nombrePaciente: String = "",
-    val errorNombre: String? = null
+    val errorNombre: String? = null,
 )
 
 // TODO mover a ReglasNegocio
@@ -115,9 +111,11 @@ class CitaViewModel : ViewModel() {
         pagoInicioMillis = null
     }
 
-    fun seleccionarServicio(especialidad: String, profesional: String) {
-        _uiState.update { estado ->
-            estado.copy(especialidad = especialidad, profesional = profesional)
+    fun seleccionarServicio(especialidad: String, profesional: String, modalidadPermitida: String
+    ) {
+        _uiState.update {
+            it.copy(especialidad = especialidad, profesional = profesional, modalidadPermitida = modalidadPermitida
+            )
         }
     }
 
@@ -166,7 +164,7 @@ class CitaViewModel : ViewModel() {
     }
 
     fun puedeCancelar(cita: CitaItem): Boolean {
-        if (cita.estado != EstadoCita.CONFIRMADA) return false
+        if (cita.estado != EstadoReserva.CONFIRMADA) return false
         val ahora = System.currentTimeMillis()
         val horasFaltantes = (cita.inicioMillis - ahora) / (1000 * 60 * 60)
         return horasFaltantes >= CANCELACION_HORAS
@@ -178,7 +176,7 @@ class CitaViewModel : ViewModel() {
 
         _citas.update { lista ->
             lista.map { cita ->
-                if (cita.id == id) cita.copy(estado = EstadoCita.CANCELADA) else cita
+                if (cita.id == id) cita.copy(estado = EstadoReserva.CANCELADA) else cita
             }
         }
         return true
@@ -218,7 +216,7 @@ class CitaViewModel : ViewModel() {
             inicioMillis = cal.timeInMillis,
             hora = horaStr,
             paciente = paciente,
-            estado = EstadoCita.CONFIRMADA
+            estado = EstadoReserva.CONFIRMADA
         )
 
         _citas.update { it + nuevaCita }
@@ -246,7 +244,7 @@ class CitaViewModel : ViewModel() {
         val calCita = Calendar.getInstance()
 
         val horasOcupadasPorCitas = listaCitas.filter { cita ->
-            if (cita.estado != EstadoCita.CONFIRMADA) return@filter false
+            if (cita.estado != EstadoReserva.CONFIRMADA) return@filter false
             calCita.timeInMillis = cita.inicioMillis
             calCita.get(Calendar.YEAR) == calSeleccionada.get(Calendar.YEAR) &&
                     calCita.get(Calendar.DAY_OF_YEAR) == calSeleccionada.get(Calendar.DAY_OF_YEAR)
@@ -349,7 +347,7 @@ class CitaViewModel : ViewModel() {
                 inicioMillis = cal1.timeInMillis,
                 hora = "10:00",
                 paciente = "Juan Pérez",
-                estado = EstadoCita.CONFIRMADA
+                estado = EstadoReserva.CONFIRMADA
             ),
             CitaItem(
                 id = 2,
@@ -359,7 +357,7 @@ class CitaViewModel : ViewModel() {
                 inicioMillis = cal2.timeInMillis,
                 hora = formatoHora.format(cal2.time),
                 paciente = "Juan Pérez",
-                estado = EstadoCita.CONFIRMADA
+                estado = EstadoReserva.CONFIRMADA
             ),
             CitaItem(
                 id = 3,
@@ -369,7 +367,7 @@ class CitaViewModel : ViewModel() {
                 inicioMillis = cal3.timeInMillis,
                 hora = "11:30",
                 paciente = "Juan Pérez",
-                estado = EstadoCita.COMPLETADA
+                estado = EstadoReserva.COMPLETADA
             ),
             CitaItem(
                 id = 4,
@@ -379,7 +377,7 @@ class CitaViewModel : ViewModel() {
                 inicioMillis = cal4.timeInMillis,
                 hora = "16:00",
                 paciente = "Juan Pérez",
-                estado = EstadoCita.COMPLETADA
+                estado = EstadoReserva.COMPLETADA
             ),
             CitaItem(
                 id = 5,
@@ -389,7 +387,7 @@ class CitaViewModel : ViewModel() {
                 inicioMillis = cal5.timeInMillis,
                 hora = "09:00",
                 paciente = "Juan Pérez",
-                estado = EstadoCita.CANCELADA
+                estado = EstadoReserva.CANCELADA
             )
         )
     }

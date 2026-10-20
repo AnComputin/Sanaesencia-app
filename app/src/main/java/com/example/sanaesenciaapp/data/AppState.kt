@@ -15,7 +15,12 @@ import kotlinx.coroutines.withContext
 data class Usuario(
     val nombre: String,
     val email: String,
-    val password: String
+    val password: String,
+    val rut: String,
+    val telefono: String,
+    val fechaNacimiento: String,
+    val comuna: String,
+    val rol: String
 )
 
 class AppState(
@@ -24,7 +29,7 @@ class AppState(
 
     val usuarios = mutableStateListOf<Usuario>()
 
-    var usuarioActual: Usuario? = null
+    var usuarioActual by mutableStateOf<Usuario?>(null)
         private set
 
     // Lista observable de especialidades para la UI y Room
@@ -42,7 +47,12 @@ class AppState(
                     Usuario(
                         nombre = it.nombre,
                         email = it.email,
-                        password = it.password
+                        password = it.password,
+                        rut = it.rut,
+                        telefono = it.telefono,
+                        fechaNacimiento = it.fechaNacimiento,
+                        comuna = it.comuna,
+                        rol = it.rol
                     )
                 }
             )
@@ -106,46 +116,83 @@ class AppState(
     fun registrarUsuario(
         nombre: String,
         email: String,
-        password: String
+        password: String,
+        rut: String,
+        telefono: String,
+        fechaNacimiento: String,
+        comuna: String,
+        rol: String
     ): Boolean {
-        if (usuarios.any { it.email == email }) {
+
+        if (
+            usuarios.any {
+                it.email.equals(
+                    email.trim(),
+                    ignoreCase = true
+                )
+            }
+        ) {
             return false
         }
 
         val nuevoUsuario = Usuario(
-            nombre = nombre,
-            email = email,
-            password = password
+            nombre = nombre.trim(),
+            email = email.trim(),
+            password = password,
+            rut = rut.trim(),
+            telefono = telefono.trim(),
+            fechaNacimiento = fechaNacimiento.trim(),
+            comuna = comuna.trim(),
+            rol = rol
         )
 
         usuarios.add(nuevoUsuario)
 
         scope.launch {
+
             db.usuarioDao().insertar(
+
                 UsuarioEntity(
-                    nombre = nombre,
-                    email = email,
-                    password = password
+                    nombre = nombre.trim(),
+                    email = email.trim(),
+                    password = password,
+                    rut = rut.trim(),
+                    telefono = telefono.trim(),
+                    fechaNacimiento = fechaNacimiento.trim(),
+                    comuna = comuna.trim(),
+                    rol = rol
                 )
             )
         }
 
         return true
     }
+    fun existeCorreo(email: String): Boolean {
+
+        return usuarios.any {
+            it.email.equals(
+                email.trim(),
+                ignoreCase = true
+            )
+        }
+    }
 
     fun login(
         email: String,
         password: String
     ): Boolean {
-        val usuario = usuarios.find {
-            it.email == email && it.password == password
-        }
 
+        val usuario = usuarios.find {
+            it.email.equals(
+                email.trim(),
+                ignoreCase = true
+            ) && it.password == password
+        }
         if (usuario == null) {
             return false
         }
-
         usuarioActual = usuario
+
         return true
     }
 

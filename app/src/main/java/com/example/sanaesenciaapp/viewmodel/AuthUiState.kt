@@ -1,6 +1,10 @@
 package com.example.sanaesenciaapp.viewmodel
 
 data class AuthUiState(
+
+    val nombre: String = "",
+    val errorNombre: String? = null,
+
     //email
     val email: String = "",
     val errorEmail: String? = null,

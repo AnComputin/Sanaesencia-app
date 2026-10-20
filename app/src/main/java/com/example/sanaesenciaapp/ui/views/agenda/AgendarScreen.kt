@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -27,6 +28,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -37,6 +39,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.sanaesenciaapp.ui.components.SanaBackground
 import com.example.sanaesenciaapp.viewmodel.CitaViewModel
 import com.example.sanaesenciaapp.viewmodel.Horario
 import com.example.sanaesenciaapp.viewmodel.Modalidad
@@ -48,165 +52,465 @@ fun AgendarScreen(
     onContinuar: () -> Unit,
     onVolver: () -> Unit
 ) {
+
     val uiState by citaViewModel.uiState.collectAsState()
     val horarios by citaViewModel.horarios.collectAsState()
     val puedeContinuar by citaViewModel.puedeContinuar.collectAsState()
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+
         topBar = {
             TopAppBar(
-                title = { Text("Reservar cita") },
+                title = {
+                    Text(
+                        text = "Reservar cita",
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                },
+
                 navigationIcon = {
-                    IconButton(onClick = onVolver) {
+                    IconButton(
+                        onClick = onVolver
+                    ) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            imageVector =
+                                Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Volver"
                         )
                     }
                 }
             )
         }
+
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Sección Servicio y Profesional
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                ),
-                modifier = Modifier.fillMaxWidth()
+
+        SanaBackground {
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .verticalScroll(rememberScrollState())
+                    .padding(
+                        horizontal = 20.dp,
+                        vertical = 18.dp
+                    ),
+
+                verticalArrangement =
+                    Arrangement.spacedBy(18.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+
+                // Encabezado
+                Column {
+
+                    Text(
+                        text = "Agenda tu atención",
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+
+                    Spacer(
+                        modifier = Modifier.height(5.dp)
+                    )
+
+                    Text(
+                        text = "Selecciona modalidad, fecha y horario.",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onBackground
+                            .copy(alpha = 0.7f)
+                    )
+                }
+
+                // Resumen del servicio
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+
+                    shape = RoundedCornerShape(22.dp),
+
+                    colors = CardDefaults.cardColors(
+                        containerColor =
+                            MaterialTheme.colorScheme.primaryContainer
+                    )
                 ) {
-                    Text(
-                        text = "Detalles del servicio",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "Especialidad: ${if (uiState.especialidad.isNotBlank()) uiState.especialidad else "-"}",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Text(
-                        text = "Profesional: ${if (uiState.profesional.isNotBlank()) uiState.profesional else "-"}",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement =
+                            Arrangement.spacedBy(8.dp)
+                    ) {
+
+                        Text(
+                            text = "Tu atención",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color =
+                                MaterialTheme.colorScheme.primary
+                        )
+
+                        Text(
+                            text =
+                                if (uiState.especialidad.isNotBlank())
+                                    uiState.especialidad
+                                else
+                                    "Especialidad",
+
+                            fontSize = 21.sp,
+                            fontWeight = FontWeight.Bold,
+                            color =
+                                MaterialTheme.colorScheme.secondary
+                        )
+
+                        Text(
+                            text =
+                                if (uiState.profesional.isNotBlank())
+                                    uiState.profesional
+                                else
+                                    "Profesional por definir",
+
+                            fontSize = 15.sp,
+                            color =
+                                MaterialTheme.colorScheme
+                                    .onPrimaryContainer
+                        )
+                    }
                 }
-            }
 
-            // Sección Modalidad
-            Text(
-                text = "Modalidad de atención",
-                style = MaterialTheme.typography.titleMedium
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                ModalidadTarjeta(
-                    titulo = "Presencial",
-                    isSelected = uiState.modalidad == Modalidad.PRESENCIAL,
-                    onClick = { citaViewModel.seleccionarModalidad(Modalidad.PRESENCIAL) },
-                    modifier = Modifier.weight(1f)
-                )
-                ModalidadTarjeta(
-                    titulo = "Online",
-                    isSelected = uiState.modalidad == Modalidad.ONLINE,
-                    onClick = { citaViewModel.seleccionarModalidad(Modalidad.ONLINE) },
-                    modifier = Modifier.weight(1f)
-                )
-            }
+                // Modalidad
+                SeccionTarjeta(
+                    titulo = "Modalidad de atención",
+                    subtitulo = "Elige cómo deseas recibir tu atención."
+                ) {
 
-            // Sección Fechas
-            Text(
-                text = "Seleccionar fecha",
-                style = MaterialTheme.typography.titleMedium
-            )
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(vertical = 4.dp)
-            ) {
-                items(citaViewModel.fechasDisponibles) { fechaMillis ->
-                    val esSeleccionado = uiState.fechaMillis == fechaMillis
-                    FechaTarjeta(
-                        textoFecha = citaViewModel.formatearFecha(fechaMillis),
-                        isSelected = esSeleccionado,
-                        onClick = { citaViewModel.seleccionarFecha(fechaMillis) }
-                    )
-                }
-            }
-
-            // Sección Horarios
-            Text(
-                text = "Seleccionar hora",
-                style = MaterialTheme.typography.titleMedium
-            )
-            val filasHorarios = horarios.chunked(3)
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                filasHorarios.forEach { fila ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+
+                        horizontalArrangement =
+                            Arrangement.spacedBy(10.dp)
                     ) {
-                        fila.forEach { horario ->
-                            HoraTarjeta(
-                                horario = horario,
-                                isSelected = uiState.hora == horario.hora,
-                                onClick = { citaViewModel.seleccionarHora(horario.hora) },
+
+                        if (
+                            uiState.modalidadPermitida.equals(
+                                "Presencial",
+                                ignoreCase = true
+                            ) ||
+                            uiState.modalidadPermitida.equals(
+                                "Ambas",
+                                ignoreCase = true
+                            )
+                        ) {
+
+                            ModalidadTarjeta(
+                                titulo = "Presencial",
+
+                                isSelected =
+                                    uiState.modalidad ==
+                                            Modalidad.PRESENCIAL,
+
+                                onClick = {
+                                    citaViewModel
+                                        .seleccionarModalidad(
+                                            Modalidad.PRESENCIAL
+                                        )
+                                },
+
                                 modifier = Modifier.weight(1f)
                             )
                         }
-                        repeat(3 - fila.size) {
-                            Spacer(modifier = Modifier.weight(1f))
+
+                        if (
+                            uiState.modalidadPermitida.equals(
+                                "Online",
+                                ignoreCase = true
+                            ) ||
+                            uiState.modalidadPermitida.equals(
+                                "Ambas",
+                                ignoreCase = true
+                            )
+                        ) {
+
+                            ModalidadTarjeta(
+                                titulo = "Online",
+
+                                isSelected =
+                                    uiState.modalidad ==
+                                            Modalidad.ONLINE,
+
+                                onClick = {
+                                    citaViewModel
+                                        .seleccionarModalidad(
+                                            Modalidad.ONLINE
+                                        )
+                                },
+
+                                modifier = Modifier.weight(1f)
+                            )
                         }
                     }
                 }
-            }
 
-            // Datos del Paciente
-            Text(
-                text = "Datos del paciente",
-                style = MaterialTheme.typography.titleMedium
-            )
-            OutlinedTextField(
-                value = uiState.nombrePaciente,
-                onValueChange = { citaViewModel.cambiarNombre(it) },
-                label = { Text("Nombre del paciente") },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = null
+                // Fecha
+                SeccionTarjeta(
+                    titulo = "Seleccionar fecha",
+                    subtitulo = "Elige uno de los próximos días disponibles."
+                ) {
+
+                    LazyRow(
+                        horizontalArrangement =
+                            Arrangement.spacedBy(9.dp),
+
+                        contentPadding =
+                            PaddingValues(vertical = 4.dp)
+                    ) {
+
+                        items(
+                            citaViewModel.fechasDisponibles
+                        ) { fechaMillis ->
+
+                            val esSeleccionado =
+                                uiState.fechaMillis ==
+                                        fechaMillis
+
+                            FechaTarjeta(
+                                textoFecha =
+                                    citaViewModel
+                                        .formatearFecha(
+                                            fechaMillis
+                                        ),
+
+                                isSelected =
+                                    esSeleccionado,
+
+                                onClick = {
+                                    citaViewModel
+                                        .seleccionarFecha(
+                                            fechaMillis
+                                        )
+                                }
+                            )
+                        }
+                    }
+                }
+
+                // Horario
+                SeccionTarjeta(
+                    titulo = "Seleccionar hora",
+                    subtitulo = "Los horarios deshabilitados ya no están disponibles."
+                ) {
+
+                    val filasHorarios =
+                        horarios.chunked(3)
+
+                    Column(
+                        verticalArrangement =
+                            Arrangement.spacedBy(9.dp)
+                    ) {
+
+                        filasHorarios.forEach { fila ->
+
+                            Row(
+                                modifier =
+                                    Modifier.fillMaxWidth(),
+
+                                horizontalArrangement =
+                                    Arrangement.spacedBy(8.dp)
+                            ) {
+
+                                fila.forEach { horario ->
+
+                                    HoraTarjeta(
+                                        horario = horario,
+
+                                        isSelected =
+                                            uiState.hora ==
+                                                    horario.hora,
+
+                                        onClick = {
+                                            citaViewModel
+                                                .seleccionarHora(
+                                                    horario.hora
+                                                )
+                                        },
+
+                                        modifier =
+                                            Modifier.weight(1f)
+                                    )
+                                }
+
+                                repeat(
+                                    3 - fila.size
+                                ) {
+                                    Spacer(
+                                        modifier =
+                                            Modifier.weight(1f)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Paciente
+                SeccionTarjeta(
+                    titulo = "Datos del paciente",
+                    subtitulo = "Indica quién recibirá la atención."
+                ) {
+
+                    OutlinedTextField(
+                        value =
+                            uiState.nombrePaciente,
+
+                        onValueChange = {
+                            citaViewModel
+                                .cambiarNombre(it)
+                        },
+
+                        label = {
+                            Text(
+                                "Nombre del paciente"
+                            )
+                        },
+
+                        leadingIcon = {
+                            Icon(
+                                imageVector =
+                                    Icons.Default.Person,
+
+                                contentDescription = null
+                            )
+                        },
+
+                        isError =
+                            uiState.errorNombre != null,
+
+                        supportingText =
+                            if (
+                                uiState.errorNombre != null
+                            ) {
+                                {
+                                    Text(
+                                        uiState.errorNombre!!
+                                    )
+                                }
+                            } else {
+                                null
+                            },
+
+                        singleLine = true,
+
+                        shape =
+                            RoundedCornerShape(16.dp),
+
+                        modifier =
+                            Modifier.fillMaxWidth()
                     )
-                },
-                isError = uiState.errorNombre != null,
-                supportingText = if (uiState.errorNombre != null) {
-                    { Text(uiState.errorNombre!!) }
-                } else null,
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
+                }
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = onContinuar,
 
-            // Botón Continuar
-            Button(
-                onClick = onContinuar,
-                enabled = puedeContinuar,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Continuar")
+                    enabled = puedeContinuar,
+
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+
+                    shape =
+                        RoundedCornerShape(18.dp)
+                ) {
+
+                    Text(
+                        text = "Continuar al pago",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Text(
+                    text = "Podrás revisar todos los datos antes de confirmar.",
+                    fontSize = 12.sp,
+
+                    color =
+                        MaterialTheme.colorScheme
+                            .onBackground
+                            .copy(alpha = 0.6f),
+
+                    modifier =
+                        Modifier.align(
+                            Alignment.CenterHorizontally
+                        )
+                )
+
+                Spacer(
+                    modifier = Modifier.height(18.dp)
+                )
             }
         }
     }
 }
+
+
+@Composable
+private fun SeccionTarjeta(
+    titulo: String,
+    subtitulo: String,
+    contenido: @Composable () -> Unit
+) {
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+
+        shape = RoundedCornerShape(22.dp),
+
+        colors = CardDefaults.cardColors(
+            containerColor =
+                MaterialTheme.colorScheme.surface
+        ),
+
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp
+        )
+    ) {
+
+        Column(
+            modifier = Modifier.padding(20.dp),
+
+            verticalArrangement =
+                Arrangement.spacedBy(12.dp)
+        ) {
+
+            Column {
+
+                Text(
+                    text = titulo,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color =
+                        MaterialTheme.colorScheme.secondary
+                )
+
+                Spacer(
+                    modifier = Modifier.height(3.dp)
+                )
+
+                Text(
+                    text = subtitulo,
+                    fontSize = 12.sp,
+
+                    color =
+                        MaterialTheme.colorScheme
+                            .onSurface
+                            .copy(alpha = 0.62f)
+                )
+            }
+
+            contenido()
+        }
+    }
+}
+
 
 @Composable
 private fun ModalidadTarjeta(
@@ -215,37 +519,85 @@ private fun ModalidadTarjeta(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val backgroundColor by animateColorAsState(
-        targetValue = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+
+    val backgroundColor by
+    animateColorAsState(
+        targetValue =
+            if (isSelected)
+                MaterialTheme.colorScheme
+                    .primaryContainer
+            else
+                MaterialTheme.colorScheme
+                    .surfaceVariant,
+
         label = "ModalidadBackgroundColor"
     )
-    val contentColor by animateColorAsState(
-        targetValue = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+
+    val contentColor by
+    animateColorAsState(
+        targetValue =
+            if (isSelected)
+                MaterialTheme.colorScheme
+                    .onPrimaryContainer
+            else
+                MaterialTheme.colorScheme
+                    .onSurfaceVariant,
+
         label = "ModalidadContentColor"
     )
 
     Card(
         onClick = onClick,
+
+        shape =
+            RoundedCornerShape(16.dp),
+
         colors = CardDefaults.cardColors(
             containerColor = backgroundColor,
             contentColor = contentColor
         ),
+
         modifier = modifier
     ) {
-        Box(
+
+        Column(
             modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            contentAlignment = Alignment.Center
+                .fillMaxWidth()
+                .padding(vertical = 16.dp),
+
+            horizontalAlignment =
+                Alignment.CenterHorizontally
         ) {
+
+            Text(
+                text =
+                    if (titulo == "Presencial")
+                        "📍"
+                    else
+                        "💻",
+
+                fontSize = 22.sp
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(5.dp)
+            )
+
             Text(
                 text = titulo,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                fontSize = 14.sp,
+
+                fontWeight =
+                    if (isSelected)
+                        FontWeight.Bold
+                    else
+                        FontWeight.Medium
             )
         }
     }
 }
+
 
 @Composable
 private fun FechaTarjeta(
@@ -253,34 +605,72 @@ private fun FechaTarjeta(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    val backgroundColor by animateColorAsState(
-        targetValue = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+
+    val backgroundColor by
+    animateColorAsState(
+        targetValue =
+            if (isSelected)
+                MaterialTheme.colorScheme
+                    .primaryContainer
+            else
+                MaterialTheme.colorScheme
+                    .surfaceVariant,
+
         label = "FechaBackgroundColor"
     )
-    val contentColor by animateColorAsState(
-        targetValue = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+
+    val contentColor by
+    animateColorAsState(
+        targetValue =
+            if (isSelected)
+                MaterialTheme.colorScheme
+                    .onPrimaryContainer
+            else
+                MaterialTheme.colorScheme
+                    .onSurfaceVariant,
+
         label = "FechaContentColor"
     )
 
     Card(
         onClick = onClick,
+
+        shape =
+            RoundedCornerShape(16.dp),
+
         colors = CardDefaults.cardColors(
-            containerColor = backgroundColor,
-            contentColor = contentColor
+            containerColor =
+                backgroundColor,
+            contentColor =
+                contentColor
         )
     ) {
+
         Box(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-            contentAlignment = Alignment.Center
+            modifier = Modifier.padding(
+                horizontal = 16.dp,
+                vertical = 13.dp
+            ),
+
+            contentAlignment =
+                Alignment.Center
         ) {
+
             Text(
                 text = textoFecha,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+
+                fontSize = 13.sp,
+
+                fontWeight =
+                    if (isSelected)
+                        FontWeight.Bold
+                    else
+                        FontWeight.Medium
             )
         }
     }
 }
+
 
 @Composable
 private fun HoraTarjeta(
@@ -289,54 +679,113 @@ private fun HoraTarjeta(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val backgroundColor by animateColorAsState(
+
+    val backgroundColor by
+    animateColorAsState(
         targetValue = when {
-            !horario.disponible -> MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f)
-            isSelected -> MaterialTheme.colorScheme.primaryContainer
-            else -> MaterialTheme.colorScheme.surfaceVariant
+
+            !horario.disponible ->
+                MaterialTheme.colorScheme
+                    .surfaceVariant
+                    .copy(alpha = 0.45f)
+
+            isSelected ->
+                MaterialTheme.colorScheme
+                    .primaryContainer
+
+            else ->
+                MaterialTheme.colorScheme
+                    .surfaceVariant
         },
+
         label = "HoraBackgroundColor"
     )
-    val contentColor by animateColorAsState(
+
+    val contentColor by
+    animateColorAsState(
         targetValue = when {
-            !horario.disponible -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-            isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
-            else -> MaterialTheme.colorScheme.onSurfaceVariant
+
+            !horario.disponible ->
+                MaterialTheme.colorScheme
+                    .onSurface
+                    .copy(alpha = 0.35f)
+
+            isSelected ->
+                MaterialTheme.colorScheme
+                    .onPrimaryContainer
+
+            else ->
+                MaterialTheme.colorScheme
+                    .onSurfaceVariant
         },
+
         label = "HoraContentColor"
     )
 
     Card(
         onClick = onClick,
-        enabled = horario.disponible,
-        colors = CardDefaults.cardColors(
-            containerColor = backgroundColor,
-            contentColor = contentColor,
-            disabledContainerColor = backgroundColor,
-            disabledContentColor = contentColor
-        ),
+
+        enabled =
+            horario.disponible,
+
+        shape =
+            RoundedCornerShape(14.dp),
+
+        colors =
+            CardDefaults.cardColors(
+                containerColor =
+                    backgroundColor,
+
+                contentColor =
+                    contentColor,
+
+                disabledContainerColor =
+                    backgroundColor,
+
+                disabledContentColor =
+                    contentColor
+            ),
+
         modifier = modifier
     ) {
+
         Box(
             modifier = Modifier
-                .padding(vertical = 12.dp)
-                .fillMaxWidth(),
-            contentAlignment = Alignment.Center
+                .fillMaxWidth()
+                .padding(
+                    vertical = 13.dp
+                ),
+
+            contentAlignment =
+                Alignment.Center
         ) {
+
             Text(
                 text = horario.hora,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+
+                fontSize = 14.sp,
+
+                fontWeight =
+                    if (isSelected)
+                        FontWeight.Bold
+                    else
+                        FontWeight.Medium
             )
         }
     }
 }
 
-@Preview(showBackground = true)
+
+@Preview(
+    showBackground = true
+)
 @Composable
 private fun AgendarScreenPreview() {
+
     AgendarScreen(
-        citaViewModel = CitaViewModel(),
+        citaViewModel =
+            CitaViewModel(),
+
         onContinuar = {},
         onVolver = {}
     )

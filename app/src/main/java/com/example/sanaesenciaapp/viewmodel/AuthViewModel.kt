@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import com.example.sanaesenciaapp.utils.validarNombre
 
 class AuthViewModel : ViewModel() {
 
@@ -18,9 +19,26 @@ class AuthViewModel : ViewModel() {
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
     // ── Actualizar campos ──────────────────────────
+    fun onNombreChange(nuevoNombre: String) {
+        _uiState.update { it.copy(nombre = nuevoNombre, errorNombre = null, errorGeneral = null) }
+    }
+
+    fun validarCampoNombre() {
+        val error =
+            validarNombre(
+                _uiState.value.nombre
+            )
+
+        _uiState.update {
+            it.copy(
+                errorNombre = error
+            )
+        }
+    }
+
 
     fun onEmailChange(nuevoEmail: String) {
-        _uiState.update { it.copy(email = nuevoEmail, errorEmail = null) }
+        _uiState.update { it.copy(email = nuevoEmail, errorEmail = null, errorGeneral = null) }
     }
 
     fun onRutChange(nuevoRut: String) {
@@ -32,7 +50,7 @@ class AuthViewModel : ViewModel() {
     }
 
     fun onPasswordChange(nuevaPassword: String) {
-        _uiState.update { it.copy(password = nuevaPassword, errorPassword = null) }
+        _uiState.update { it.copy(password = nuevaPassword, errorPassword = null, errorGeneral = null) }
     }
 
     fun onConfirmPasswordChange(nuevaConfirmacion: String) {
@@ -66,6 +84,8 @@ class AuthViewModel : ViewModel() {
     }
 
     // ── Validar campo individual ────────────────────
+
+
 
     fun validarCampoEmail() {
         val error = validarEmail(_uiState.value.email)
@@ -109,6 +129,7 @@ class AuthViewModel : ViewModel() {
 
     fun validarRegistro(): Boolean {
         val state = _uiState.value
+        val errorNombre = validarNombre(state.nombre)
 
         val errorEmail = validarEmail(state.email)
         val errorRut = validarRut(state.rut)
@@ -125,6 +146,7 @@ class AuthViewModel : ViewModel() {
 
         _uiState.update {
             it.copy(
+                errorNombre = errorNombre,
                 errorEmail = errorEmail,
                 errorRut = errorRut,
                 errorTelefono = errorTelefono,
@@ -137,9 +159,14 @@ class AuthViewModel : ViewModel() {
         }
 
         return listOf(
-            errorEmail, errorRut, errorTelefono,
+            errorNombre, errorRut, errorTelefono,
             errorPassword, errorConfirm, errorFecha,
             errorComuna, errorTerminos
         ).all { it == null }
+    }
+    fun setErrorGeneral(mensaje: String?) {
+        _uiState.update {
+            it.copy(errorGeneral = mensaje)
+        }
     }
 }
