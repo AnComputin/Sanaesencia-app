@@ -1,6 +1,7 @@
 package com.example.sanaesenciaapp.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -32,6 +33,10 @@ fun AppNavigation(
 ) {
     val terapeutaViewModel: TerapeutaViewModel = viewModel()
     val citaViewModel: CitaViewModel = viewModel()
+
+    LaunchedEffect(appState.usuarioActual?.email) {
+        citaViewModel.establecerUsuario(appState.usuarioActual?.email ?: "")
+    }
 
     NavHost(
         navController = navController,
