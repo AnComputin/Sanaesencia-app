@@ -1,7 +1,9 @@
 package com.example.sanaesenciaapp.ui.views
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -26,16 +28,14 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.sanaesenciaapp.data.AppState
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.Box
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.drawscope.rotate
 import com.example.sanaesenciaapp.ui.components.SanaBackground
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -180,7 +180,7 @@ fun HomeScreen(
                     }
                 }
 
-                // TODO TU CONTENIDO ORIGINAL
+                // CONTENIDO ORIGINAL
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -241,6 +241,34 @@ fun HomeScreen(
                             text = "Reservar hora",
                             fontSize = 17.sp
                         )
+                    }
+
+                    if (usuario != null) {
+
+                        Spacer(
+                            modifier = Modifier.height(12.dp)
+                        )
+
+                        // Botón Mis citas (visible solo si el usuario tiene sesión iniciada)
+                        OutlinedButton(
+                            onClick = {
+                                navController.navigate("mis_citas")
+                            },
+
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(55.dp),
+
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+
+                            Text(
+                                text = "Mis citas",
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                        }
                     }
 
                     Spacer(
@@ -436,6 +464,7 @@ fun HomeScreen(
         }
     }
 }
+
 @Composable
 fun EspecialidadCard(
     nombre: String,
