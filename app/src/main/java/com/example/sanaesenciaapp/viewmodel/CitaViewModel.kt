@@ -39,7 +39,8 @@ data class CitaItem(
     val inicioMillis: Long,
     val hora: String,
     val paciente: String,
-    val estado: EstadoReserva
+    val estado: EstadoReserva,
+    val pacienteEmail: String = ""
 )
 
 data class CitaUiState(
@@ -63,9 +64,19 @@ class CitaViewModel : ViewModel() {
 
     val fechasDisponibles: List<Long> = generarFechasDisponibles()
 
-    // TODO reemplazar por CitaRepository cuando Mark lo publique.
     private val _citas = MutableStateFlow<List<CitaItem>>(generarCitasFalsas())
-    val citas: StateFlow<List<CitaItem>> = _citas.asStateFlow()
+
+
+    private val _usuarioEmail = MutableStateFlow("")
+
+    // Cada usuario ve solo sus propias citas
+    val citas: StateFlow<List<CitaItem>> = combine(_citas, _usuarioEmail) { lista, email ->
+        lista.filter { it.pacienteEmail == email }
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5_000),
+        emptyList()
+    )
 
     private val _ultimaCita = MutableStateFlow<CitaItem?>(null)
     val ultimaCita: StateFlow<CitaItem?> = _ultimaCita.asStateFlow()
@@ -181,10 +192,14 @@ class CitaViewModel : ViewModel() {
         }
         return true
     }
-
+    // Se llama cada vez que cambia la sesión (login o logout)
+    fun establecerUsuario(email: String) {
+        _usuarioEmail.value = email
+        _ultimaCita.value = null
+        _uiState.value = CitaUiState()
+    }
     fun confirmarCita() {
         val estado = _uiState.value
-        // TODO quitar valores por defecto cuando DetalleServicio llame a seleccionarServicio
         val especialidad = if (estado.especialidad.isNotBlank()) estado.especialidad else "Psicología"
         val profesional = if (estado.profesional.isNotBlank()) estado.profesional else "Por asignar"
         val modalidad = estado.modalidad
@@ -216,8 +231,10 @@ class CitaViewModel : ViewModel() {
             inicioMillis = cal.timeInMillis,
             hora = horaStr,
             paciente = paciente,
-            estado = EstadoReserva.CONFIRMADA
+            estado = EstadoReserva.CONFIRMADA,
+            pacienteEmail = _usuarioEmail.value
         )
+
 
         _citas.update { it + nuevaCita }
         _ultimaCita.value = nuevaCita
