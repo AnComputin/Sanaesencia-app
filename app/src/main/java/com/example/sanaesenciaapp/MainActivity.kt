@@ -4,7 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.rememberNavController
 import com.example.sanaesenciaapp.data.AppState
@@ -14,50 +13,27 @@ import com.example.sanaesenciaapp.ui.theme.SanaEsenciaAppTheme
 
 class MainActivity : ComponentActivity() {
 
-    override fun onCreate(
-        savedInstanceState: Bundle?
-    ) {
-
+    override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         enableEdgeToEdge()
 
-        val db =
-            AppDatabase.getInstance(
-                applicationContext
-            )
-
-        val appState =
-            AppState(db)
-
+        val db = AppDatabase.getInstance(applicationContext)
+        val appState = AppState(db)
         appState.cargarDatos()
 
         setContent {
-
             SanaEsenciaAppTheme {
-
-                SanaEsenciaApp(
-                    appState
-                )
+                SanaEsenciaApp(appState)
             }
         }
     }
 }
 
-
 @Composable
-fun SanaEsenciaApp(
-    appState: AppState
-) {
-
-    val navController =
-        rememberNavController()
-
-    MaterialTheme {
-
-        AppNavigation(
-            navController,
-            appState
-        )
-    }
+fun SanaEsenciaApp(appState: AppState) {
+    val navController = rememberNavController()
+    AppNavigation(
+        navController = navController,
+        appState = appState
+    )
 }

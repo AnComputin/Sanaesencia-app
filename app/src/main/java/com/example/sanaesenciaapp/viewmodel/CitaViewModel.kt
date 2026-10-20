@@ -159,7 +159,7 @@ class CitaViewModel : ViewModel() {
     }
 
     fun formatearFecha(millis: Long): String {
-        val formato = SimpleDateFormat("EEE d MMM", Locale("es", "CL"))
+        val formato = SimpleDateFormat("EEE d MMM", Locale.forLanguageTag("es-CL"))
         return formato.format(Date(millis))
     }
 
