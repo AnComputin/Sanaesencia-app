@@ -437,6 +437,35 @@ fun HomeScreen(
                     }
 
                     Spacer(
+                        modifier = Modifier.height(12.dp)
+                    )
+
+                    // Espacio de Bienestar
+                    Button(
+                        onClick = {
+                            navController.navigate("juegos_hub")
+                        },
+
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+
+                        shape = RoundedCornerShape(16.dp),
+
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.secondary
+                        )
+                    ) {
+
+                        Text(
+                            text = "🌿 Espacio de Bienestar",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 17.sp
+                        )
+                    }
+
+                    Spacer(
                         modifier = Modifier.height(24.dp)
                     )
 
