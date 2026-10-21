@@ -113,8 +113,17 @@ class CitaViewModel : ViewModel() {
 
     fun seleccionarServicio(especialidad: String, profesional: String, modalidadPermitida: String
     ) {
+        val modalidadInicial = when {
+            modalidadPermitida.equals("Presencial", ignoreCase = true) -> Modalidad.PRESENCIAL
+            modalidadPermitida.equals("Online", ignoreCase = true) -> Modalidad.ONLINE
+            else -> null
+        }
         _uiState.update {
-            it.copy(especialidad = especialidad, profesional = profesional, modalidadPermitida = modalidadPermitida
+            it.copy(
+                especialidad = especialidad,
+                profesional = profesional,
+                modalidadPermitida = modalidadPermitida,
+                modalidad = modalidadInicial
             )
         }
     }

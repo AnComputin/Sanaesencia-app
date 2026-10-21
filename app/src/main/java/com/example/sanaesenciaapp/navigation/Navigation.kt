@@ -13,12 +13,12 @@ import com.example.sanaesenciaapp.ui.views.SplashScreen
 import com.example.sanaesenciaapp.ui.views.UbicacionScreen
 import com.example.sanaesenciaapp.ui.views.catalogo.DetalleServicioScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.sanaesenciaapp.ui.views.admin.HomeAdminScreen
 import com.example.sanaesenciaapp.ui.views.terapeuta.AgendaDiaScreen
 import com.example.sanaesenciaapp.ui.views.terapeuta.DetalleContinuidadScreen
 import com.example.sanaesenciaapp.ui.views.terapeuta.HomeTerapeutaScreen
 import com.example.sanaesenciaapp.ui.views.terapeuta.PacientesAsignadosScreen
 import com.example.sanaesenciaapp.viewmodel.TerapeutaViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.sanaesenciaapp.ui.views.agenda.AgendarScreen
 import com.example.sanaesenciaapp.viewmodel.CitaViewModel
 import com.example.sanaesenciaapp.ui.views.SeleccionEspecialidadScreen
@@ -59,14 +59,11 @@ fun AppNavigation(
             LoginScreen(
                 onNavigateToHome = {
 
-                    val destino =
-                        if (
-                            appState.usuarioActual?.rol == "TERAPEUTA"
-                        ) {
-                            "home_terapeuta"
-                        } else {
-                            "home"
-                        }
+                    val destino = when (appState.usuarioActual?.rol) {
+                        "ADMIN" -> "home_admin"
+                        "TERAPEUTA" -> "home_terapeuta"
+                        else -> "home"
+                    }
                     navController.navigate(destino) {
                         popUpTo("login") {
                             inclusive = true
@@ -76,6 +73,13 @@ fun AppNavigation(
                 onNavigateToRegistro = {
                     navController.navigate("registro")
                 },
+                appState = appState
+            )
+        }
+
+        composable("home_admin") {
+            HomeAdminScreen(
+                navController = navController,
                 appState = appState
             )
         }
@@ -105,8 +109,9 @@ fun AppNavigation(
         composable("detalle_servicio") {
             val esp = appState.especialidadSeleccionada
             if (esp != null) {
+                val espActual = appState.especialidades.find { it.id == esp.id } ?: esp
                 DetalleServicioScreen(
-                    especialidad = esp,
+                    especialidad = espActual,
                     onBackClick = { navController.popBackStack() },
                     onReservarClick = {
 
@@ -117,9 +122,9 @@ fun AppNavigation(
                         } else {
 
                             citaViewModel.seleccionarServicio(
-                                especialidad = esp.nombre,
-                                profesional = esp.profesional,
-                                modalidadPermitida = esp.modalidad
+                                especialidad = espActual.nombre,
+                                profesional = espActual.profesional,
+                                modalidadPermitida = espActual.modalidad
                             )
 
                             navController.navigate("agendar")

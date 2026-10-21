@@ -5,8 +5,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.example.sanaesenciaapp.data.room.AppDatabase
+import com.example.sanaesenciaapp.data.room.ESPECIALIDADES_INICIALES
 import com.example.sanaesenciaapp.data.room.EspecialidadEntity
 import com.example.sanaesenciaapp.data.room.UsuarioEntity
+import com.example.sanaesenciaapp.utils.Seguridad
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -24,7 +26,7 @@ data class Usuario(
 )
 
 class AppState(
-    private val db: AppDatabase
+    val db: AppDatabase
 ) {
 
     val usuarios = mutableStateListOf<Usuario>()
@@ -57,58 +59,58 @@ class AppState(
                 }
             )
 
+            // Asegurar que existe y está actualizado el usuario Administrador ficticio para pruebas
+            val adminExistente = usuariosDb.find {
+                it.email.equals("admin@sanaesencia.cl", ignoreCase = true)
+            }
+            val passwordHasheadaAdmin = Seguridad.hashear("admin123")
+            val adminEntity = UsuarioEntity(
+                nombre = adminExistente?.nombre ?: "Administrador SanaEsencia",
+                email = "admin@sanaesencia.cl",
+                password = passwordHasheadaAdmin,
+                rut = adminExistente?.rut?.ifBlank { "11.111.111-1" } ?: "11.111.111-1",
+                telefono = adminExistente?.telefono?.ifBlank { "+56912345678" } ?: "+56912345678",
+                fechaNacimiento = adminExistente?.fechaNacimiento?.ifBlank { "01/01/1985" } ?: "01/01/1985",
+                comuna = adminExistente?.comuna?.ifBlank { "Santiago" } ?: "Santiago",
+                rol = "ADMIN"
+            )
+            db.usuarioDao().insertar(adminEntity)
+
+            val usuarioAdminObj = Usuario(
+                nombre = adminEntity.nombre,
+                email = adminEntity.email,
+                password = adminEntity.password,
+                rut = adminEntity.rut,
+                telefono = adminEntity.telefono,
+                fechaNacimiento = adminEntity.fechaNacimiento,
+                comuna = adminEntity.comuna,
+                rol = adminEntity.rol
+            )
+
+            withContext(Dispatchers.Main) {
+                val indexAdmin = usuarios.indexOfFirst { it.email.equals("admin@sanaesencia.cl", ignoreCase = true) }
+                if (indexAdmin >= 0) {
+                    usuarios[indexAdmin] = usuarioAdminObj
+                } else {
+                    usuarios.add(usuarioAdminObj)
+                }
+            }
+
             // Gestión del Catálogo de Especialidades en Room
             val especialidadDao = db.especialidadDao()
-            var listaEspDb = especialidadDao.obtenerTodas()
+            val listaEspDb = especialidadDao.obtenerTodas()
 
             // Si está vacío, insertamos los datos iniciales por defecto (Seed data)
             if (listaEspDb.isEmpty()) {
-                val iniciales = listOf(
-                    EspecialidadEntity(
-                        id = 1,
-                        nombre = "Psicología Infanto-Juvenil",
-                        descripcion = "Acompañamiento psicológico integral para niños y jóvenes.",
-                        icono = "🧠",
-                        profesional = "Mg. Andrea Soto",
-                        modalidad = "Ambas",
-                        agendaPausada = false
-                    ),
-                    EspecialidadEntity(
-                        id = 2,
-                        nombre = "Fonoaudiología",
-                        descripcion = "Evaluación y tratamiento de trastornos del habla y lenguaje.",
-                        icono = "🗣️",
-                        profesional = "Klga. Camila Rojas",
-                        modalidad = "Presencial",
-                        agendaPausada = false
-                    ),
-                    EspecialidadEntity(
-                        id = 3,
-                        nombre = "Terapia Ocupacional",
-                        descripcion = "Estimulación sensorial y desarrollo de autonomía.",
-                        icono = "🧩",
-                        profesional = "TO. Javiera Paz",
-                        modalidad = "Presencial",
-                        agendaPausada = true
-                    ),
-                    EspecialidadEntity(
-                        id = 4,
-                        nombre = "Nutrición Integrativa",
-                        descripcion = "Planes nutricionales enfocados en el bienestar holístico.",
-                        icono = "🥗",
-                        profesional = "Nut. Felipe Morales",
-                        modalidad = "Ambas",
-                        agendaPausada = false
-                    )
-                )
-                especialidadDao.insertarTodas(iniciales)
-                listaEspDb = especialidadDao.obtenerTodas()
+                especialidadDao.insertarTodas(ESPECIALIDADES_INICIALES)
             }
 
-            // Actualizamos la lista observable en el hilo principal
-            withContext(Dispatchers.Main) {
-                especialidades.clear()
-                especialidades.addAll(listaEspDb)
+            // Observar cambios en tiempo real desde Room
+            especialidadDao.obtenerTodasFlow().collect { listaActualizada ->
+                withContext(Dispatchers.Main) {
+                    especialidades.clear()
+                    especialidades.addAll(listaActualizada)
+                }
             }
         }
     }
@@ -135,10 +137,12 @@ class AppState(
             return false
         }
 
+        val passwordHasheada = Seguridad.hashear(password)
+
         val nuevoUsuario = Usuario(
             nombre = nombre.trim(),
             email = email.trim(),
-            password = password,
+            password = passwordHasheada,
             rut = rut.trim(),
             telefono = telefono.trim(),
             fechaNacimiento = fechaNacimiento.trim(),
@@ -155,7 +159,7 @@ class AppState(
                 UsuarioEntity(
                     nombre = nombre.trim(),
                     email = email.trim(),
-                    password = password,
+                    password = passwordHasheada,
                     rut = rut.trim(),
                     telefono = telefono.trim(),
                     fechaNacimiento = fechaNacimiento.trim(),
@@ -167,6 +171,7 @@ class AppState(
 
         return true
     }
+
     fun existeCorreo(email: String): Boolean {
 
         return usuarios.any {
@@ -181,12 +186,15 @@ class AppState(
         email: String,
         password: String
     ): Boolean {
+        val emailLimpio = email.trim()
+        val passLimpia = password.trim()
 
         val usuario = usuarios.find {
-            it.email.equals(
-                email.trim(),
-                ignoreCase = true
-            ) && it.password == password
+            it.email.equals(emailLimpio, ignoreCase = true) &&
+                    (Seguridad.verificar(passLimpia, it.password) ||
+                     Seguridad.verificar(password, it.password) ||
+                     it.password == passLimpia ||
+                     it.password == password)
         }
         if (usuario == null) {
             return false

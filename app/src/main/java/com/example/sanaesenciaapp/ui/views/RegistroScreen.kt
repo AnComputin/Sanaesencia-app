@@ -1,7 +1,9 @@
 package com.example.sanaesenciaapp.ui.views
 
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -9,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -25,20 +28,31 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -48,6 +62,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.sanaesenciaapp.data.AppState
 import com.example.sanaesenciaapp.ui.components.SanaBackground
 import com.example.sanaesenciaapp.viewmodel.AuthViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,12 +77,50 @@ fun RegistroScreen(
 
     val state by authViewModel.uiState.collectAsState()
 
+    val context = LocalContext.current
+
+    var mostrarComunas by remember {
+        mutableStateOf(false)
+    }
+
+    var mostrarCalendario by remember {
+        mutableStateOf(false)
+    }
+
+    val datePickerState = rememberDatePickerState()
+
+    val comunas = listOf(
+        "Los Vilos",
+        "Canela",
+        "Illapel",
+        "Salamanca",
+        "La Ligua",
+        "Papudo",
+        "Zapallar",
+        "Concón",
+        "Viña del Mar",
+        "Valparaíso",
+        "Quilpué",
+        "Villa Alemana",
+        "Quillota",
+        "Limache",
+        "Olmué",
+        "La Serena",
+        "Coquimbo",
+        "Ovalle",
+        "Santiago",
+        "Providencia",
+        "Las Condes"
+    )
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
 
         topBar = {
+
             TopAppBar(
                 title = {
+
                     Text(
                         text = "Crear cuenta",
                         fontWeight = FontWeight.Bold,
@@ -92,7 +148,10 @@ fun RegistroScreen(
                     Arrangement.spacedBy(18.dp)
             ) {
 
-                // Encabezado
+                // --------------------------------
+                // ENCABEZADO
+                // --------------------------------
+
                 Column {
 
                     Text(
@@ -114,46 +173,63 @@ fun RegistroScreen(
                     )
                 }
 
-                // Tipo de cuenta
+                // --------------------------------
+                // TIPO DE CUENTA
+                // --------------------------------
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(22.dp),
 
-                    colors = CardDefaults.cardColors(
-                        containerColor =
-                            MaterialTheme.colorScheme.primaryContainer
-                    )
+                    shape =
+                        RoundedCornerShape(22.dp),
+
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor =
+                                MaterialTheme.colorScheme
+                                    .primaryContainer
+                        )
                 ) {
 
                     Column(
-                        modifier = Modifier.padding(20.dp)
+                        modifier =
+                            Modifier.padding(20.dp)
                     ) {
 
                         Text(
                             text = "Tipo de cuenta",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.secondary
+                            color =
+                                MaterialTheme.colorScheme.secondary
                         )
 
                         Spacer(
-                            modifier = Modifier.height(5.dp)
+                            modifier =
+                                Modifier.height(5.dp)
                         )
 
                         Text(
-                            text = "Selecciona cómo utilizarás SanaEsencia.",
+                            text =
+                                "Selecciona cómo utilizarás SanaEsencia.",
+
                             fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme
-                                .onPrimaryContainer
-                                .copy(alpha = 0.70f)
+
+                            color =
+                                MaterialTheme.colorScheme
+                                    .onPrimaryContainer
+                                    .copy(alpha = 0.70f)
                         )
 
                         Spacer(
-                            modifier = Modifier.height(14.dp)
+                            modifier =
+                                Modifier.height(14.dp)
                         )
 
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier =
+                                Modifier.fillMaxWidth(),
+
                             horizontalArrangement =
                                 Arrangement.spacedBy(10.dp)
                         ) {
@@ -163,8 +239,11 @@ fun RegistroScreen(
                                     state.rol == "PACIENTE",
 
                                 onClick = {
+
                                     authViewModel
-                                        .onRolChange("PACIENTE")
+                                        .onRolChange(
+                                            "PACIENTE"
+                                        )
                                 },
 
                                 label = {
@@ -180,8 +259,11 @@ fun RegistroScreen(
                                     state.rol == "TERAPEUTA",
 
                                 onClick = {
+
                                     authViewModel
-                                        .onRolChange("TERAPEUTA")
+                                        .onRolChange(
+                                            "TERAPEUTA"
+                                        )
                                 },
 
                                 label = {
@@ -195,41 +277,56 @@ fun RegistroScreen(
                     }
                 }
 
-                // Datos personales
+                // --------------------------------
+                // DATOS PERSONALES
+                // --------------------------------
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(22.dp),
 
-                    colors = CardDefaults.cardColors(
-                        containerColor =
-                            MaterialTheme.colorScheme.surface
-                    ),
+                    shape =
+                        RoundedCornerShape(22.dp),
 
-                    elevation = CardDefaults.cardElevation(
-                        defaultElevation = 2.dp
-                    )
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor =
+                                MaterialTheme.colorScheme.surface
+                        ),
+
+                    elevation =
+                        CardDefaults.cardElevation(
+                            defaultElevation = 2.dp
+                        )
                 ) {
 
                     Column(
-                        modifier = Modifier.padding(20.dp)
+                        modifier =
+                            Modifier.padding(20.dp)
                     ) {
 
                         Text(
                             text = "Datos personales",
                             fontSize = 19.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.secondary
+                            color =
+                                MaterialTheme.colorScheme.secondary
                         )
 
                         Spacer(
-                            modifier = Modifier.height(16.dp)
+                            modifier =
+                                Modifier.height(16.dp)
                         )
+
+                        // -------------------------
+                        // NOMBRE
+                        // -------------------------
 
                         OutlinedTextField(
                             value = state.nombre,
 
                             onValueChange = {
-                                authViewModel.onNombreChange(it)
+                                authViewModel
+                                    .onNombreChange(it)
                             },
 
                             label = {
@@ -237,9 +334,13 @@ fun RegistroScreen(
                             },
 
                             leadingIcon = {
+
                                 Icon(
-                                    Icons.Default.Person,
-                                    contentDescription = "Nombre"
+                                    imageVector =
+                                        Icons.Default.Person,
+
+                                    contentDescription =
+                                        "Nombre"
                                 )
                             },
 
@@ -247,33 +348,49 @@ fun RegistroScreen(
                                 state.errorNombre != null,
 
                             supportingText = {
+
                                 AnimatedVisibility(
                                     visible =
                                         state.errorNombre != null
                                 ) {
+
                                     Text(
                                         text =
-                                            state.errorNombre ?: "",
+                                            state.errorNombre
+                                                ?: "",
+
                                         color =
-                                            MaterialTheme.colorScheme.error
+                                            MaterialTheme
+                                                .colorScheme
+                                                .error
                                     )
                                 }
                             },
 
                             singleLine = true,
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier.fillMaxWidth()
+
+                            shape =
+                                RoundedCornerShape(16.dp),
+
+                            modifier =
+                                Modifier.fillMaxWidth()
                         )
 
                         Spacer(
-                            modifier = Modifier.height(10.dp)
+                            modifier =
+                                Modifier.height(10.dp)
                         )
+
+                        // -------------------------
+                        // RUT
+                        // -------------------------
 
                         OutlinedTextField(
                             value = state.rut,
 
                             onValueChange = {
-                                authViewModel.onRutChange(it)
+                                authViewModel
+                                    .onRutChange(it)
                             },
 
                             label = {
@@ -281,9 +398,13 @@ fun RegistroScreen(
                             },
 
                             leadingIcon = {
+
                                 Icon(
-                                    Icons.Default.Person,
-                                    contentDescription = "RUT"
+                                    imageVector =
+                                        Icons.Default.Person,
+
+                                    contentDescription =
+                                        "RUT"
                                 )
                             },
 
@@ -291,79 +412,142 @@ fun RegistroScreen(
                                 state.errorRut != null,
 
                             supportingText = {
+
                                 AnimatedVisibility(
                                     visible =
                                         state.errorRut != null
                                 ) {
+
                                     Text(
                                         text =
-                                            state.errorRut ?: "",
+                                            state.errorRut
+                                                ?: "",
+
                                         color =
-                                            MaterialTheme.colorScheme.error
+                                            MaterialTheme
+                                                .colorScheme
+                                                .error
                                     )
                                 }
                             },
 
                             singleLine = true,
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier.fillMaxWidth()
+
+                            shape =
+                                RoundedCornerShape(16.dp),
+
+                            modifier =
+                                Modifier.fillMaxWidth()
                         )
 
                         Spacer(
-                            modifier = Modifier.height(10.dp)
+                            modifier =
+                                Modifier.height(12.dp)
                         )
 
-                        OutlinedTextField(
-                            value = state.fechaNacimiento,
+                        // --------------------------------
+                        // FECHA DE NACIMIENTO
+                        // --------------------------------
 
-                            onValueChange = {
-                                authViewModel
-                                    .onFechaNacimientoChange(it)
+                        Text(
+                            text =
+                                "Fecha de nacimiento",
+
+                            fontSize = 13.sp,
+
+                            fontWeight =
+                                FontWeight.SemiBold,
+
+                            color =
+                                MaterialTheme.colorScheme.primary
+                        )
+
+                        Spacer(
+                            modifier =
+                                Modifier.height(6.dp)
+                        )
+
+                        OutlinedButton(
+                            onClick = {
+
+                                mostrarCalendario =
+                                    true
                             },
 
-                            label = {
-                                Text(
-                                    "Fecha de nacimiento (DD/MM/AAAA)"
-                                )
-                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
 
-                            leadingIcon = {
-                                Icon(
+                            shape =
+                                RoundedCornerShape(16.dp)
+                        ) {
+
+                            Icon(
+                                imageVector =
                                     Icons.Default.DateRange,
-                                    contentDescription = "Fecha"
-                                )
-                            },
 
-                            isError =
-                                state.errorFechaNacimiento != null,
+                                contentDescription =
+                                    "Seleccionar fecha"
+                            )
 
-                            supportingText = {
-                                AnimatedVisibility(
-                                    visible =
-                                        state.errorFechaNacimiento != null
-                                ) {
-                                    Text(
-                                        text =
-                                            state.errorFechaNacimiento ?: "",
-                                        color =
-                                            MaterialTheme.colorScheme.error
+                            Spacer(
+                                modifier =
+                                    Modifier.width(10.dp)
+                            )
+
+                            Text(
+                                text =
+                                    if (
+                                        state.fechaNacimiento
+                                            .isBlank()
                                     )
-                                }
-                            },
+                                        "Seleccionar fecha"
+                                    else
+                                        state.fechaNacimiento
+                            )
+                        }
 
-                            singleLine = true,
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                        AnimatedVisibility(
+                            visible =
+                                state.errorFechaNacimiento
+                                        != null
+                        ) {
+
+                            Text(
+                                text =
+                                    state.errorFechaNacimiento
+                                        ?: "",
+
+                                color =
+                                    MaterialTheme
+                                        .colorScheme
+                                        .error,
+
+                                fontSize = 12.sp,
+
+                                modifier =
+                                    Modifier.padding(
+                                        start = 16.dp,
+                                        top = 4.dp
+                                    )
+                            )
+                        }
 
                         Spacer(
-                            modifier = Modifier.height(10.dp)
+                            modifier =
+                                Modifier.height(14.dp)
                         )
 
+                        // -------------------------
+                        // TELÉFONO
+                        // -------------------------
+
                         OutlinedTextField(
-                            value = state.telefono,
+                            value =
+                                state.telefono,
 
                             onValueChange = {
+
                                 authViewModel
                                     .onTelefonoChange(it)
                             },
@@ -373,9 +557,13 @@ fun RegistroScreen(
                             },
 
                             leadingIcon = {
+
                                 Icon(
-                                    Icons.Default.Phone,
-                                    contentDescription = "Teléfono"
+                                    imageVector =
+                                        Icons.Default.Phone,
+
+                                    contentDescription =
+                                        "Teléfono"
                                 )
                             },
 
@@ -383,116 +571,242 @@ fun RegistroScreen(
                                 state.errorTelefono != null,
 
                             supportingText = {
+
                                 AnimatedVisibility(
                                     visible =
                                         state.errorTelefono != null
                                 ) {
+
                                     Text(
                                         text =
-                                            state.errorTelefono ?: "",
+                                            state.errorTelefono
+                                                ?: "",
+
                                         color =
-                                            MaterialTheme.colorScheme.error
+                                            MaterialTheme
+                                                .colorScheme
+                                                .error
                                     )
                                 }
                             },
 
                             singleLine = true,
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier.fillMaxWidth()
+
+                            shape =
+                                RoundedCornerShape(16.dp),
+
+                            modifier =
+                                Modifier.fillMaxWidth()
                         )
 
                         Spacer(
-                            modifier = Modifier.height(10.dp)
+                            modifier =
+                                Modifier.height(14.dp)
                         )
 
-                        OutlinedTextField(
-                            value = state.comuna,
+                        // --------------------------------
+                        // COMUNA
+                        // --------------------------------
 
-                            onValueChange = {
-                                authViewModel
-                                    .onComunaChange(it)
-                            },
+                        Text(
+                            text = "Comuna",
 
-                            label = {
-                                Text("Comuna")
-                            },
+                            fontSize = 13.sp,
 
-                            leadingIcon = {
+                            fontWeight =
+                                FontWeight.SemiBold,
+
+                            color =
+                                MaterialTheme.colorScheme.primary
+                        )
+
+                        Spacer(
+                            modifier =
+                                Modifier.height(6.dp)
+                        )
+
+                        Box(
+                            modifier =
+                                Modifier.fillMaxWidth()
+                        ) {
+
+                            OutlinedButton(
+                                onClick = {
+
+                                    mostrarComunas =
+                                        true
+                                },
+
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(56.dp),
+
+                                shape =
+                                    RoundedCornerShape(16.dp)
+                            ) {
+
                                 Icon(
-                                    Icons.Default.LocationOn,
-                                    contentDescription = "Comuna"
+                                    imageVector =
+                                        Icons.Default.LocationOn,
+
+                                    contentDescription =
+                                        "Seleccionar comuna"
                                 )
-                            },
 
-                            isError =
-                                state.errorComuna != null,
+                                Spacer(
+                                    modifier =
+                                        Modifier.width(10.dp)
+                                )
 
-                            supportingText = {
-                                AnimatedVisibility(
-                                    visible =
-                                        state.errorComuna != null
-                                ) {
-                                    Text(
-                                        text =
-                                            state.errorComuna ?: "",
-                                        color =
-                                            MaterialTheme.colorScheme.error
+                                Text(
+                                    text =
+                                        if (
+                                            state.comuna
+                                                .isBlank()
+                                        )
+                                            "Seleccionar comuna"
+                                        else
+                                            state.comuna
+                                )
+                            }
+
+                            DropdownMenu(
+                                expanded =
+                                    mostrarComunas,
+
+                                onDismissRequest = {
+
+                                    mostrarComunas =
+                                        false
+                                },
+
+                                modifier =
+                                    Modifier.fillMaxWidth(
+                                        0.90f
+                                    )
+                            ) {
+
+                                comunas.forEach {
+                                        comuna ->
+
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(comuna)
+                                        },
+
+                                        onClick = {
+
+                                            authViewModel
+                                                .onComunaChange(
+                                                    comuna
+                                                )
+
+                                            mostrarComunas =
+                                                false
+                                        }
                                     )
                                 }
-                            },
+                            }
+                        }
 
-                            singleLine = true,
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                        AnimatedVisibility(
+                            visible =
+                                state.errorComuna != null
+                        ) {
+
+                            Text(
+                                text =
+                                    state.errorComuna ?: "",
+
+                                color =
+                                    MaterialTheme
+                                        .colorScheme
+                                        .error,
+
+                                fontSize = 12.sp,
+
+                                modifier =
+                                    Modifier.padding(
+                                        start = 16.dp,
+                                        top = 4.dp
+                                    )
+                            )
+                        }
                     }
                 }
 
-                // Datos de acceso
+                // --------------------------------
+                // DATOS DE ACCESO
+                // --------------------------------
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(22.dp),
 
-                    colors = CardDefaults.cardColors(
-                        containerColor =
-                            MaterialTheme.colorScheme.surface
-                    ),
+                    shape =
+                        RoundedCornerShape(22.dp),
 
-                    elevation = CardDefaults.cardElevation(
-                        defaultElevation = 2.dp
-                    )
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor =
+                                MaterialTheme.colorScheme.surface
+                        ),
+
+                    elevation =
+                        CardDefaults.cardElevation(
+                            defaultElevation = 2.dp
+                        )
                 ) {
 
                     Column(
-                        modifier = Modifier.padding(20.dp)
+                        modifier =
+                            Modifier.padding(20.dp)
                     ) {
 
                         Text(
                             text = "Datos de acceso",
+
                             fontSize = 19.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.secondary
+
+                            fontWeight =
+                                FontWeight.Bold,
+
+                            color =
+                                MaterialTheme.colorScheme.secondary
                         )
 
                         Spacer(
-                            modifier = Modifier.height(16.dp)
+                            modifier =
+                                Modifier.height(16.dp)
                         )
 
+                        // -------------------------
+                        // CORREO
+                        // -------------------------
+
                         OutlinedTextField(
-                            value = state.email,
+                            value =
+                                state.email,
 
                             onValueChange = {
-                                authViewModel.onEmailChange(it)
+
+                                authViewModel
+                                    .onEmailChange(it)
                             },
 
                             label = {
-                                Text("Correo electrónico")
+                                Text(
+                                    "Correo electrónico"
+                                )
                             },
 
                             leadingIcon = {
+
                                 Icon(
-                                    Icons.Default.Email,
-                                    contentDescription = "Email"
+                                    imageVector =
+                                        Icons.Default.Email,
+
+                                    contentDescription =
+                                        "Email"
                                 )
                             },
 
@@ -500,32 +814,49 @@ fun RegistroScreen(
                                 state.errorEmail != null,
 
                             supportingText = {
+
                                 AnimatedVisibility(
                                     visible =
                                         state.errorEmail != null
                                 ) {
+
                                     Text(
                                         text =
-                                            state.errorEmail ?: "",
+                                            state.errorEmail
+                                                ?: "",
+
                                         color =
-                                            MaterialTheme.colorScheme.error
+                                            MaterialTheme
+                                                .colorScheme
+                                                .error
                                     )
                                 }
                             },
 
                             singleLine = true,
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier.fillMaxWidth()
+
+                            shape =
+                                RoundedCornerShape(16.dp),
+
+                            modifier =
+                                Modifier.fillMaxWidth()
                         )
 
                         Spacer(
-                            modifier = Modifier.height(10.dp)
+                            modifier =
+                                Modifier.height(10.dp)
                         )
 
+                        // -------------------------
+                        // CONTRASEÑA
+                        // -------------------------
+
                         OutlinedTextField(
-                            value = state.password,
+                            value =
+                                state.password,
 
                             onValueChange = {
+
                                 authViewModel
                                     .onPasswordChange(it)
                             },
@@ -535,9 +866,13 @@ fun RegistroScreen(
                             },
 
                             leadingIcon = {
+
                                 Icon(
-                                    Icons.Default.Lock,
-                                    contentDescription = "Contraseña"
+                                    imageVector =
+                                        Icons.Default.Lock,
+
+                                    contentDescription =
+                                        "Contraseña"
                                 )
                             },
 
@@ -545,6 +880,7 @@ fun RegistroScreen(
 
                                 IconButton(
                                     onClick = {
+
                                         authViewModel
                                             .togglePasswordVisibility()
                                     }
@@ -553,20 +889,31 @@ fun RegistroScreen(
                                     Icon(
                                         imageVector =
                                             if (
-                                                state.isPasswordVisible
+                                                state
+                                                    .isPasswordVisible
                                             )
-                                                Icons.Default.VisibilityOff
+                                                Icons.Default
+                                                    .VisibilityOff
                                             else
-                                                Icons.Default.Visibility,
+                                                Icons.Default
+                                                    .Visibility,
 
                                         contentDescription =
-                                            "Ver contraseña"
+                                            if (
+                                                state
+                                                    .isPasswordVisible
+                                            )
+                                                "Ocultar contraseña"
+                                            else
+                                                "Ver contraseña"
                                     )
                                 }
                             },
 
                             visualTransformation =
-                                if (state.isPasswordVisible)
+                                if (
+                                    state.isPasswordVisible
+                                )
                                     VisualTransformation.None
                                 else
                                     PasswordVisualTransformation(),
@@ -575,43 +922,67 @@ fun RegistroScreen(
                                 state.errorPassword != null,
 
                             supportingText = {
+
                                 AnimatedVisibility(
                                     visible =
                                         state.errorPassword != null
                                 ) {
+
                                     Text(
                                         text =
-                                            state.errorPassword ?: "",
+                                            state.errorPassword
+                                                ?: "",
+
                                         color =
-                                            MaterialTheme.colorScheme.error
+                                            MaterialTheme
+                                                .colorScheme
+                                                .error
                                     )
                                 }
                             },
 
                             singleLine = true,
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier.fillMaxWidth()
+
+                            shape =
+                                RoundedCornerShape(16.dp),
+
+                            modifier =
+                                Modifier.fillMaxWidth()
                         )
 
                         Spacer(
-                            modifier = Modifier.height(10.dp)
+                            modifier =
+                                Modifier.height(10.dp)
                         )
 
+                        // -------------------------
+                        // CONFIRMAR CONTRASEÑA
+                        // -------------------------
+
                         OutlinedTextField(
-                            value = state.confirmPassword,
+                            value =
+                                state.confirmPassword,
 
                             onValueChange = {
+
                                 authViewModel
-                                    .onConfirmPasswordChange(it)
+                                    .onConfirmPasswordChange(
+                                        it
+                                    )
                             },
 
                             label = {
-                                Text("Confirmar contraseña")
+                                Text(
+                                    "Confirmar contraseña"
+                                )
                             },
 
                             leadingIcon = {
+
                                 Icon(
-                                    Icons.Default.Lock,
+                                    imageVector =
+                                        Icons.Default.Lock,
+
                                     contentDescription =
                                         "Confirmar contraseña"
                                 )
@@ -621,6 +992,7 @@ fun RegistroScreen(
 
                                 IconButton(
                                     onClick = {
+
                                         authViewModel
                                             .toggleConfirmPasswordVisibility()
                                     }
@@ -629,63 +1001,95 @@ fun RegistroScreen(
                                     Icon(
                                         imageVector =
                                             if (
-                                                state.isConfirmPasswordVisible
+                                                state
+                                                    .isConfirmPasswordVisible
                                             )
-                                                Icons.Default.VisibilityOff
+                                                Icons.Default
+                                                    .VisibilityOff
                                             else
-                                                Icons.Default.Visibility,
+                                                Icons.Default
+                                                    .Visibility,
 
                                         contentDescription =
-                                            "Ver contraseña"
+                                            if (
+                                                state
+                                                    .isConfirmPasswordVisible
+                                            )
+                                                "Ocultar contraseña"
+                                            else
+                                                "Ver contraseña"
                                     )
                                 }
                             },
 
                             visualTransformation =
                                 if (
-                                    state.isConfirmPasswordVisible
+                                    state
+                                        .isConfirmPasswordVisible
                                 )
                                     VisualTransformation.None
                                 else
                                     PasswordVisualTransformation(),
 
                             isError =
-                                state.errorConfirmPassword != null,
+                                state.errorConfirmPassword
+                                        != null,
 
                             supportingText = {
+
                                 AnimatedVisibility(
                                     visible =
-                                        state.errorConfirmPassword != null
+                                        state.errorConfirmPassword
+                                                != null
                                 ) {
+
                                     Text(
                                         text =
-                                            state.errorConfirmPassword ?: "",
+                                            state.errorConfirmPassword
+                                                ?: "",
+
                                         color =
-                                            MaterialTheme.colorScheme.error
+                                            MaterialTheme
+                                                .colorScheme
+                                                .error
                                     )
                                 }
                             },
 
                             singleLine = true,
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier.fillMaxWidth()
+
+                            shape =
+                                RoundedCornerShape(16.dp),
+
+                            modifier =
+                                Modifier.fillMaxWidth()
                         )
                     }
                 }
 
-                // Términos
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
+                // --------------------------------
+                // TÉRMINOS
+                // --------------------------------
 
-                    colors = CardDefaults.cardColors(
-                        containerColor =
-                            MaterialTheme.colorScheme.primaryContainer
-                    )
+                Card(
+                    modifier =
+                        Modifier.fillMaxWidth(),
+
+                    shape =
+                        RoundedCornerShape(20.dp),
+
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor =
+                                MaterialTheme
+                                    .colorScheme
+                                    .primaryContainer
+                        )
                 ) {
 
                     Column(
-                        modifier = Modifier.padding(14.dp)
+                        modifier =
+                            Modifier.padding(14.dp)
                     ) {
 
                         Row(
@@ -698,17 +1102,23 @@ fun RegistroScreen(
                                     state.aceptaTerminos,
 
                                 onCheckedChange = {
+
                                     authViewModel
-                                        .onAceptarTerminosChange(it)
+                                        .onAceptarTerminosChange(
+                                            it
+                                        )
                                 }
                             )
 
                             Text(
                                 text =
                                     "Acepto los Términos y Condiciones y la Política de Privacidad",
+
                                 fontSize = 12.sp,
+
                                 color =
-                                    MaterialTheme.colorScheme
+                                    MaterialTheme
+                                        .colorScheme
                                         .onPrimaryContainer
                             )
                         }
@@ -723,7 +1133,9 @@ fun RegistroScreen(
                                     state.errorTerminos ?: "",
 
                                 color =
-                                    MaterialTheme.colorScheme.error,
+                                    MaterialTheme
+                                        .colorScheme
+                                        .error,
 
                                 fontSize = 12.sp,
 
@@ -737,20 +1149,29 @@ fun RegistroScreen(
                     }
                 }
 
-                // Error general
+                // --------------------------------
+                // ERROR GENERAL
+                // --------------------------------
+
                 AnimatedVisibility(
                     visible =
                         state.errorGeneral != null
                 ) {
 
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
+                        modifier =
+                            Modifier.fillMaxWidth(),
 
-                        colors = CardDefaults.cardColors(
-                            containerColor =
-                                MaterialTheme.colorScheme.errorContainer
-                        )
+                        shape =
+                            RoundedCornerShape(16.dp),
+
+                        colors =
+                            CardDefaults.cardColors(
+                                containerColor =
+                                    MaterialTheme
+                                        .colorScheme
+                                        .errorContainer
+                            )
                     ) {
 
                         Text(
@@ -758,7 +1179,9 @@ fun RegistroScreen(
                                 state.errorGeneral ?: "",
 
                             color =
-                                MaterialTheme.colorScheme.onErrorContainer,
+                                MaterialTheme
+                                    .colorScheme
+                                    .onErrorContainer,
 
                             fontSize = 13.sp,
 
@@ -768,54 +1191,80 @@ fun RegistroScreen(
                     }
                 }
 
+                // --------------------------------
+                // CREAR CUENTA
+                // --------------------------------
+
                 Button(
                     onClick = {
 
                         val valido =
-                            authViewModel.validarRegistro()
+                            authViewModel
+                                .validarRegistro()
 
                         if (valido) {
 
-                            val registrado =
-                                appState?.registrarUsuario(
-                                    nombre =
-                                        state.nombre,
-
-                                    email =
-                                        state.email,
-
-                                    password =
-                                        state.password,
-
-                                    rut =
-                                        state.rut,
-
-                                    telefono =
-                                        state.telefono,
-
-                                    fechaNacimiento =
-                                        state.fechaNacimiento,
-
-                                    comuna =
-                                        state.comuna,
-
-                                    rol =
-                                        state.rol
-                                ) == true
-
-                            if (registrado) {
-
-                                authViewModel
-                                    .setErrorGeneral(null)
-
-                                onRegistroExitoso()
-
-                            } else {
+                            if (appState == null) {
 
                                 authViewModel
                                     .setErrorGeneral(
-                                        "Ya existe una cuenta con este correo"
+                                        "No se pudo acceder a la base de datos"
                                     )
+
+                            } else {
+
+                                val registrado =
+                                    appState
+                                        .registrarUsuario(
+                                            nombre =
+                                                state.nombre,
+
+                                            email =
+                                                state.email,
+
+                                            password =
+                                                state.password,
+
+                                            rut =
+                                                state.rut,
+
+                                            telefono =
+                                                state.telefono,
+
+                                            fechaNacimiento =
+                                                state.fechaNacimiento,
+
+                                            comuna =
+                                                state.comuna,
+
+                                            rol =
+                                                state.rol
+                                        )
+
+                                if (registrado) {
+
+                                    authViewModel
+                                        .setErrorGeneral(
+                                            null
+                                        )
+
+                                    Toast
+                                        .makeText(
+                                            context,
+                                            "Cuenta creada con éxito",
+                                            Toast.LENGTH_SHORT
+                                        )
+                                        .show()
+
+                                    onRegistroExitoso()
+
+                                } else {
+
+                                    authViewModel
+                                        .setErrorGeneral(
+                                            "Ya existe una cuenta con este correo"
+                                        )
+                                }
                             }
                         }
                     },
@@ -836,16 +1285,106 @@ fun RegistroScreen(
                 }
 
                 Text(
-                    text = "Tus datos serán utilizados únicamente dentro de este prototipo.",
+                    text =
+                        "Tus datos serán utilizados únicamente dentro de este prototipo.",
+
                     fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onBackground
-                        .copy(alpha = 0.55f)
+
+                    color =
+                        MaterialTheme
+                            .colorScheme
+                            .onBackground
+                            .copy(alpha = 0.55f)
                 )
 
                 Spacer(
-                    modifier = Modifier.height(28.dp)
+                    modifier =
+                        Modifier.height(28.dp)
                 )
             }
+        }
+    }
+
+    // --------------------------------
+    // CALENDARIO FECHA DE NACIMIENTO
+    // --------------------------------
+
+    if (mostrarCalendario) {
+
+        DatePickerDialog(
+            onDismissRequest = {
+                mostrarCalendario = false
+            },
+
+            confirmButton = {
+
+                TextButton(
+                    onClick = {
+
+                        val fechaSeleccionada =
+                            datePickerState
+                                .selectedDateMillis
+
+                        if (fechaSeleccionada != null) {
+
+                            val formato =
+                                SimpleDateFormat(
+                                    "dd/MM/yyyy",
+                                    Locale.getDefault()
+                                )
+
+                            formato.timeZone =
+                                TimeZone.getTimeZone(
+                                    "UTC"
+                                )
+
+                            val fecha =
+                                formato.format(
+                                    Date(
+                                        fechaSeleccionada
+                                    )
+                                )
+
+                            authViewModel
+                                .onFechaNacimientoChange(
+                                    fecha
+                                )
+
+                            mostrarCalendario =
+                                false
+
+                        } else {
+
+                            Toast.makeText(
+                                context,
+                                "Selecciona una fecha",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                ) {
+
+                    Text("Aceptar")
+                }
+            },
+
+            dismissButton = {
+
+                TextButton(
+                    onClick = {
+                        mostrarCalendario =
+                            false
+                    }
+                ) {
+
+                    Text("Cancelar")
+                }
+            }
+        ) {
+
+            DatePicker(
+                state = datePickerState
+            )
         }
     }
 }

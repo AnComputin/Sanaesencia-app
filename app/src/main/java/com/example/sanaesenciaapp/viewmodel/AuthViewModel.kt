@@ -66,6 +66,7 @@ class AuthViewModel : ViewModel() {
     }
 
     fun onRolChange(nuevoRol: String) {
+        if (nuevoRol == "ADMIN") return
         _uiState.update { it.copy(rol = nuevoRol) }
     }
 
