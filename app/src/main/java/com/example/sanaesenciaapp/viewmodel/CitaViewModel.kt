@@ -64,8 +64,7 @@ class CitaViewModel : ViewModel() {
 
     val fechasDisponibles: List<Long> = generarFechasDisponibles()
 
-    private val _citas = MutableStateFlow<List<CitaItem>>(generarCitasFalsas())
-
+    private val _citas = MutableStateFlow<List<CitaItem>>(emptyList())
 
     private val _usuarioEmail = MutableStateFlow("")
 
@@ -192,11 +191,20 @@ class CitaViewModel : ViewModel() {
         }
         return true
     }
-    // Se llama cada vez que cambia la sesión (login o logout)
     fun establecerUsuario(email: String) {
         _usuarioEmail.value = email
         _ultimaCita.value = null
         _uiState.value = CitaUiState()
+
+        // Datos de ejemplo: se asignan al usuario una sola vez
+        if (email.isNotBlank() && _citas.value.none { it.pacienteEmail == email }) {
+            val base = _citas.value.maxOfOrNull { it.id } ?: 0
+            _citas.update { actuales ->
+                actuales + generarCitasFalsas().map {
+                    it.copy(id = it.id + base, pacienteEmail = email)
+                }
+            }
+        }
     }
     fun confirmarCita() {
         val estado = _uiState.value
