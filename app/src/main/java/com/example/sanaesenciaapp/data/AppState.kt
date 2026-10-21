@@ -1,12 +1,14 @@
 package com.example.sanaesenciaapp.data
 
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.example.sanaesenciaapp.data.room.AppDatabase
 import com.example.sanaesenciaapp.data.room.ESPECIALIDADES_INICIALES
+import com.example.sanaesenciaapp.data.room.ESPECIALISTAS_INICIALES
 import com.example.sanaesenciaapp.data.room.EspecialidadEntity
+import com.example.sanaesenciaapp.data.room.EspecialistaEntity
 import com.example.sanaesenciaapp.data.room.UsuarioEntity
 import com.example.sanaesenciaapp.utils.Seguridad
 import kotlinx.coroutines.CoroutineScope
@@ -34,40 +36,27 @@ class AppState(
     var usuarioActual by mutableStateOf<Usuario?>(null)
         private set
 
-    // Lista observable de especialidades para la UI y Room
+    // Catálogo observable para Compose.
     val especialidades = mutableStateListOf<EspecialidadEntity>()
     var especialidadSeleccionada by mutableStateOf<EspecialidadEntity?>(null)
+
+    val especialistas = mutableStateListOf<EspecialistaEntity>()
+    var especialistaSeleccionado by mutableStateOf<EspecialistaEntity?>(null)
 
     private val scope = CoroutineScope(Dispatchers.IO)
 
     fun cargarDatos() {
         scope.launch {
-            val usuariosDb = db.usuarioDao().obtenerTodos()
-            usuarios.clear()
-            usuarios.addAll(
-                usuariosDb.map {
-                    Usuario(
-                        nombre = it.nombre,
-                        email = it.email,
-                        password = it.password,
-                        rut = it.rut,
-                        telefono = it.telefono,
-                        fechaNacimiento = it.fechaNacimiento,
-                        comuna = it.comuna,
-                        rol = it.rol
-                    )
-                }
-            )
-
-            // Asegurar que existe y está actualizado el usuario Administrador ficticio para pruebas
-            val adminExistente = usuariosDb.find {
+            // Usuario administrador ficticio para la demostración del prototipo.
+            val usuariosAntes = db.usuarioDao().obtenerTodos()
+            val adminExistente = usuariosAntes.find {
                 it.email.equals("admin@sanaesencia.cl", ignoreCase = true)
             }
-            val passwordHasheadaAdmin = Seguridad.hashear("admin123")
+
             val adminEntity = UsuarioEntity(
                 nombre = adminExistente?.nombre ?: "Administrador SanaEsencia",
                 email = "admin@sanaesencia.cl",
-                password = passwordHasheadaAdmin,
+                password = Seguridad.hashear("admin123"),
                 rut = adminExistente?.rut?.ifBlank { "11.111.111-1" } ?: "11.111.111-1",
                 telefono = adminExistente?.telefono?.ifBlank { "+56912345678" } ?: "+56912345678",
                 fechaNacimiento = adminExistente?.fechaNacimiento?.ifBlank { "01/01/1985" } ?: "01/01/1985",
@@ -76,41 +65,51 @@ class AppState(
             )
             db.usuarioDao().insertar(adminEntity)
 
-            val usuarioAdminObj = Usuario(
-                nombre = adminEntity.nombre,
-                email = adminEntity.email,
-                password = adminEntity.password,
-                rut = adminEntity.rut,
-                telefono = adminEntity.telefono,
-                fechaNacimiento = adminEntity.fechaNacimiento,
-                comuna = adminEntity.comuna,
-                rol = adminEntity.rol
-            )
+            // Los seeds SOLO completan registros faltantes. Así los cambios del panel Admin
+            // (modalidad y agendaPausada) se conservan al cerrar y volver a abrir la app.
+            db.especialidadDao().insertarTodas(ESPECIALIDADES_INICIALES)
+            db.especialistaDao().insertarTodos(ESPECIALISTAS_INICIALES)
+
+            val usuariosDb = db.usuarioDao().obtenerTodos()
+            val usuariosMapeados = usuariosDb.map {
+                Usuario(
+                    nombre = it.nombre,
+                    email = it.email,
+                    password = it.password,
+                    rut = it.rut,
+                    telefono = it.telefono,
+                    fechaNacimiento = it.fechaNacimiento,
+                    comuna = it.comuna,
+                    rol = it.rol
+                )
+            }
 
             withContext(Dispatchers.Main) {
-                val indexAdmin = usuarios.indexOfFirst { it.email.equals("admin@sanaesencia.cl", ignoreCase = true) }
-                if (indexAdmin >= 0) {
-                    usuarios[indexAdmin] = usuarioAdminObj
-                } else {
-                    usuarios.add(usuarioAdminObj)
-                }
+                usuarios.clear()
+                usuarios.addAll(usuariosMapeados)
             }
 
-            // Gestión del Catálogo de Especialidades en Room
-            val especialidadDao = db.especialidadDao()
-            val listaEspDb = especialidadDao.obtenerTodas()
-
-            // Si está vacío, insertamos los datos iniciales por defecto (Seed data)
-            if (listaEspDb.isEmpty()) {
-                especialidadDao.insertarTodas(ESPECIALIDADES_INICIALES)
-            }
-
-            // Observar cambios en tiempo real desde Room
-            especialidadDao.obtenerTodasFlow().collect { listaActualizada ->
+            // Room notifica en vivo los cambios hechos desde el panel administrador.
+            db.especialidadDao().obtenerTodasFlow().collect { listaActualizada ->
                 withContext(Dispatchers.Main) {
                     especialidades.clear()
-                    especialidades.addAll(listaActualizada)
+                    especialidades.addAll(listaActualizada.sortedBy { it.id })
+
+                    // Mantener sincronizada la especialidad actualmente seleccionada.
+                    especialidadSeleccionada?.let { seleccionada ->
+                        especialidadSeleccionada = listaActualizada.find { it.id == seleccionada.id }
+                    }
                 }
+            }
+        }
+    }
+
+    fun cargarEspecialistasPorEspecialidad(especialidadId: Int) {
+        scope.launch {
+            val lista = db.especialistaDao().obtenerPorEspecialidad(especialidadId)
+            withContext(Dispatchers.Main) {
+                especialistas.clear()
+                especialistas.addAll(lista)
             }
         }
     }
@@ -125,46 +124,40 @@ class AppState(
         comuna: String,
         rol: String
     ): Boolean {
+        val emailLimpio = email.trim()
 
-        if (
-            usuarios.any {
-                it.email.equals(
-                    email.trim(),
-                    ignoreCase = true
-                )
-            }
-        ) {
+        if (usuarios.any { it.email.equals(emailLimpio, ignoreCase = true) }) {
             return false
         }
 
+        // El registro público nunca debe crear administradores.
+        val rolSeguro = if (rol == "TERAPEUTA") "TERAPEUTA" else "PACIENTE"
         val passwordHasheada = Seguridad.hashear(password)
 
         val nuevoUsuario = Usuario(
             nombre = nombre.trim(),
-            email = email.trim(),
+            email = emailLimpio,
             password = passwordHasheada,
             rut = rut.trim(),
             telefono = telefono.trim(),
             fechaNacimiento = fechaNacimiento.trim(),
             comuna = comuna.trim(),
-            rol = rol
+            rol = rolSeguro
         )
 
         usuarios.add(nuevoUsuario)
 
         scope.launch {
-
             db.usuarioDao().insertar(
-
                 UsuarioEntity(
-                    nombre = nombre.trim(),
-                    email = email.trim(),
-                    password = passwordHasheada,
-                    rut = rut.trim(),
-                    telefono = telefono.trim(),
-                    fechaNacimiento = fechaNacimiento.trim(),
-                    comuna = comuna.trim(),
-                    rol = rol
+                    nombre = nuevoUsuario.nombre,
+                    email = nuevoUsuario.email,
+                    password = nuevoUsuario.password,
+                    rut = nuevoUsuario.rut,
+                    telefono = nuevoUsuario.telefono,
+                    fechaNacimiento = nuevoUsuario.fechaNacimiento,
+                    comuna = nuevoUsuario.comuna,
+                    rol = nuevoUsuario.rol
                 )
             )
         }
@@ -173,12 +166,8 @@ class AppState(
     }
 
     fun existeCorreo(email: String): Boolean {
-
         return usuarios.any {
-            it.email.equals(
-                email.trim(),
-                ignoreCase = true
-            )
+            it.email.equals(email.trim(), ignoreCase = true)
         }
     }
 
@@ -191,20 +180,23 @@ class AppState(
 
         val usuario = usuarios.find {
             it.email.equals(emailLimpio, ignoreCase = true) &&
-                    (Seguridad.verificar(passLimpia, it.password) ||
-                     Seguridad.verificar(password, it.password) ||
-                     it.password == passLimpia ||
-                     it.password == password)
-        }
-        if (usuario == null) {
-            return false
-        }
-        usuarioActual = usuario
+                (
+                    Seguridad.verificar(passLimpia, it.password) ||
+                        Seguridad.verificar(password, it.password) ||
+                        // Compatibilidad con usuarios antiguos guardados sin hash.
+                        it.password == passLimpia ||
+                        it.password == password
+                    )
+        } ?: return false
 
+        usuarioActual = usuario
         return true
     }
 
     fun logout() {
         usuarioActual = null
+        especialidadSeleccionada = null
+        especialistaSeleccionado = null
+        especialistas.clear()
     }
 }

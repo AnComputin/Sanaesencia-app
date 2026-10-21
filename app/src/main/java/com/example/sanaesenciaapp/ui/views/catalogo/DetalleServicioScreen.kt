@@ -236,7 +236,7 @@ fun DetalleServicioScreen(
                         ) {
 
                             Text(
-                                text = "Profesional a cargo",
+                                text = "Especialistas disponibles",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.primary
@@ -359,7 +359,7 @@ fun DetalleServicioScreen(
                             )
 
                             Text(
-                                text = "Esta especialidad no tiene horas disponibles por el momento. Puedes revisar nuevamente más adelante.",
+                                text = "Esta especialidad no tiene horas disponibles por el momento. Puedes revisar nuevamente más adelante o esperar a que administración reactive la agenda.",
                                 fontSize = 14.sp,
                                 color =
                                     MaterialTheme.colorScheme.onErrorContainer

@@ -43,11 +43,13 @@ import java.util.Locale
 @Composable
 fun PagoScreen(
     citaViewModel: CitaViewModel,
+    usuarioEmail: String = "",
     onPagoExitoso: () -> Unit,
     onExpirado: () -> Unit
 ) {
 
     val uiState by citaViewModel.uiState.collectAsState()
+    val puedeConfirmar by citaViewModel.puedeContinuar.collectAsState()
 
     LaunchedEffect(Unit) {
         citaViewModel.iniciarPago()
@@ -61,6 +63,14 @@ fun PagoScreen(
 
     var estaExpirado by remember {
         mutableStateOf(false)
+    }
+
+    var procesandoPago by remember {
+        mutableStateOf(false)
+    }
+
+    var errorReserva by remember {
+        mutableStateOf<String?>(null)
     }
 
     LaunchedEffect(tiempoRestante) {
@@ -464,16 +474,27 @@ fun PagoScreen(
 
             Button(
                 onClick = {
+                    procesandoPago = true
+                    errorReserva = null
 
-                    citaViewModel
-                        .confirmarCita()
+                    citaViewModel.confirmarCita(usuarioEmail) { exito ->
+                        procesandoPago = false
 
-                    onPagoExitoso()
+                        if (exito) {
+                            onPagoExitoso()
+                        } else {
+                            errorReserva =
+                                "La hora dejó de estar disponible. Vuelve a seleccionar un horario."
+                        }
+                    }
                 },
 
                 enabled =
                     !estaExpirado &&
-                            tiempoRestante > 0,
+                            tiempoRestante > 0 &&
+                            !procesandoPago &&
+                            usuarioEmail.isNotBlank() &&
+                            puedeConfirmar,
 
                 modifier = Modifier
                     .fillMaxWidth()
@@ -484,10 +505,27 @@ fun PagoScreen(
             ) {
 
                 Text(
-                    text = "Pagar $35.000",
+                    text = if (procesandoPago) "Confirmando reserva..." else "Pagar $35.000",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )
+            }
+
+            errorReserva?.let { mensaje ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
+                ) {
+                    Text(
+                        text = mensaje,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        fontSize = 13.sp,
+                        modifier = Modifier.padding(14.dp)
+                    )
+                }
             }
 
             Text(

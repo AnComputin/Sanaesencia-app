@@ -344,54 +344,8 @@ fun LoginScreen(
 
                         Button(
                             onClick = {
-
-                                when {
-
-                                    state.email.isBlank() ||
-                                            state.password.isBlank() -> {
-
-                                        authViewModel
-                                            .setErrorGeneral(
-                                                "Ingrese correo y contraseña"
-                                            )
-                                    }
-
-                                    app == null -> {
-
-                                        authViewModel
-                                            .setErrorGeneral(
-                                                "No se pudo acceder a la sesión"
-                                            )
-                                    }
-
-                                    !app.existeCorreo(
-                                        state.email
-                                    ) -> {
-
-                                        authViewModel
-                                            .setErrorGeneral(
-                                                "No existe una cuenta con este correo"
-                                            )
-                                    }
-
-                                    !app.login(
-                                        state.email,
-                                        state.password
-                                    ) -> {
-
-                                        authViewModel
-                                            .setErrorGeneral(
-                                                "Contraseña incorrecta"
-                                            )
-                                    }
-
-                                    else -> {
-
-                                        authViewModel
-                                            .setErrorGeneral(null)
-
-                                        onNavigateToHome()
-                                    }
+                                if (authViewModel.iniciarSesion(app)) {
+                                    onNavigateToHome()
                                 }
                             },
 

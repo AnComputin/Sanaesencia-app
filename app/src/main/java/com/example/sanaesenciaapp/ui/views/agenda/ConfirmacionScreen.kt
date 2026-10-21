@@ -322,6 +322,13 @@ fun ConfirmacionScreen(
                                     cita.paciente
                             )
 
+                            if (cita.modalidad == Modalidad.PRESENCIAL && cita.boxAsignado != null) {
+                                DatoConfirmacion(
+                                    titulo = "Box asignado",
+                                    valor = "Box ${cita.boxAsignado}"
+                                )
+                            }
+
                             Spacer(
                                 modifier =
                                     Modifier.height(2.dp)
@@ -357,7 +364,7 @@ fun ConfirmacionScreen(
                                             cita.modalidad ==
                                             Modalidad.PRESENCIAL
                                         )
-                                            "📍 $modalidadTexto"
+                                            "📍 $modalidadTexto${cita.boxAsignado?.let { " · Box $it" } ?: ""}"
                                         else
                                             "💻 $modalidadTexto",
 
@@ -444,7 +451,10 @@ fun ConfirmacionScreen(
                                             cita.inicioMillis,
 
                                         ubicacion =
-                                            "Modalidad: ${cita.modalidad.name}"
+                                            if (cita.modalidad == Modalidad.PRESENCIAL && cita.boxAsignado != null)
+                                                "Presencial · Box ${cita.boxAsignado}"
+                                            else
+                                                "Modalidad: ${cita.modalidad.name}"
                                     )
 
                             if (!exito) {

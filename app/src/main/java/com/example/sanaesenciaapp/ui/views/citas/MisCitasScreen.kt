@@ -49,7 +49,6 @@ import androidx.compose.ui.unit.dp
 import com.example.sanaesenciaapp.utils.CalendarioHelper
 import com.example.sanaesenciaapp.viewmodel.CitaItem
 import com.example.sanaesenciaapp.viewmodel.CitaViewModel
-import com.example.sanaesenciaapp.viewmodel.EstadoCita
 import com.example.sanaesenciaapp.viewmodel.EstadoReserva
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -61,15 +60,26 @@ import com.example.sanaesenciaapp.ui.components.SanaBackground
 @Composable
 fun MisCitasScreen(
     citaViewModel: CitaViewModel,
+    usuarioEmail: String = "",
     onVolver: () -> Unit
 ) {
-    val citas by citaViewModel.citas.collectAsState()
+    val todasLasCitas by citaViewModel.citas.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     var citaACancelar by remember { mutableStateOf<CitaItem?>(null) }
+
+    val citas = remember(todasLasCitas, usuarioEmail) {
+        if (usuarioEmail.isBlank()) {
+            emptyList()
+        } else {
+            todasLasCitas.filter {
+                it.usuarioEmail.equals(usuarioEmail, ignoreCase = true)
+            }
+        }
+    }
 
     val proximasCitas = remember(citas) {
         citas.filter { it.estado == EstadoReserva.CONFIRMADA }
@@ -207,7 +217,10 @@ fun MisCitasScreen(
                                             cita.inicioMillis,
 
                                         ubicacion =
-                                            "Modalidad: ${cita.modalidad.name}"
+                                            if (cita.modalidad == com.example.sanaesenciaapp.viewmodel.Modalidad.PRESENCIAL && cita.boxAsignado != null)
+                                                "Presencial · Box ${cita.boxAsignado}"
+                                            else
+                                                "Modalidad: ${cita.modalidad.name}"
                                     )
 
                                 if (!exito) {
@@ -487,7 +500,7 @@ private fun CitaTarjeta(
                                 cita.modalidad.name ==
                                 "PRESENCIAL"
                             )
-                                "📍 Presencial"
+                                "📍 Presencial${cita.boxAsignado?.let { " · Box $it" } ?: ""}"
                             else
                                 "💻 Online",
 

@@ -1,6 +1,7 @@
 package com.example.sanaesenciaapp.viewmodel
 
 import androidx.lifecycle.ViewModel
+import com.example.sanaesenciaapp.data.AppState
 import com.example.sanaesenciaapp.utils.validarComuna
 import com.example.sanaesenciaapp.utils.validarEmail
 import com.example.sanaesenciaapp.utils.validarFechaNacimiento
@@ -168,6 +169,28 @@ class AuthViewModel : ViewModel() {
     fun setErrorGeneral(mensaje: String?) {
         _uiState.update {
             it.copy(errorGeneral = mensaje)
+        }
+    }
+
+    fun iniciarSesion(appState: AppState?): Boolean {
+        val state = _uiState.value
+        return when {
+            state.email.isBlank() || state.password.isBlank() -> {
+                setErrorGeneral("Ingrese correo y contraseña")
+                false
+            }
+            appState == null -> {
+                setErrorGeneral("No se pudo acceder a la sesión")
+                false
+            }
+            !appState.login(state.email, state.password) -> {
+                setErrorGeneral("Credenciales inválidas")
+                false
+            }
+            else -> {
+                setErrorGeneral(null)
+                true
+            }
         }
     }
 }

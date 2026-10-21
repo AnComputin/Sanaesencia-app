@@ -70,12 +70,14 @@ fun SeleccionEspecialidadScreen(
                 Card(
                     onClick = {
 
-                        appState.especialidadSeleccionada =
-                            especialidad
+                        appState.especialidadSeleccionada = especialidad
+                        appState.especialistaSeleccionado = null
 
-                        navController.navigate(
-                            "detalle_servicio"
-                        )
+                        if (especialidad.agendaPausada) {
+                            navController.navigate("detalle_servicio")
+                        } else {
+                            navController.navigate("seleccionar_especialista")
+                        }
                     },
 
                     modifier = Modifier.fillMaxWidth(),
@@ -150,7 +152,7 @@ fun SeleccionEspecialidadScreen(
                         Spacer(modifier = Modifier.height(12.dp))
 
                         Text(
-                            text = "Profesional",
+                            text = "Especialistas",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.primary
@@ -182,7 +184,7 @@ fun SeleccionEspecialidadScreen(
                                 if (especialidad.agendaPausada)
                                     "Agenda temporalmente no disponible"
                                 else
-                                    "Toca para ver información y reservar",
+                                    "Toca para elegir especialista y reservar",
 
                             fontSize = 13.sp,
 

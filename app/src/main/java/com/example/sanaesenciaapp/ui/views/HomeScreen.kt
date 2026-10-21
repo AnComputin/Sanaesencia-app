@@ -276,7 +276,7 @@ fun HomeScreen(
                     )
 
                     Text(
-                        text = "Especialidades",
+                        text = "Especialidades Frecuentes",
                         fontSize = 25.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
@@ -293,8 +293,8 @@ fun HomeScreen(
                     ) {
 
                         EspecialidadCard(
-                            nombre = "Psicología",
-                            icono = "🧠",
+                            nombre = "Psicología\nInfanto-Juvenil",
+                            icono = "🌱",
                             modifier = Modifier.weight(1f),
 
                             onClick = {
@@ -311,8 +311,8 @@ fun HomeScreen(
                         )
 
                         EspecialidadCard(
-                            nombre = "Fonoaudiología",
-                            icono = "💬",
+                            nombre = "Psicología\nAdulto",
+                            icono = "🧠",
                             modifier = Modifier.weight(1f),
 
                             onClick = {
@@ -341,7 +341,7 @@ fun HomeScreen(
 
                         EspecialidadCard(
                             nombre = "Terapia\nOcupacional",
-                            icono = "🖐️",
+                            icono = "🧩",
                             modifier = Modifier.weight(1f),
 
                             onClick = {
@@ -358,8 +358,8 @@ fun HomeScreen(
                         )
 
                         EspecialidadCard(
-                            nombre = "Nutrición",
-                            icono = "🍏",
+                            nombre = "Nutrición\nIntegrativa",
+                            icono = "🥗",
                             modifier = Modifier.weight(1f),
 
                             onClick = {
