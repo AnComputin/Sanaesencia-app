@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.example.sanaesenciaapp.data.room.AppDatabase
+import com.example.sanaesenciaapp.data.room.BeneficiarioEntity
 import com.example.sanaesenciaapp.data.room.ESPECIALIDADES_INICIALES
 import com.example.sanaesenciaapp.data.room.ESPECIALISTAS_INICIALES
 import com.example.sanaesenciaapp.data.room.EspecialidadEntity
@@ -13,6 +14,7 @@ import com.example.sanaesenciaapp.data.room.UsuarioEntity
 import com.example.sanaesenciaapp.utils.Seguridad
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -43,7 +45,11 @@ class AppState(
     val especialistas = mutableStateListOf<EspecialistaEntity>()
     var especialistaSeleccionado by mutableStateOf<EspecialistaEntity?>(null)
 
+    val beneficiarios = mutableStateListOf<BeneficiarioEntity>()
+    var beneficiarioSeleccionado by mutableStateOf<BeneficiarioEntity?>(null)
+
     private val scope = CoroutineScope(Dispatchers.IO)
+    private var beneficiariosJob: Job? = null
 
     fun cargarDatos() {
         scope.launch {
@@ -110,6 +116,60 @@ class AppState(
             withContext(Dispatchers.Main) {
                 especialistas.clear()
                 especialistas.addAll(lista)
+            }
+        }
+    }
+
+    private fun observarBeneficiarios(email: String) {
+        beneficiariosJob?.cancel()
+        beneficiariosJob = scope.launch {
+            db.beneficiarioDao().obtenerPorPropietarioFlow(email).collect { lista ->
+                withContext(Dispatchers.Main) {
+                    beneficiarios.clear()
+                    beneficiarios.addAll(lista)
+
+                    beneficiarioSeleccionado?.let { seleccionado ->
+                        beneficiarioSeleccionado = lista.find { it.id == seleccionado.id }
+                    }
+                }
+            }
+        }
+    }
+
+    fun seleccionarBeneficiario(beneficiario: BeneficiarioEntity?) {
+        beneficiarioSeleccionado = beneficiario
+    }
+
+    fun registrarBeneficiario(
+        nombre: String,
+        rut: String,
+        fechaNacimiento: String,
+        parentesco: String,
+        onResultado: (Boolean, String?) -> Unit = { _, _ -> }
+    ) {
+        val email = usuarioActual?.email
+        if (email.isNullOrBlank()) {
+            onResultado(false, "Debes iniciar sesión para registrar un beneficiario")
+            return
+        }
+
+        val nuevo = BeneficiarioEntity(
+            propietarioEmail = email,
+            nombre = nombre.trim(),
+            rut = rut.trim().replace(".", "").uppercase(),
+            fechaNacimiento = fechaNacimiento.trim(),
+            parentesco = parentesco.trim()
+        )
+
+        scope.launch {
+            val id = db.beneficiarioDao().insertar(nuevo)
+            withContext(Dispatchers.Main) {
+                if (id > 0) {
+                    beneficiarioSeleccionado = nuevo.copy(id = id.toInt())
+                    onResultado(true, null)
+                } else {
+                    onResultado(false, "Este beneficiario ya está registrado en tu cuenta")
+                }
             }
         }
     }
@@ -190,10 +250,16 @@ class AppState(
         } ?: return false
 
         usuarioActual = usuario
+        beneficiarioSeleccionado = null
+        observarBeneficiarios(usuario.email)
         return true
     }
 
     fun logout() {
+        beneficiariosJob?.cancel()
+        beneficiariosJob = null
+        beneficiarios.clear()
+        beneficiarioSeleccionado = null
         usuarioActual = null
         especialidadSeleccionada = null
         especialistaSeleccionado = null

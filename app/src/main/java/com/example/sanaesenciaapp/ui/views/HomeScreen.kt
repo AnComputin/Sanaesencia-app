@@ -276,7 +276,7 @@ fun HomeScreen(
                     )
 
                     Text(
-                        text = "Especialidades Frecuentes",
+                        text = "Especialidades",
                         fontSize = 25.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary

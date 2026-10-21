@@ -47,6 +47,7 @@ data class CitaItem(
     val finMillis: Long,
     val hora: String,
     val paciente: String,
+    val beneficiarioId: Int? = null,
     val estado: EstadoReserva,
     val boxAsignado: Int? = null
 )
@@ -61,6 +62,7 @@ data class CitaUiState(
     val fechaMillis: Long? = null,
     val hora: String? = null,
     val nombrePaciente: String = "",
+    val beneficiarioId: Int? = null,
     val errorNombre: String? = null
 )
 
@@ -187,19 +189,25 @@ class CitaViewModel(
         reiniciarPago()
     }
 
-    fun cambiarNombre(valor: String) {
+    fun seleccionarPaciente(nombre: String, beneficiarioId: Int?) {
         val error = when {
-            valor.isBlank() -> "El nombre no puede estar vacío"
-            valor.trim().length < 3 -> "El nombre debe tener al menos 3 caracteres"
+            nombre.isBlank() -> "El nombre no puede estar vacío"
+            nombre.trim().length < 3 -> "El nombre debe tener al menos 3 caracteres"
             else -> null
         }
 
         _uiState.update { estado ->
             estado.copy(
-                nombrePaciente = valor,
+                nombrePaciente = nombre,
+                beneficiarioId = beneficiarioId,
                 errorNombre = error
             )
         }
+    }
+
+    fun cambiarNombre(valor: String) {
+        // Si el usuario edita manualmente el nombre, deja de estar vinculado a una ficha.
+        seleccionarPaciente(valor, null)
     }
 
     fun formatearFecha(millis: Long): String {
@@ -218,9 +226,10 @@ class CitaViewModel(
         val citaActual = citas.value.find { it.id == id } ?: return false
         if (!puedeCancelar(citaActual)) return false
 
-        if (citaDao != null) {
+        val dao = citaDao
+        if (dao != null) {
             viewModelScope.launch {
-                citaDao.actualizarEstado(id, EstadoReserva.CANCELADA.name)
+                dao.actualizarEstado(id, EstadoReserva.CANCELADA.name)
             }
         } else {
             _citasMemoria.update { lista ->
@@ -276,14 +285,16 @@ class CitaViewModel(
             finMillis = fin,
             hora = horaStr,
             pacienteNombre = paciente,
+            beneficiarioId = estado.beneficiarioId,
             estado = EstadoReserva.CONFIRMADA.name,
             boxAsignado = null
         )
 
-        if (citaDao != null) {
+        val dao = citaDao
+        if (dao != null) {
             viewModelScope.launch {
                 val reservada = runCatching {
-                    citaDao.reservarSiDisponible(entidad)
+                    dao.reservarSiDisponible(entidad)
                 }.getOrNull()
 
                 if (reservada == null) {
@@ -348,6 +359,7 @@ class CitaViewModel(
                 fechaMillis = null,
                 hora = null,
                 nombrePaciente = "",
+                beneficiarioId = null,
                 errorNombre = null
             )
         }
@@ -464,6 +476,7 @@ private fun CitaEntity.toItem(): CitaItem {
         finMillis = finMillis,
         hora = hora,
         paciente = pacienteNombre,
+        beneficiarioId = beneficiarioId,
         estado = estadoEnum,
         boxAsignado = boxAsignado
     )

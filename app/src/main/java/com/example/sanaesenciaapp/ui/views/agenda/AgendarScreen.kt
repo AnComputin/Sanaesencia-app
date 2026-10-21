@@ -23,6 +23,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -30,8 +31,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -40,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.sanaesenciaapp.data.room.BeneficiarioEntity
 import com.example.sanaesenciaapp.ui.components.SanaBackground
 import com.example.sanaesenciaapp.viewmodel.CitaViewModel
 import com.example.sanaesenciaapp.viewmodel.Horario
@@ -50,12 +54,45 @@ import com.example.sanaesenciaapp.viewmodel.Modalidad
 fun AgendarScreen(
     citaViewModel: CitaViewModel,
     onContinuar: () -> Unit,
-    onVolver: () -> Unit
+    onVolver: () -> Unit,
+    nombreTitular: String = "",
+    beneficiarios: List<BeneficiarioEntity> = emptyList(),
+    beneficiarioSeleccionadoId: Int? = null,
+    onPacienteTitularSeleccionado: () -> Unit = {},
+    onBeneficiarioSeleccionado: (BeneficiarioEntity) -> Unit = {},
+    onRegistrarBeneficiario: () -> Unit = {}
 ) {
 
     val uiState by citaViewModel.uiState.collectAsState()
     val horarios by citaViewModel.horarios.collectAsState()
     val puedeContinuar by citaViewModel.puedeContinuar.collectAsState()
+
+    // Al entrar por primera vez se propone al titular. Si se vuelve desde la ficha de
+    // beneficiario, se selecciona automáticamente el menor recién registrado.
+    LaunchedEffect(
+        nombreTitular,
+        beneficiarioSeleccionadoId,
+        beneficiarios.size,
+        uiState.especialistaId
+    ) {
+        val beneficiarioSeleccionado = beneficiarioSeleccionadoId?.let { id ->
+            beneficiarios.find { it.id == id }
+        }
+
+        when {
+            beneficiarioSeleccionado != null &&
+                uiState.beneficiarioId != beneficiarioSeleccionado.id -> {
+                citaViewModel.seleccionarPaciente(
+                    beneficiarioSeleccionado.nombre,
+                    beneficiarioSeleccionado.id
+                )
+            }
+
+            uiState.nombrePaciente.isBlank() && nombreTitular.isNotBlank() -> {
+                citaViewModel.seleccionarPaciente(nombreTitular, null)
+            }
+        }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -352,59 +389,91 @@ fun AgendarScreen(
                     }
                 }
 
-                // Paciente
+                // Paciente / beneficiario
                 SeccionTarjeta(
-                    titulo = "Datos del paciente",
-                    subtitulo = "Indica quién recibirá la atención."
+                    titulo = "¿Quién recibirá la atención?",
+                    subtitulo = "Puedes reservar para ti o para un beneficiario registrado."
                 ) {
+                    if (nombreTitular.isNotBlank()) {
+                        FilterChip(
+                            selected = uiState.beneficiarioId == null &&
+                                uiState.nombrePaciente.trim().equals(
+                                    nombreTitular.trim(),
+                                    ignoreCase = true
+                                ),
+                            onClick = {
+                                citaViewModel.seleccionarPaciente(nombreTitular, null)
+                                onPacienteTitularSeleccionado()
+                            },
+                            label = { Text("Para mí · $nombreTitular") }
+                        )
+                    }
+
+                    if (beneficiarios.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = "Beneficiarios",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            contentPadding = PaddingValues(end = 4.dp)
+                        ) {
+                            items(beneficiarios, key = { it.id }) { beneficiario ->
+                                FilterChip(
+                                    selected = uiState.beneficiarioId == beneficiario.id,
+                                    onClick = {
+                                        citaViewModel.seleccionarPaciente(
+                                            beneficiario.nombre,
+                                            beneficiario.id
+                                        )
+                                        onBeneficiarioSeleccionado(beneficiario)
+                                    },
+                                    label = {
+                                        Text("${beneficiario.nombre} · ${beneficiario.parentesco}")
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    TextButton(
+                        onClick = onRegistrarBeneficiario,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Registrar menor o beneficiario a cargo")
+                    }
 
                     OutlinedTextField(
-                        value =
-                            uiState.nombrePaciente,
-
+                        value = uiState.nombrePaciente,
                         onValueChange = {
-                            citaViewModel
-                                .cambiarNombre(it)
+                            citaViewModel.cambiarNombre(it)
+                            onPacienteTitularSeleccionado()
                         },
-
-                        label = {
-                            Text(
-                                "Nombre del paciente"
-                            )
-                        },
-
+                        label = { Text("Nombre del paciente") },
                         leadingIcon = {
                             Icon(
-                                imageVector =
-                                    Icons.Default.Person,
-
+                                imageVector = Icons.Default.Person,
                                 contentDescription = null
                             )
                         },
-
-                        isError =
-                            uiState.errorNombre != null,
-
-                        supportingText =
-                            if (
-                                uiState.errorNombre != null
-                            ) {
-                                {
-                                    Text(
-                                        uiState.errorNombre!!
-                                    )
-                                }
-                            } else {
-                                null
-                            },
-
+                        isError = uiState.errorNombre != null,
+                        supportingText = if (uiState.errorNombre != null) {
+                            { Text(uiState.errorNombre!!) }
+                        } else {
+                            null
+                        },
                         singleLine = true,
-
-                        shape =
-                            RoundedCornerShape(16.dp),
-
-                        modifier =
-                            Modifier.fillMaxWidth()
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
 

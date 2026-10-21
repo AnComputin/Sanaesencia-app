@@ -35,12 +35,14 @@ Proyecto desarrollado para la asignatura DSY1105 · Duoc UC.
 
 - **Autenticación:** Registro e inicio de sesión con validación por campo (RUT, teléfono, contraseña y fecha de nacimiento).
 - **Catálogo de Servicios:** Consulta de especialidades y detalle informativo de cada servicio.
-- **Reserva y Agendamiento:** Selección de modalidad (presencial u online), fecha disponible y hora de atención.
+- **Reserva y Agendamiento:** Selección de especialidad, especialista, modalidad (presencial u online), fecha disponible, hora y paciente/beneficiario.
 - **Pago Simulado:** Pasarela de pago ficticia con temporizador regresivo de 10 minutos.
 - **Confirmación de Citas:** Pantalla de resumen post-pago con confirmación animada.
 - **Gestión de Citas (Mis Citas):** Pestañas de citas *Próximas* e *Historial*, con opción de cancelación respetando la regla de 24 horas de anticipación.
 - **Ubicación y Sede:** Cálculo de distancia a la sede presencial mediante GPS, apertura nativa en Google Maps y contacto directo por WhatsApp.
 - **Perfil Terapeuta:** Panel para profesionales con pacientes asignados, alerta de riesgo de deserción (más de 30 días sin atención), agenda del día y detalle de continuidad.
+- **Beneficiarios:** Registro persistente de menores o personas a cargo asociados a la cuenta del paciente y selección directa al reservar.
+- **Administración:** Panel ADMIN para modalidad/agenda de especialidades y visualización en tiempo real de ocupación de los 8 boxes.
 
 ---
 
@@ -85,7 +87,7 @@ El proyecto implementa la arquitectura **MVVM (Model-View-ViewModel)**, separand
 
 ##  Usuarios de Prueba
 
-No hay usuarios precargados en la base de datos. Para probar la aplicación, regístrese desde la pantalla de **Registro** indicando los datos requeridos y seleccionando el rol correspondiente:
+Para probar PACIENTE o TERAPEUTA, regístrese desde la pantalla de **Registro** indicando los datos requeridos y seleccionando el rol correspondiente. Además existe un ADMIN ficticio para demostración: `admin@sanaesencia.cl` / `admin123`.
 - **Paciente**: Acceso al flujo de agendamiento, pago y gestión de citas.
 - **Terapeuta**: Acceso al perfil profesional, pacientes asignados y agenda del día.
 
@@ -101,7 +103,6 @@ No hay usuarios precargados en la base de datos. Para probar la aplicación, reg
 
 ##  Limitaciones Conocidas
 
-- Las citas agendadas y los datos de pacientes del terapeuta se mantienen en memoria durante la sesión y no se persisten en Room.
+- Los datos simulados del módulo terapeuta siguen siendo de demostración; las citas de pacientes, especialistas y beneficiarios sí se persisten en Room.
 - El proceso de pago es una simulación visual sin conexión a una pasarela real.
 - El almacenamiento de contraseñas utiliza un hashing con sal educativo (SHA-256) en lugar de PBKDF2/bcrypt.
-- El panel de administración completo queda planificado para la entrega final.

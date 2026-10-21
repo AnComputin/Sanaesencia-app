@@ -16,6 +16,7 @@ data class CitaEntity(
     val finMillis: Long,
     val hora: String,
     val pacienteNombre: String,
+    val beneficiarioId: Int? = null,
     val estado: String, // "CONFIRMADA", "COMPLETADA", "CANCELADA"
     val boxAsignado: Int? = null
 )

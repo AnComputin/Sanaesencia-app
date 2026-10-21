@@ -17,6 +17,7 @@ import com.example.sanaesenciaapp.ui.views.admin.HomeAdminScreen
 import com.example.sanaesenciaapp.ui.views.agenda.AgendarScreen
 import com.example.sanaesenciaapp.ui.views.agenda.ConfirmacionScreen
 import com.example.sanaesenciaapp.ui.views.agenda.PagoScreen
+import com.example.sanaesenciaapp.ui.views.auth.FichaBeneficiarioScreen
 import com.example.sanaesenciaapp.ui.views.catalogo.DetalleServicioScreen
 import com.example.sanaesenciaapp.ui.views.catalogo.SeleccionEspecialistaScreen
 import com.example.sanaesenciaapp.ui.views.citas.MisCitasScreen
@@ -116,6 +117,7 @@ fun AppNavigation(
                         } else if (!espActual.agendaPausada) {
                             appState.especialidadSeleccionada = espActual
                             appState.especialistaSeleccionado = null
+                            appState.seleccionarBeneficiario(null)
                             navController.navigate("seleccionar_especialista")
                         }
                     }
@@ -145,6 +147,27 @@ fun AppNavigation(
                     navController.navigate("pago")
                 },
                 onVolver = {
+                    navController.popBackStack()
+                },
+                nombreTitular = appState.usuarioActual?.nombre.orEmpty(),
+                beneficiarios = appState.beneficiarios,
+                beneficiarioSeleccionadoId = appState.beneficiarioSeleccionado?.id,
+                onPacienteTitularSeleccionado = {
+                    appState.seleccionarBeneficiario(null)
+                },
+                onBeneficiarioSeleccionado = { beneficiario ->
+                    appState.seleccionarBeneficiario(beneficiario)
+                },
+                onRegistrarBeneficiario = {
+                    navController.navigate("ficha_beneficiario")
+                }
+            )
+        }
+
+        composable("ficha_beneficiario") {
+            FichaBeneficiarioScreen(
+                appState = appState,
+                onNavigateBack = {
                     navController.popBackStack()
                 }
             )
