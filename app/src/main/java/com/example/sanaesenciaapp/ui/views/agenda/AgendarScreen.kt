@@ -44,13 +44,15 @@ import com.example.sanaesenciaapp.ui.components.SanaBackground
 import com.example.sanaesenciaapp.viewmodel.CitaViewModel
 import com.example.sanaesenciaapp.viewmodel.Horario
 import com.example.sanaesenciaapp.viewmodel.Modalidad
+import androidx.compose.material3.TextButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AgendarScreen(
     citaViewModel: CitaViewModel,
     onContinuar: () -> Unit,
-    onVolver: () -> Unit
+    onVolver: () -> Unit,
+    onRegistrarMenor: () -> Unit = {}
 ) {
 
     val uiState by citaViewModel.uiState.collectAsState()
@@ -406,6 +408,12 @@ fun AgendarScreen(
                         modifier =
                             Modifier.fillMaxWidth()
                     )
+                }
+                TextButton(
+                    onClick = onRegistrarMenor,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("¿La cita es para un menor? Registrar menor a cargo")
                 }
 
                 Button(
@@ -779,14 +787,14 @@ private fun HoraTarjeta(
 @Preview(
     showBackground = true
 )
+@Suppress("ViewModelConstructorInComposable")
 @Composable
 private fun AgendarScreenPreview() {
 
     AgendarScreen(
-        citaViewModel =
-            CitaViewModel(),
-
+        citaViewModel = CitaViewModel(),
         onContinuar = {},
-        onVolver = {}
+        onVolver = {},
+        onRegistrarMenor = {}
     )
 }

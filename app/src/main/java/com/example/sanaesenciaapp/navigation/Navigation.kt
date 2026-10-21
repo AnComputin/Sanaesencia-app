@@ -25,6 +25,7 @@ import com.example.sanaesenciaapp.ui.views.terapeuta.HomeTerapeutaScreen
 import com.example.sanaesenciaapp.ui.views.terapeuta.PacientesAsignadosScreen
 import com.example.sanaesenciaapp.viewmodel.CitaViewModel
 import com.example.sanaesenciaapp.viewmodel.TerapeutaViewModel
+import com.example.sanaesenciaapp.ui.views.auth.FichaBeneficiarioScreen
 
 @Composable
 fun AppNavigation(
@@ -158,12 +159,9 @@ fun AppNavigation(
         composable("agendar") {
             AgendarScreen(
                 citaViewModel = citaViewModel,
-                onContinuar = {
-                    navController.navigate("pago")
-                },
-                onVolver = {
-                    navController.popBackStack()
-                }
+                onContinuar = { navController.navigate("pago") },
+                onVolver = { navController.popBackStack() },
+                onRegistrarMenor = { navController.navigate("ficha_beneficiario") }
             )
         }
 
@@ -209,6 +207,11 @@ fun AppNavigation(
                 onVolver = {
                     navController.popBackStack()
                 }
+            )
+        }
+        composable("ficha_beneficiario") {
+            FichaBeneficiarioScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }
