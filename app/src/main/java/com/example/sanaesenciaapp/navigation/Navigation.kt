@@ -2,11 +2,15 @@ package com.example.sanaesenciaapp.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.sanaesenciaapp.data.AppState
+import com.example.sanaesenciaapp.data.room.AppDatabase
 import com.example.sanaesenciaapp.ui.views.HomeScreen
 import com.example.sanaesenciaapp.ui.views.InicioScreen
 import com.example.sanaesenciaapp.ui.views.LoginScreen
@@ -33,7 +37,12 @@ fun AppNavigation(
     appState: AppState
 ) {
     val terapeutaViewModel: TerapeutaViewModel = viewModel()
-    val citaViewModel: CitaViewModel = viewModel()
+    val context = LocalContext.current.applicationContext
+    val citaViewModel: CitaViewModel = viewModel(
+        factory = viewModelFactory {
+            initializer { CitaViewModel(AppDatabase.getInstance(context).citaDao()) }
+        }
+    )
 
     LaunchedEffect(appState.usuarioActual?.email) {
         citaViewModel.establecerUsuario(appState.usuarioActual?.email ?: "")

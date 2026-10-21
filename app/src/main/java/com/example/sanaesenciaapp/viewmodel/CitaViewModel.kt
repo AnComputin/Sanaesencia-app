@@ -2,6 +2,9 @@ package com.example.sanaesenciaapp.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.sanaesenciaapp.data.room.CitaDao
+import com.example.sanaesenciaapp.data.room.CitaEntity
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -10,6 +13,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -54,10 +58,9 @@ data class CitaUiState(
     val errorNombre: String? = null,
 )
 
-// TODO mover a ReglasNegocio
 private const val CANCELACION_HORAS = 24
 
-class CitaViewModel : ViewModel() {
+class CitaViewModel(private val citaDao: CitaDao? = null) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CitaUiState())
     val uiState: StateFlow<CitaUiState> = _uiState.asStateFlow()
@@ -65,6 +68,13 @@ class CitaViewModel : ViewModel() {
     val fechasDisponibles: List<Long> = generarFechasDisponibles()
 
     private val _citas = MutableStateFlow<List<CitaItem>>(emptyList())
+
+    // Carga las citas guardadas en Room al crear el ViewModel
+    private val cargaInicial: Job = viewModelScope.launch {
+        val guardadas = citaDao?.obtenerTodas().orEmpty()
+        if (guardadas.isNotEmpty()) _citas.value = guardadas.map { it.aItem() }
+    }
+
 
     private val _usuarioEmail = MutableStateFlow("")
 
@@ -80,7 +90,6 @@ class CitaViewModel : ViewModel() {
     private val _ultimaCita = MutableStateFlow<CitaItem?>(null)
     val ultimaCita: StateFlow<CitaItem?> = _ultimaCita.asStateFlow()
 
-    // TODO: Los horarios falsos se reemplazarán por CitaRepository cuando el compañero lo publique.
     val horarios: StateFlow<List<Horario>> = combine(_uiState, _citas) { estado, listaCitas ->
         calcularHorarios(estado.fechaMillis, listaCitas)
     }.stateIn(
@@ -89,7 +98,6 @@ class CitaViewModel : ViewModel() {
         initialValue = generarHorariosFalsos(null)
     )
 
-    // TODO mover a ReglasNegocio
     val duracionPagoSegundos: Int = 600
     private var pagoInicioMillis: Long? = null
 
@@ -189,20 +197,28 @@ class CitaViewModel : ViewModel() {
                 if (cita.id == id) cita.copy(estado = EstadoReserva.CANCELADA) else cita
             }
         }
+        viewModelScope.launch {
+            citaDao?.insertar(citaActual.copy(estado = EstadoReserva.CANCELADA).aEntity())
+        }
         return true
     }
+    // Se llama cada vez que cambia la sesión (login o logout)
     fun establecerUsuario(email: String) {
         _usuarioEmail.value = email
         _ultimaCita.value = null
         _uiState.value = CitaUiState()
 
-        // Datos de ejemplo: se asignan al usuario una sola vez
-        if (email.isNotBlank() && _citas.value.none { it.pacienteEmail == email }) {
-            val base = _citas.value.maxOfOrNull { it.id } ?: 0
-            _citas.update { actuales ->
-                actuales + generarCitasFalsas().map {
+        if (email.isBlank()) return
+        viewModelScope.launch {
+            cargaInicial.join()
+            // Datos de ejemplo: se asignan y guardan una sola vez por usuario
+            if (_citas.value.none { it.pacienteEmail == email }) {
+                val base = _citas.value.maxOfOrNull { it.id } ?: 0
+                val ejemplo = generarCitasFalsas().map {
                     it.copy(id = it.id + base, pacienteEmail = email)
                 }
+                _citas.update { it + ejemplo }
+                citaDao?.insertarTodas(ejemplo.map { it.aEntity() })
             }
         }
     }
@@ -245,6 +261,7 @@ class CitaViewModel : ViewModel() {
 
 
         _citas.update { it + nuevaCita }
+        viewModelScope.launch { citaDao?.insertar(nuevaCita.aEntity()) }
         _ultimaCita.value = nuevaCita
 
         _uiState.update { actual ->
@@ -300,7 +317,6 @@ class CitaViewModel : ViewModel() {
         return listaFechas
     }
 
-    // TODO: Los horarios falsos se reemplazarán por CitaRepository cuando el compañero lo publique.
     private fun generarHorariosFalsos(fechaMillis: Long?): List<Horario> {
         val horasBase = listOf("09:00", "10:30", "12:00", "14:00", "15:30", "17:00")
 
@@ -325,7 +341,6 @@ class CitaViewModel : ViewModel() {
         }
     }
 
-    // TODO reemplazar por CitaRepository cuando Mark lo publique.
     private fun generarCitasFalsas(): List<CitaItem> {
         val cal1 = Calendar.getInstance().apply {
             add(Calendar.DAY_OF_MONTH, 3)
@@ -417,3 +432,13 @@ class CitaViewModel : ViewModel() {
         )
     }
 }
+
+private fun CitaEntity.aItem() = CitaItem(
+    id, especialidad, profesional, Modalidad.valueOf(modalidad),
+    inicioMillis, hora, paciente, EstadoReserva.valueOf(estado), pacienteEmail
+)
+
+private fun CitaItem.aEntity() = CitaEntity(
+    id, especialidad, profesional, modalidad.name,
+    inicioMillis, hora, paciente, estado.name, pacienteEmail
+)
