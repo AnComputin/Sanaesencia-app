@@ -8,7 +8,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.rememberNavController
 import com.example.sanaesenciaapp.data.AppState
-import com.example.sanaesenciaapp.data.room.AppDatabase
 import com.example.sanaesenciaapp.navigation.AppNavigation
 import com.example.sanaesenciaapp.ui.theme.SanaEsenciaAppTheme
 
@@ -23,9 +22,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         val db =
-            AppDatabase.getInstance(
-                applicationContext
-            )
+            (application as MyApplication).appContainer.database
 
         val appState =
             AppState(db)
