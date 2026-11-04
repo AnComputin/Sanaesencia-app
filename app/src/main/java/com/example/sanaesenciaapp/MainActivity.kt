@@ -21,11 +21,9 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
 
-        val db =
-            (application as MyApplication).appContainer.database
-
-        val appState =
-            AppState(db)
+        val appContainer = (application as MyApplication).appContainer
+        val db = appContainer.database
+        val appState = AppState(db, appContainer.sesionRepository)
 
         appState.cargarDatos()
 

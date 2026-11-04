@@ -7,6 +7,7 @@ import com.example.sanaesenciaapp.data.room.CitaDao
 import com.example.sanaesenciaapp.data.room.EspecialidadDao
 import com.example.sanaesenciaapp.data.room.EspecialistaDao
 import com.example.sanaesenciaapp.data.room.UsuarioDao
+import com.example.sanaesenciaapp.data.repository.SesionRepository
 
 class AppContainer(context: Context) {
 
@@ -19,4 +20,6 @@ class AppContainer(context: Context) {
     val especialistaDao: EspecialistaDao = database.especialistaDao()
     val citaDao: CitaDao = database.citaDao()
     val beneficiarioDao: BeneficiarioDao = database.beneficiarioDao()
+
+    val sesionRepository = SesionRepository()
 }

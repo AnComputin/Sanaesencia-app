@@ -11,6 +11,7 @@ import com.example.sanaesenciaapp.data.room.ESPECIALISTAS_INICIALES
 import com.example.sanaesenciaapp.data.room.EspecialidadEntity
 import com.example.sanaesenciaapp.data.room.EspecialistaEntity
 import com.example.sanaesenciaapp.data.room.UsuarioEntity
+import com.example.sanaesenciaapp.data.repository.SesionRepository
 import com.example.sanaesenciaapp.utils.Seguridad
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -30,12 +31,13 @@ data class Usuario(
 )
 
 class AppState(
-    val db: AppDatabase
+    val db: AppDatabase,
+    private val sesionRepository: SesionRepository
 ) {
 
     val usuarios = mutableStateListOf<Usuario>()
 
-    var usuarioActual by mutableStateOf<Usuario?>(null)
+    var usuarioActual by mutableStateOf(sesionRepository.sesionActual.value)
         private set
 
     // Catálogo observable para Compose.
@@ -235,23 +237,11 @@ class AppState(
         email: String,
         password: String
     ): Boolean {
-        val emailLimpio = email.trim()
-        val passLimpia = password.trim()
+        val sesion = sesionRepository.autenticar(email, password, usuarios) ?: return false
 
-        val usuario = usuarios.find {
-            it.email.equals(emailLimpio, ignoreCase = true) &&
-                (
-                    Seguridad.verificar(passLimpia, it.password) ||
-                        Seguridad.verificar(password, it.password) ||
-                        // Compatibilidad con usuarios antiguos guardados sin hash.
-                        it.password == passLimpia ||
-                        it.password == password
-                    )
-        } ?: return false
-
-        usuarioActual = usuario
+        usuarioActual = sesion
         beneficiarioSeleccionado = null
-        observarBeneficiarios(usuario.email)
+        observarBeneficiarios(sesion.email)
         return true
     }
 
@@ -260,6 +250,7 @@ class AppState(
         beneficiariosJob = null
         beneficiarios.clear()
         beneficiarioSeleccionado = null
+        sesionRepository.cerrarSesion()
         usuarioActual = null
         especialidadSeleccionada = null
         especialistaSeleccionado = null
