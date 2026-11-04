@@ -12,6 +12,7 @@ import com.example.sanaesenciaapp.data.room.EspecialidadEntity
 import com.example.sanaesenciaapp.data.room.EspecialistaEntity
 import com.example.sanaesenciaapp.data.room.UsuarioEntity
 import com.example.sanaesenciaapp.data.repository.SesionRepository
+import com.example.sanaesenciaapp.data.repository.UsuarioRepository
 import com.example.sanaesenciaapp.utils.Seguridad
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -32,7 +33,8 @@ data class Usuario(
 
 class AppState(
     val db: AppDatabase,
-    private val sesionRepository: SesionRepository
+    private val sesionRepository: SesionRepository,
+    private val usuarioRepository: UsuarioRepository
 ) {
 
     val usuarios = mutableStateListOf<Usuario>()
@@ -56,7 +58,7 @@ class AppState(
     fun cargarDatos() {
         scope.launch {
             // Usuario administrador ficticio para la demostración del prototipo.
-            val usuariosAntes = db.usuarioDao().obtenerTodos()
+            val usuariosAntes = usuarioRepository.obtenerTodos()
             val adminExistente = usuariosAntes.find {
                 it.email.equals("admin@sanaesencia.cl", ignoreCase = true)
             }
@@ -71,14 +73,14 @@ class AppState(
                 comuna = adminExistente?.comuna?.ifBlank { "Santiago" } ?: "Santiago",
                 rol = "ADMIN"
             )
-            db.usuarioDao().insertar(adminEntity)
+            usuarioRepository.insertar(adminEntity)
 
             // Los seeds SOLO completan registros faltantes. Así los cambios del panel Admin
             // (modalidad y agendaPausada) se conservan al cerrar y volver a abrir la app.
             db.especialidadDao().insertarTodas(ESPECIALIDADES_INICIALES)
             db.especialistaDao().insertarTodos(ESPECIALISTAS_INICIALES)
 
-            val usuariosDb = db.usuarioDao().obtenerTodos()
+            val usuariosDb = usuarioRepository.obtenerTodos()
             val usuariosMapeados = usuariosDb.map {
                 Usuario(
                     nombre = it.nombre,
@@ -210,7 +212,7 @@ class AppState(
         usuarios.add(nuevoUsuario)
 
         scope.launch {
-            db.usuarioDao().insertar(
+            usuarioRepository.insertar(
                 UsuarioEntity(
                     nombre = nuevoUsuario.nombre,
                     email = nuevoUsuario.email,

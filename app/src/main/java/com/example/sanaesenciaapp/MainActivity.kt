@@ -23,7 +23,7 @@ class MainActivity : ComponentActivity() {
 
         val appContainer = (application as MyApplication).appContainer
         val db = appContainer.database
-        val appState = AppState(db, appContainer.sesionRepository)
+        val appState = AppState(db, appContainer.sesionRepository, appContainer.usuarioRepository)
 
         appState.cargarDatos()
 
