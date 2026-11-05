@@ -15,8 +15,8 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         CitaEntity::class,
         BeneficiarioEntity::class
     ],
-    version = 6,
-    exportSchema = false
+    version = 7,
+    exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
 
@@ -373,6 +373,73 @@ abstract class AppDatabase : RoomDatabase() {
                 }
             }
 
+        /**
+         * Applies case-insensitive uniqueness while preserving each stored email verbatim.
+         * Room runs migrations transactionally, so a failed preflight leaves version 6 intact.
+         */
+        internal val MIGRATION_6_7 =
+            object : Migration(6, 7) {
+                override fun migrate(database: SupportSQLiteDatabase) {
+                    val collisionGroups = database.query(
+                        """
+                        SELECT COUNT(*) FROM (
+                            SELECT email
+                            FROM usuarios
+                            GROUP BY email COLLATE NOCASE
+                            HAVING COUNT(*) > 1
+                        )
+                        """.trimIndent()
+                    ).use { cursor ->
+                        if (cursor.moveToFirst()) cursor.getInt(0) else 0
+                    }
+
+                    val emailsWithOuterWhitespace = database.query(
+                        "SELECT COUNT(*) FROM usuarios WHERE email != TRIM(email)"
+                    ).use { cursor ->
+                        if (cursor.moveToFirst()) cursor.getInt(0) else 0
+                    }
+
+                    if (collisionGroups > 0) {
+                        throw IllegalStateException(
+                            "Room migration 6->7 aborted: $collisionGroups email group(s) " +
+                                "collide under NOCASE. $emailsWithOuterWhitespace historical " +
+                                "email value(s) with surrounding whitespace were left unchanged. " +
+                                "Resolve duplicate accounts before upgrading."
+                        )
+                    }
+
+                    database.execSQL(
+                        """
+                        CREATE TABLE IF NOT EXISTS `usuarios_nuevo` (
+                            `email` TEXT NOT NULL COLLATE NOCASE,
+                            `nombre` TEXT NOT NULL,
+                            `password` TEXT NOT NULL,
+                            `rut` TEXT NOT NULL,
+                            `telefono` TEXT NOT NULL,
+                            `fechaNacimiento` TEXT NOT NULL,
+                            `comuna` TEXT NOT NULL,
+                            `rol` TEXT NOT NULL,
+                            PRIMARY KEY(`email`)
+                        )
+                        """.trimIndent()
+                    )
+                    database.execSQL(
+                        """
+                        INSERT INTO `usuarios_nuevo` (
+                            `email`, `nombre`, `password`, `rut`, `telefono`,
+                            `fechaNacimiento`, `comuna`, `rol`
+                        )
+                        SELECT
+                            `email`, `nombre`, `password`, `rut`, `telefono`,
+                            `fechaNacimiento`, `comuna`, `rol`
+                        FROM `usuarios`
+                        """.trimIndent()
+                    )
+                    database.execSQL("DROP TABLE `usuarios`")
+                    database.execSQL("ALTER TABLE `usuarios_nuevo` RENAME TO `usuarios`")
+                }
+            }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 Room.databaseBuilder(
@@ -380,7 +447,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "sanaesencia_db"
                 )
-                    .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+                    .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
                     .fallbackToDestructiveMigration(false)
                     .build()
                     .also {
