@@ -5,8 +5,16 @@ import androidx.lifecycle.ViewModelProvider
 import com.example.sanaesenciaapp.di.AppContainer
 
 /**
- * Factory module owned by a feature. Each module handles only the ViewModels
- * belonging to that feature and obtains shared dependencies from the container.
+ * Contrato de módulo ViewModel por característica o integrante (Mark, Valentina, Alejandra, Anaís).
+ *
+ * Cada integrante debe crear su propia implementación de [AppViewModelModule] dentro de su paquete
+ * de módulo (ej. `AuthViewModelModule` para Mark, `AgendaViewModelModule` para Valentina, `CatalogoViewModelModule` para Alejandra).
+ *
+ * Guía de integración para el equipo:
+ * 1. Implementar [supports] para responder `true` únicamente con las clases ViewModel asignadas a su módulo.
+ * 2. Implementar [create] para instanciar sus ViewModels obteniendo dependencias compartidas de [AppContainer].
+ * 3. Pasar su módulo a la lista de [AppViewModelProvider].
+ * 4. NO modificar los archivos ni módulos pertenecientes a otros integrantes.
  */
 interface AppViewModelModule {
     fun supports(modelClass: Class<out ViewModel>): Boolean
@@ -18,8 +26,8 @@ interface AppViewModelModule {
 }
 
 /**
- * Shared dispatch point for feature-owned ViewModel modules.
- * Feature modules are supplied explicitly; this class does not own their factories.
+ * Punto de despacho compartido para los módulos de ViewModel por integrante.
+ * Recibe la lista de módulos explícitamente sin acoplarlos en un único archivo.
  */
 class AppViewModelProvider(
     private val appContainer: AppContainer,
