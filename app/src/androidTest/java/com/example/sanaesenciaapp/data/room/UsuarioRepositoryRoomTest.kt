@@ -14,6 +14,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.assertThrows
 import org.junit.Before
@@ -133,6 +134,36 @@ class UsuarioRepositoryRoomTest {
         }
     }
 
+    @Test
+    fun obtenerPorEmailDevuelveUsuarioExistenteYNullSiNoExiste() = runBlocking {
+        val original = usuario("Persona@dominio.cl")
+        repository.registrar(original)
+
+        val encontrado = repository.obtenerPorEmail("Persona@dominio.cl")
+        assertEquals(original, encontrado)
+
+        val inexistente = repository.obtenerPorEmail("noexiste@dominio.cl")
+        assertNull(inexistente)
+    }
+
+    @Test
+    fun obtenerPorEmailEsInsensibleAMayusculasYAplicaTrim() = runBlocking {
+        val original = usuario("Persona@dominio.cl")
+        repository.registrar(original)
+
+        val enMinusculas = repository.obtenerPorEmail("persona@dominio.cl")
+        assertEquals(original, enMinusculas)
+
+        val enMayusculas = repository.obtenerPorEmail("PERSONA@DOMINIO.CL")
+        assertEquals(original, enMayusculas)
+
+        val conEspacios = repository.obtenerPorEmail("  Persona@dominio.cl  ")
+        assertEquals(original, conEspacios)
+
+        val conEspaciosYMinusculas = repository.obtenerPorEmail("  persona@dominio.cl  ")
+        assertEquals(original, conEspaciosYMinusculas)
+    }
+
     private fun usuario(
         email: String,
         nombre: String = "Persona",
@@ -150,10 +181,13 @@ class UsuarioRepositoryRoomTest {
     )
 
     private class FailingUsuarioDao(
-        private val insert: suspend (UsuarioEntity) -> Long
+        private val insert: suspend (UsuarioEntity) -> Long = { -1L },
+        private val getByEmail: suspend (String) -> UsuarioEntity? = { null }
     ) : UsuarioDao {
         override suspend fun insertar(usuario: UsuarioEntity): Long = insert(usuario)
 
         override suspend fun obtenerTodos(): List<UsuarioEntity> = emptyList()
+
+        override suspend fun obtenerPorEmail(email: String): UsuarioEntity? = getByEmail(email)
     }
 }
