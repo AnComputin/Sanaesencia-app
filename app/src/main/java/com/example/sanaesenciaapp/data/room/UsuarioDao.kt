@@ -13,4 +13,7 @@ interface UsuarioDao {
 
     @Query("SELECT * FROM usuarios")
     suspend fun obtenerTodos(): List<UsuarioEntity>
+
+    @Query("SELECT * FROM usuarios WHERE email = :email COLLATE NOCASE")
+    suspend fun obtenerPorEmail(email: String): UsuarioEntity?
 }

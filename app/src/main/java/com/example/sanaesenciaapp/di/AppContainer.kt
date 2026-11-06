@@ -22,6 +22,6 @@ class AppContainer(context: Context) {
     val citaDao: CitaDao = database.citaDao()
     val beneficiarioDao: BeneficiarioDao = database.beneficiarioDao()
 
-    val sesionRepository = SesionRepository()
     val usuarioRepository = UsuarioRepository(usuarioDao)
+    val sesionRepository = SesionRepository(usuarioRepository)
 }

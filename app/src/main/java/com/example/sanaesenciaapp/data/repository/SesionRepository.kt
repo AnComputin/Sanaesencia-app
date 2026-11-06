@@ -1,10 +1,13 @@
 package com.example.sanaesenciaapp.data.repository
 
-import com.example.sanaesenciaapp.data.Usuario
 import com.example.sanaesenciaapp.utils.Seguridad
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.withContext
 
 /**
  * Datos de identidad necesarios durante una sesión. No contiene credenciales.
@@ -20,37 +23,55 @@ data class SesionUsuario(
 )
 
 /**
- * Centraliza la autenticación local existente y el estado en memoria de la sesión.
+ * Centraliza la autenticación y el estado en memoria de la sesión.
  *
- * La verificación conserva las reglas actuales de AppState. La lista recibida procede
- * de sus usuarios cargados desde Room y solo se consulta durante la autenticación;
- * no se conserva en este repositorio.
+ * Consulta las credenciales a través de [UsuarioRepository] en un contexto de coroutine [ioDispatcher]
+ * sin exponer entidades Room completas ni hashes al resto de la aplicación.
  */
-class SesionRepository {
+class SesionRepository(
+    private val usuarioRepository: UsuarioRepository,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+) {
 
     private val _sesionActual = MutableStateFlow<SesionUsuario?>(null)
     val sesionActual: StateFlow<SesionUsuario?> = _sesionActual.asStateFlow()
 
-    internal fun autenticar(
+    suspend fun autenticar(
         email: String,
-        password: String,
-        usuarios: List<Usuario>
-    ): SesionUsuario? {
+        password: String
+    ): SesionUsuario? = withContext(ioDispatcher) {
         val emailLimpio = email.trim()
-        val passwordLimpia = password.trim()
 
-        val usuario = usuarios.find {
-            it.email.equals(emailLimpio, ignoreCase = true) &&
-                (
-                    Seguridad.verificar(passwordLimpia, it.password) ||
-                        Seguridad.verificar(password, it.password) ||
-                        // Compatibilidad con usuarios antiguos guardados sin hash.
-                        it.password == passwordLimpia ||
-                        it.password == password
-                    )
-        } ?: return null
+        if (emailLimpio.isBlank() || password.isEmpty()) {
+            return@withContext null
+        }
 
-        return SesionUsuario(
+        val usuario = try {
+            usuarioRepository.obtenerPorEmail(emailLimpio)
+        } catch (e: CancellationException) {
+            throw e
+        } ?: return@withContext null
+
+        val passwordValida = if (esFormatoHashValido(usuario.password)) {
+            // Verificación criptográfica con sal y SHA-256 (prototipo).
+            // Se rechaza explícitamente cualquier coincidencia literal con el hash almacenado
+            // para evitar que la cadena codificada de la base de datos se utilice como contraseña.
+            if (password == usuario.password) {
+                false
+            } else {
+                Seguridad.verificar(password, usuario.password)
+            }
+        } else {
+            // Compatibilidad transicional con cuentas históricas almacenadas en texto plano.
+            // Se preservan espacios intencionales de la contraseña.
+            usuario.password == password
+        }
+
+        if (!passwordValida) {
+            return@withContext null
+        }
+
+        SesionUsuario(
             nombre = usuario.nombre,
             email = usuario.email,
             rut = usuario.rut,
@@ -63,5 +84,13 @@ class SesionRepository {
 
     fun cerrarSesion() {
         _sesionActual.value = null
+    }
+
+    private fun esFormatoHashValido(almacenado: String): Boolean {
+        val partes = almacenado.split(":")
+        if (partes.size != 2) return false
+        val (salHex, hashHex) = partes
+        return salHex.length == 32 && salHex.all { it.isDigit() || it in 'a'..'f' || it in 'A'..'F' } &&
+            hashHex.length == 64 && hashHex.all { it.isDigit() || it in 'a'..'f' || it in 'A'..'F' }
     }
 }

@@ -23,6 +23,9 @@ class UsuarioRepository(
 ) {
     suspend fun obtenerTodos(): List<UsuarioEntity> = usuarioDao.obtenerTodos()
 
+    suspend fun obtenerPorEmail(email: String): UsuarioEntity? =
+        usuarioDao.obtenerPorEmail(email.trim())
+
     /**
      * Inserta el correo recortado conservando su capitalización original.
      * La clave primaria NOCASE de SQLite resuelve atómicamente los duplicados.
