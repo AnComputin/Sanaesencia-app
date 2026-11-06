@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -28,6 +30,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -48,12 +51,19 @@ fun LoginScreen(
     onNavigateToHome: () -> Unit,
     onNavigateToRegistro: () -> Unit,
     appState: AppState? = null,
-    authViewModel: AuthViewModel = viewModel()
+    authViewModel: AuthViewModel = viewModel(factory = AuthViewModel.Factory)
 ) {
 
     val state by authViewModel.uiState.collectAsState()
 
     val app = appState
+
+    LaunchedEffect(state.loginExitoso) {
+        if (state.loginExitoso) {
+            onNavigateToHome()
+            authViewModel.onLoginNavegado()
+        }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -344,11 +354,9 @@ fun LoginScreen(
 
                         Button(
                             onClick = {
-                                if (authViewModel.iniciarSesion(app)) {
-                                    onNavigateToHome()
-                                }
+                                authViewModel.iniciarSesion(appState = app)
                             },
-
+                            enabled = !state.isLoading,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(55.dp),
@@ -356,13 +364,20 @@ fun LoginScreen(
                             shape =
                                 RoundedCornerShape(18.dp)
                         ) {
-
-                            Text(
-                                text = "Iniciar sesión",
-                                fontSize = 16.sp,
-                                fontWeight =
-                                    FontWeight.SemiBold
-                            )
+                            if (state.isLoading) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Text(
+                                    text = "Iniciar sesión",
+                                    fontSize = 16.sp,
+                                    fontWeight =
+                                        FontWeight.SemiBold
+                                )
+                            }
                         }
                     }
                 }

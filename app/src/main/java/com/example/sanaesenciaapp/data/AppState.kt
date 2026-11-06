@@ -12,6 +12,7 @@ import com.example.sanaesenciaapp.data.room.EspecialidadEntity
 import com.example.sanaesenciaapp.data.room.EspecialistaEntity
 import com.example.sanaesenciaapp.data.room.UsuarioEntity
 import com.example.sanaesenciaapp.data.repository.SesionRepository
+import com.example.sanaesenciaapp.data.repository.SesionUsuario
 import com.example.sanaesenciaapp.data.repository.UsuarioRepository
 import com.example.sanaesenciaapp.utils.Seguridad
 import kotlinx.coroutines.CoroutineScope
@@ -33,7 +34,7 @@ data class Usuario(
 
 class AppState(
     val db: AppDatabase,
-    private val sesionRepository: SesionRepository,
+    val sesionRepository: SesionRepository,
     private val usuarioRepository: UsuarioRepository
 ) {
 
@@ -54,6 +55,28 @@ class AppState(
 
     private val scope = CoroutineScope(Dispatchers.IO)
     private var beneficiariosJob: Job? = null
+
+    init {
+        scope.launch {
+            sesionRepository.sesionActual.collect { sesion ->
+                withContext(Dispatchers.Main) {
+                    sincronizarSesion(sesion)
+                }
+            }
+        }
+    }
+
+    fun sincronizarSesion(sesion: SesionUsuario?) {
+        usuarioActual = sesion
+        beneficiarioSeleccionado = null
+        if (sesion != null) {
+            observarBeneficiarios(sesion.email)
+        } else {
+            beneficiariosJob?.cancel()
+            beneficiariosJob = null
+            beneficiarios.clear()
+        }
+    }
 
     fun cargarDatos() {
         scope.launch {
@@ -233,18 +256,6 @@ class AppState(
         return usuarios.any {
             it.email.equals(email.trim(), ignoreCase = true)
         }
-    }
-
-    fun login(
-        email: String,
-        password: String
-    ): Boolean {
-        val sesion = sesionRepository.autenticar(email, password, usuarios) ?: return false
-
-        usuarioActual = sesion
-        beneficiarioSeleccionado = null
-        observarBeneficiarios(sesion.email)
-        return true
     }
 
     fun logout() {

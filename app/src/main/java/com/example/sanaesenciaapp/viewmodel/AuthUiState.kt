@@ -44,5 +44,6 @@ data class AuthUiState(
 
     //estado general
     val isLoading: Boolean = false,
+    val loginExitoso: Boolean = false,
     val errorGeneral: String? = null
 )
