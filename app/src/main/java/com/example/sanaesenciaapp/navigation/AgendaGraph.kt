@@ -54,7 +54,8 @@ fun NavGraphBuilder.agendaGraph(
         )
     }
 
-    composable("confirmacion") {
+    // Ruta con parámetro citaId (para futura integración)
+    composable("confirmacion/{citaId}") {
         ConfirmacionScreen(
             citaViewModel = citaViewModel,
             onVerMisCitas = {
