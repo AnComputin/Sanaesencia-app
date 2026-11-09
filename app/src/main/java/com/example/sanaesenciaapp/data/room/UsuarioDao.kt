@@ -16,4 +16,7 @@ interface UsuarioDao {
 
     @Query("SELECT * FROM usuarios WHERE email = :email COLLATE NOCASE")
     suspend fun obtenerPorEmail(email: String): UsuarioEntity?
+
+    @Query("UPDATE usuarios SET password = :nuevaPassword WHERE email = :email COLLATE NOCASE")
+    suspend fun actualizarPassword(email: String, nuevaPassword: String): Int
 }

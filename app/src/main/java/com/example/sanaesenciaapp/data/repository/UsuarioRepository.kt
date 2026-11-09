@@ -46,6 +46,20 @@ class UsuarioRepository(
     }
 
     /**
+     * Actualiza la contraseña hasheada de un usuario por su correo.
+     */
+    suspend fun actualizarPassword(email: String, nuevaPassword: String): Boolean {
+        return try {
+            val filasAfectadas = usuarioDao.actualizarPassword(email.trim(), nuevaPassword)
+            filasAfectadas > 0
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    /**
      * Inserción de bajo nivel usada por la carga inicial existente.
      * IGNORE garantiza que una fila previa no sea reemplazada.
      */

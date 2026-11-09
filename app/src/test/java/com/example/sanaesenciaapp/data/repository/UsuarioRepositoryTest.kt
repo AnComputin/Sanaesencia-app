@@ -8,6 +8,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class UsuarioRepositoryTest {
@@ -36,6 +37,13 @@ class UsuarioRepositoryTest {
         override suspend fun obtenerPorEmail(email: String): UsuarioEntity? {
             if (throwCancellationOnGet) throw CancellationException("cancelled")
             return usuarios[email.lowercase()]
+        }
+
+        override suspend fun actualizarPassword(email: String, nuevaPassword: String): Int {
+            val key = email.lowercase()
+            val previo = usuarios[key] ?: return 0
+            usuarios[key] = previo.copy(password = nuevaPassword)
+            return 1
         }
     }
 
@@ -106,6 +114,21 @@ class UsuarioRepositoryTest {
 
         val almacenado = repository.obtenerPorEmail("persona@dominio.cl")
         assertEquals("Original", almacenado?.nombre)
+    }
+
+    @Test
+    fun `actualizarPassword modifica la contrasena hasheada exitosamente`() = runBlocking {
+        val fakeDao = FakeUsuarioDao()
+        val repository = UsuarioRepository(fakeDao)
+
+        val user = usuario("paciente@sanaesencia.cl", password = "old-hash")
+        repository.registrar(user)
+
+        val exito = repository.actualizarPassword("paciente@sanaesencia.cl", "pbkdf2:sha256:10000:new-hash")
+        assertTrue(exito)
+
+        val actualizado = repository.obtenerPorEmail("paciente@sanaesencia.cl")
+        assertEquals("pbkdf2:sha256:10000:new-hash", actualizado?.password)
     }
 
     @Test
