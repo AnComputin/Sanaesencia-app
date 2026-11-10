@@ -189,5 +189,7 @@ class UsuarioRepositoryRoomTest {
         override suspend fun obtenerTodos(): List<UsuarioEntity> = emptyList()
 
         override suspend fun obtenerPorEmail(email: String): UsuarioEntity? = getByEmail(email)
+
+        override suspend fun actualizarPassword(email: String, nuevaPassword: String): Int = 0
     }
 }
