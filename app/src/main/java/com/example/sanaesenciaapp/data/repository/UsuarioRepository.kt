@@ -64,4 +64,11 @@ class UsuarioRepository(
      * IGNORE garantiza que una fila previa no sea reemplazada.
      */
     suspend fun insertar(usuario: UsuarioEntity): Long = usuarioDao.insertar(usuario)
+
+    /**
+     * Contabiliza las cuentas cuyo campo password no comienza con el prefijo "pbkdf2:sha256:".
+     * Retorna exclusivamente un valor escalar entero sin exponer credenciales ni entidades.
+     */
+    suspend fun contarCuentasSinFormatoPbkdf2(): Int =
+        usuarioDao.contarCuentasSinFormatoPbkdf2()
 }

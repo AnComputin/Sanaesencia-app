@@ -51,6 +51,10 @@ class SesionRepositoryTest {
             usuarios[key] = previo.copy(password = nuevaPassword)
             return 1
         }
+
+        override suspend fun contarCuentasSinFormatoPbkdf2(): Int {
+            return usuarios.values.count { !it.password.startsWith("pbkdf2:sha256:") }
+        }
     }
 
     private fun crearUsuario(

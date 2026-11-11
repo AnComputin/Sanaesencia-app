@@ -19,4 +19,7 @@ interface UsuarioDao {
 
     @Query("UPDATE usuarios SET password = :nuevaPassword WHERE email = :email COLLATE NOCASE")
     suspend fun actualizarPassword(email: String, nuevaPassword: String): Int
+
+    @Query("SELECT COUNT(*) FROM usuarios WHERE password NOT LIKE 'pbkdf2:sha256:%'")
+    suspend fun contarCuentasSinFormatoPbkdf2(): Int
 }

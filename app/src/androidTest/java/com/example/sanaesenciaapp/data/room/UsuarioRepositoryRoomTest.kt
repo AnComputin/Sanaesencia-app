@@ -164,6 +164,24 @@ class UsuarioRepositoryRoomTest {
         assertEquals(original, conEspaciosYMinusculas)
     }
 
+    @Test
+    fun contarCuentasSinFormatoPbkdf2ContabilizaSoloRegistrosSinPrefijoPbkdf2() = runBlocking {
+        // 1. Texto plano histórico -> Contabilizado
+        repository.registrar(usuario("plano@dominio.cl", password = "texto_plano_123"))
+
+        // 2. SHA-256 legacy con sal -> Contabilizado
+        repository.registrar(usuario("sha256@dominio.cl", password = "0123456789abcdef0123456789abcdef:hashHex"))
+
+        // 3. PBKDF2 válido -> NO contabilizado
+        repository.registrar(usuario("pbkdf2@dominio.cl", password = "pbkdf2:sha256:600000:salHex:hashHex"))
+
+        // 4. Formato malformado sin prefijo -> Contabilizado
+        repository.registrar(usuario("malformado@dominio.cl", password = "malformed_format"))
+
+        val totalSinPbkdf2 = repository.contarCuentasSinFormatoPbkdf2()
+        assertEquals(3, totalSinPbkdf2)
+    }
+
     private fun usuario(
         email: String,
         nombre: String = "Persona",
@@ -191,5 +209,7 @@ class UsuarioRepositoryRoomTest {
         override suspend fun obtenerPorEmail(email: String): UsuarioEntity? = getByEmail(email)
 
         override suspend fun actualizarPassword(email: String, nuevaPassword: String): Int = 0
+
+        override suspend fun contarCuentasSinFormatoPbkdf2(): Int = 0
     }
 }
