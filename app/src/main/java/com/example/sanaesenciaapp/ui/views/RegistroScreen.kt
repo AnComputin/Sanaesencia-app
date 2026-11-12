@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
@@ -54,12 +55,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.sanaesenciaapp.data.AppState
+import com.example.sanaesenciaapp.ui.components.RutVisualTransformation
 import com.example.sanaesenciaapp.ui.components.SanaBackground
 import com.example.sanaesenciaapp.viewmodel.AuthViewModel
 import java.text.SimpleDateFormat
@@ -385,60 +388,37 @@ fun RegistroScreen(
                         // RUT
                         // -------------------------
 
+
                         OutlinedTextField(
                             value = state.rut,
-
                             onValueChange = {
-                                authViewModel
-                                    .onRutChange(it)
+                                authViewModel.onRutChange(it)
                             },
-
-                            label = {
-                                Text("RUT")
-                            },
-
+                            label = { Text("RUT") },
                             leadingIcon = {
-
                                 Icon(
-                                    imageVector =
-                                        Icons.Default.Person,
-
-                                    contentDescription =
-                                        "RUT"
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = "RUT"
                                 )
                             },
-
-                            isError =
-                                state.errorRut != null,
-
+                            visualTransformation = RutVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Ascii
+                            ),
+                            isError = state.errorRut != null,
                             supportingText = {
-
-                                AnimatedVisibility(
-                                    visible =
-                                        state.errorRut != null
-                                ) {
-
+                                AnimatedVisibility(visible = state.errorRut != null) {
                                     Text(
-                                        text =
-                                            state.errorRut
-                                                ?: "",
-
-                                        color =
-                                            MaterialTheme
-                                                .colorScheme
-                                                .error
+                                        text = state.errorRut ?: "",
+                                        color = MaterialTheme.colorScheme.error
                                     )
                                 }
                             },
-
                             singleLine = true,
-
-                            shape =
-                                RoundedCornerShape(16.dp),
-
-                            modifier =
-                                Modifier.fillMaxWidth()
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth()
                         )
+
 
                         Spacer(
                             modifier =

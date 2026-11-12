@@ -16,32 +16,67 @@ fun validarEmail(email: String): String?{
 }
 
 //rut
-fun validarRut(rut: String): String? {
-    val limpio = rut.trim().replace(".","").replace("-","").uppercase()
-    if (limpio.length <8) return "RUT inválido: debe tener al menos 8 caracteres"
 
-    val cuerpo = limpio.substring(0, limpio.length -1)
+fun validarRut(rut: String): String? {
+
+    // Eliminar puntos y guion para validar el RUT.
+    val limpio = rut.trim()
+        .replace(".", "")
+        .replace("-", "")
+        .uppercase()
+
+    if (limpio.isBlank()) {
+        return "El RUT es obligatorio"
+    }
+
+    // Un RUT puede tener 7 u 8 dígitos en el cuerpo,
+    // más el dígito verificador.
+    if (limpio.length !in 8..9) {
+        return "RUT inválido. Revisa que esté correctamente escrito"
+    }
+
+    val cuerpo = limpio.dropLast(1)
     val dvEsperado = limpio.last()
 
-    if (!cuerpo.all { it.isDigit() }) return "El RUT solo debe contener números"
+    // El cuerpo debe contener solamente números.
+    if (cuerpo.length !in 7..8 || !cuerpo.all { it in '0'..'9' }) {
+        return "RUT inválido. Revisa que esté correctamente escrito"
+    }
 
+    // El dígito verificador debe ser un número o K.
+    if (dvEsperado !in '0'..'9' && dvEsperado != 'K') {
+        return "RUT inválido. Revisa que esté correctamente escrito"
+    }
+
+    // Cálculo del dígito verificador mediante módulo 11.
     var suma = 0
     var multiplicador = 2
-    for (i in cuerpo.indices.reversed()){
-        suma += (cuerpo[i] - '0')*multiplicador
-        multiplicador = if (multiplicador == 7)2 else multiplicador + 1
+
+    for (i in cuerpo.indices.reversed()) {
+        suma += (cuerpo[i] - '0') * multiplicador
+
+        multiplicador = if (multiplicador == 7) {
+            2
+        } else {
+            multiplicador + 1
+        }
     }
 
-    val resto = suma %11
-    val dvCalculado = when(11-resto){
+    val resto = suma % 11
+
+    val dvCalculado = when (11 - resto) {
         11 -> '0'
         10 -> 'K'
-        else -> ('0'+(11-resto))
+        else -> ('0'.code + (11 - resto)).toChar()
     }
 
-    if (dvEsperado != dvCalculado) return "Dígito verificador incorrecto. Debería ser $dvCalculado"
+    if (dvEsperado != dvCalculado) {
+        return "RUT inválido. Revisa que esté correctamente escrito"
+    }
+
     return null
 }
+
 
 //telefono
 fun validarTelefono(telefono: String): String? {
