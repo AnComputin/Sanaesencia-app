@@ -1,8 +1,10 @@
 package com.example.sanaesenciaapp.ui.views.terapeuta
 
+import androidx.compose.ui.res.stringResource
+import com.example.sanaesenciaapp.R
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,15 +26,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import com.example.sanaesenciaapp.data.AppState
 import com.example.sanaesenciaapp.ui.components.SanaBackground
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeTerapeutaScreen(
-    navController: NavController,
-    appState: AppState
+    appState: AppState,
+    onAgendaClick: () -> Unit,
+    onPacientesClick: () -> Unit,
+    onLogoutClick: () -> Unit
 ) {
 
     val usuario = appState.usuarioActual
@@ -44,7 +47,7 @@ fun HomeTerapeutaScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "SanaEsencia",
+                        text = stringResource(R.string.terapeuta_topbar),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
                     )
@@ -66,7 +69,7 @@ fun HomeTerapeutaScreen(
                 Spacer(modifier = Modifier.height(30.dp))
 
                 Text(
-                    text = "Panel del terapeuta",
+                    text = stringResource(R.string.terapeuta_titulo_panel),
                     fontSize = 30.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.secondary
@@ -75,7 +78,7 @@ fun HomeTerapeutaScreen(
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
-                    text = "Hola, ${usuario?.nombre ?: "Terapeuta"}",
+                    text = stringResource(R.string.terapeuta_saludo, usuario?.nombre ?: stringResource(R.string.terapeuta_rol_predeterminado)),
                     fontSize = 17.sp,
                     color = MaterialTheme.colorScheme.onBackground
                 )
@@ -83,7 +86,7 @@ fun HomeTerapeutaScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Gestiona tus atenciones y el seguimiento de tus pacientes.",
+                    text = stringResource(R.string.terapeuta_subt_panel),
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onBackground.copy(
                         alpha = 0.7f
@@ -107,7 +110,7 @@ fun HomeTerapeutaScreen(
                     ) {
 
                         Text(
-                            text = "Tu jornada",
+                            text = stringResource(R.string.terapeuta_card_jornada_titulo),
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color =
@@ -117,7 +120,7 @@ fun HomeTerapeutaScreen(
                         Spacer(modifier = Modifier.height(6.dp))
 
                         Text(
-                            text = "Revisa tus citas programadas para hoy.",
+                            text = stringResource(R.string.terapeuta_card_jornada_desc),
                             fontSize = 14.sp,
                             color =
                                 MaterialTheme.colorScheme.onPrimaryContainer
@@ -127,18 +130,14 @@ fun HomeTerapeutaScreen(
                         Spacer(modifier = Modifier.height(18.dp))
 
                         Button(
-                            onClick = {
-                                navController.navigate(
-                                    "agenda_terapeuta"
-                                )
-                            },
+                            onClick = onAgendaClick,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(54.dp),
                             shape = RoundedCornerShape(16.dp)
                         ) {
                             Text(
-                                text = "Ver agenda del día",
+                                text = stringResource(R.string.terapeuta_btn_agenda),
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
@@ -166,7 +165,7 @@ fun HomeTerapeutaScreen(
                     ) {
 
                         Text(
-                            text = "Pacientes",
+                            text = stringResource(R.string.terapeuta_card_pacientes_titulo),
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.secondary
@@ -175,7 +174,7 @@ fun HomeTerapeutaScreen(
                         Spacer(modifier = Modifier.height(6.dp))
 
                         Text(
-                            text = "Consulta tus pacientes asignados y su continuidad.",
+                            text = stringResource(R.string.terapeuta_card_pacientes_desc),
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onSurface
                                 .copy(alpha = 0.7f)
@@ -184,18 +183,14 @@ fun HomeTerapeutaScreen(
                         Spacer(modifier = Modifier.height(18.dp))
 
                         OutlinedButton(
-                            onClick = {
-                                navController.navigate(
-                                    "pacientes_terapeuta"
-                                )
-                            },
+                            onClick = onPacientesClick,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(54.dp),
                             shape = RoundedCornerShape(16.dp)
                         ) {
                             Text(
-                                text = "Ver mis pacientes",
+                                text = stringResource(R.string.terapeuta_btn_pacientes),
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
@@ -205,21 +200,11 @@ fun HomeTerapeutaScreen(
                 Spacer(modifier = Modifier.weight(1f))
 
                 OutlinedButton(
-                    onClick = {
-
-                        appState.logout()
-
-                        navController.navigate("home") {
-
-                            popUpTo("home_terapeuta") {
-                                inclusive = true
-                            }
-                        }
-                    },
+                    onClick = onLogoutClick,
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Cerrar sesión")
+                    Text(stringResource(R.string.terapeuta_btn_cerrar_sesion))
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))

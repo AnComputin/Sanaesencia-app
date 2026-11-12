@@ -1,5 +1,8 @@
 package com.example.sanaesenciaapp.ui.views
 
+import androidx.compose.ui.res.stringResource
+import com.example.sanaesenciaapp.R
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -143,7 +146,7 @@ fun InicioScreen(
                 )
 
                 Text(
-                    text = "SanaEsencia",
+                    text = stringResource(R.string.inicio_app_name),
                     fontSize = 38.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.secondary
@@ -154,7 +157,7 @@ fun InicioScreen(
                 )
 
                 Text(
-                    text = "Bienestar integral para ti y tu familia",
+                    text = stringResource(R.string.inicio_subt_bienestar),
                     fontSize = 18.sp,
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onBackground
@@ -183,7 +186,7 @@ fun InicioScreen(
                 ) {
 
                     Text(
-                        text = "Iniciar sesión",
+                        text = stringResource(R.string.inicio_btn_iniciar_sesion),
                         fontSize = 17.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -206,7 +209,7 @@ fun InicioScreen(
                 ) {
 
                     Text(
-                        text = "Crear cuenta",
+                        text = stringResource(R.string.inicio_btn_crear_cuenta),
                         fontSize = 17.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.secondary

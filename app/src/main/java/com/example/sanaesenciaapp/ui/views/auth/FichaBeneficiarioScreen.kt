@@ -1,5 +1,8 @@
 package com.example.sanaesenciaapp.ui.views.auth
 
+import androidx.compose.ui.res.stringResource
+import com.example.sanaesenciaapp.R
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -59,6 +62,7 @@ fun FichaBeneficiarioScreen(
     var errorParentesco by remember { mutableStateOf<String?>(null) }
     var errorGeneral by remember { mutableStateOf<String?>(null) }
     var guardando by remember { mutableStateOf(false) }
+    val errorGenerico = stringResource(R.string.beneficiario_error_generico)
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -66,7 +70,7 @@ fun FichaBeneficiarioScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Registrar beneficiario",
+                        text = stringResource(R.string.beneficiario_topbar),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
                     )
@@ -75,7 +79,7 @@ fun FichaBeneficiarioScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver"
+                            contentDescription = stringResource(R.string.beneficiario_accessibility_volver)
                         )
                     }
                 }
@@ -93,7 +97,7 @@ fun FichaBeneficiarioScreen(
             ) {
                 Column {
                     Text(
-                        text = "Persona a tu cargo",
+                        text = stringResource(R.string.beneficiario_titulo_principal),
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
@@ -102,7 +106,7 @@ fun FichaBeneficiarioScreen(
                     Spacer(modifier = Modifier.height(5.dp))
 
                     Text(
-                        text = "Guarda sus datos una vez y podrás seleccionarlo al reservar futuras atenciones.",
+                        text = stringResource(R.string.beneficiario_subt_principal),
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                     )
@@ -121,7 +125,7 @@ fun FichaBeneficiarioScreen(
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Text(
-                            text = "Datos del beneficiario",
+                            text = stringResource(R.string.beneficiario_titulo_card),
                             fontSize = 19.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.secondary
@@ -134,7 +138,7 @@ fun FichaBeneficiarioScreen(
                                 errorNombre = null
                                 errorGeneral = null
                             },
-                            label = { Text("Nombre completo") },
+                            label = { Text(stringResource(R.string.beneficiario_label_nombre)) },
                             leadingIcon = {
                                 Icon(Icons.Default.Person, contentDescription = null)
                             },
@@ -159,7 +163,7 @@ fun FichaBeneficiarioScreen(
                                 errorRut = null
                                 errorGeneral = null
                             },
-                            label = { Text("RUT") },
+                            label = { Text(stringResource(R.string.beneficiario_label_rut)) },
                             leadingIcon = {
                                 Icon(Icons.Default.Person, contentDescription = null)
                             },
@@ -184,7 +188,7 @@ fun FichaBeneficiarioScreen(
                                 errorFecha = null
                                 errorGeneral = null
                             },
-                            label = { Text("Fecha de nacimiento (DD/MM/AAAA)") },
+                            label = { Text(stringResource(R.string.beneficiario_label_fecha)) },
                             leadingIcon = {
                                 Icon(Icons.Default.DateRange, contentDescription = null)
                             },
@@ -209,7 +213,7 @@ fun FichaBeneficiarioScreen(
                                 errorParentesco = null
                                 errorGeneral = null
                             },
-                            label = { Text("Parentesco (hijo/a, sobrino/a, tutor/a...)") },
+                            label = { Text(stringResource(R.string.beneficiario_label_parentesco)) },
                             leadingIcon = {
                                 Icon(Icons.Default.Person, contentDescription = null)
                             },
@@ -270,7 +274,7 @@ fun FichaBeneficiarioScreen(
                                 if (exito) {
                                     onNavigateBack()
                                 } else {
-                                    errorGeneral = mensaje ?: "No fue posible guardar el beneficiario"
+                                    errorGeneral = mensaje ?: errorGenerico
                                 }
                             }
                         }
@@ -282,14 +286,14 @@ fun FichaBeneficiarioScreen(
                     shape = RoundedCornerShape(18.dp)
                 ) {
                     Text(
-                        text = if (guardando) "Guardando..." else "Guardar beneficiario",
+                        text = stringResource(if (guardando) R.string.beneficiario_btn_guardando else R.string.beneficiario_btn_guardar),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
 
                 Text(
-                    text = "Este beneficiario quedará asociado únicamente a tu cuenta.",
+                    text = stringResource(R.string.beneficiario_aviso_asociado),
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f)
                 )

@@ -1,43 +1,47 @@
 package com.example.sanaesenciaapp.viewmodel
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.sanaesenciaapp.data.room.AppDatabase
-import com.example.sanaesenciaapp.data.room.ESPECIALIDADES_INICIALES
+import com.example.sanaesenciaapp.data.repository.CatalogoRepository
 import com.example.sanaesenciaapp.data.room.EspecialidadEntity
-import kotlinx.coroutines.launch
+import com.example.sanaesenciaapp.data.room.EspecialistaEntity
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.stateIn
 
-class CatalogoViewModel(private val db: AppDatabase) : ViewModel() {
+@OptIn(ExperimentalCoroutinesApi::class)
+class CatalogoViewModel(
+    private val catalogoRepository: CatalogoRepository,
+    savedStateHandle: SavedStateHandle
+) : ViewModel() {
 
-    // Lista observable para la interfaz gráfica
-    var especialidades by mutableStateOf<List<EspecialidadEntity>>(emptyList())
-        private set
+    val especialidadId: StateFlow<Int?> =
+        savedStateHandle.getStateFlow(ARG_ESPECIALIDAD_ID, null)
 
-    var especialidadSeleccionada by mutableStateOf<EspecialidadEntity?>(null)
-        private set
+    val especialidades: StateFlow<List<EspecialidadEntity>> =
+        catalogoRepository.observarEspecialidades()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = emptyList()
+            )
 
-    init {
-        cargarEspecialidades()
-    }
-
-    fun cargarEspecialidades() {
-        viewModelScope.launch {
-            val dao = db.especialidadDao()
-            var lista = dao.obtenerTodas()
-
-            // Si la base de datos local está vacía, insertamos los datos por defecto (Seed data)
-            if (lista.isEmpty()) {
-                dao.insertarTodas(ESPECIALIDADES_INICIALES)
-                lista = dao.obtenerTodas()
+    val especialistas: StateFlow<List<EspecialistaEntity>> =
+        especialidadId
+            .flatMapLatest { id ->
+                id?.let(catalogoRepository::observarEspecialistas) ?: flowOf(emptyList())
             }
-            especialidades = lista
-        }
-    }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = emptyList()
+            )
 
-    fun seleccionarEspecialidad(esp: EspecialidadEntity) {
-        especialidadSeleccionada = esp
+    private companion object {
+        const val ARG_ESPECIALIDAD_ID = "especialidadId"
     }
 }

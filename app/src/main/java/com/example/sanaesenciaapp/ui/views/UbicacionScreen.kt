@@ -1,5 +1,8 @@
 package com.example.sanaesenciaapp.ui.views
 
+import androidx.compose.ui.res.stringResource
+import com.example.sanaesenciaapp.R
+
 import android.Manifest
 import android.content.Intent
 import android.net.Uri
@@ -53,7 +56,7 @@ fun UbicacionScreen(onBackClick: () -> Unit = {}) {
             TopAppBar(
                 title = {
                     Text(
-                        text = "Ubicación de la Sede",
+                        text = stringResource(R.string.inicio_titulo_sede),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
                     )
@@ -61,7 +64,7 @@ fun UbicacionScreen(onBackClick: () -> Unit = {}) {
                 navigationIcon = {
                     TextButton(onClick = onBackClick) {
                         Text(
-                            text = "← Volver",
+                            text = stringResource(R.string.inicio_volver),
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.secondary,
                             fontSize = 16.sp
@@ -98,13 +101,13 @@ fun UbicacionScreen(onBackClick: () -> Unit = {}) {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Sede Los Vilos",
+                    text = stringResource(R.string.inicio_sede_nombre),
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.secondary
                 )
                 Text(
-                    text = "Dirección: Caupolicán 220",
+                    text = stringResource(R.string.ubicacion_direccion),
                     fontSize = 16.sp,
                     color = MaterialTheme.colorScheme.onBackground
                 )
@@ -118,7 +121,7 @@ fun UbicacionScreen(onBackClick: () -> Unit = {}) {
                     ) {
                         if (distanciaKm != null) {
                             Text(
-                                text = "Estás a ${String.format("%.1f", distanciaKm)} km de la sede.",
+                                text = stringResource(R.string.ubicacion_distancia, distanciaKm!!),
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.secondary,
@@ -127,21 +130,21 @@ fun UbicacionScreen(onBackClick: () -> Unit = {}) {
                             Spacer(modifier = Modifier.height(10.dp))
                             if (distanciaKm!! > 30.0f) {
                                 Text(
-                                    text = "💡 Estás lejos de la sede física. Te sugerimos agendar una atención online.",
+                                    text = stringResource(R.string.inicio_sede_lejos),
                                     color = MaterialTheme.colorScheme.primary,
                                     fontWeight = FontWeight.SemiBold,
                                     textAlign = TextAlign.Center
                                 )
                             } else {
                                 Text(
-                                    text = "🌱 ¡Estás cerca! Te esperamos en nuestros boxes presenciales.",
+                                    text = stringResource(R.string.inicio_sede_cerca),
                                     color = MaterialTheme.colorScheme.secondary,
                                     textAlign = TextAlign.Center
                                 )
                             }
                         } else {
                             Text(
-                                text = "Presiona el botón para calcular tu distancia a la sede presencial mediante GPS.",
+                                text = stringResource(R.string.inicio_sede_instruccion),
                                 textAlign = TextAlign.Center,
                                 color = MaterialTheme.colorScheme.onBackground
                             )
@@ -150,7 +153,7 @@ fun UbicacionScreen(onBackClick: () -> Unit = {}) {
                         if (mensajePermisoRechazado) {
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                text = "⚠️ Permiso de ubicación denegado. Habilítalo en ajustes.",
+                                text = stringResource(R.string.inicio_sede_permiso_denegado),
                                 color = MaterialTheme.colorScheme.error,
                                 fontSize = 13.sp
                             )
@@ -164,7 +167,7 @@ fun UbicacionScreen(onBackClick: () -> Unit = {}) {
             Column {
                 // 1. Botón GPS para calcular la distancia
                 SanaButton(
-                    text = "Ver mi distancia (GPS)",
+                    text = stringResource(R.string.inicio_btn_distancia_gps),
                     onClick = {
                         val permissionCheck = ContextCompat.checkSelfPermission(
                             context, Manifest.permission.ACCESS_FINE_LOCATION
@@ -199,7 +202,7 @@ fun UbicacionScreen(onBackClick: () -> Unit = {}) {
                     )
                 ) {
                     Text(
-                        text = "🗺️ Ver en Google Maps",
+                        text = stringResource(R.string.inicio_btn_google_maps),
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp
                     )
@@ -222,7 +225,7 @@ fun UbicacionScreen(onBackClick: () -> Unit = {}) {
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Text(
-                        text = "💬 Contactar por WhatsApp",
+                        text = stringResource(R.string.ubicacion_btn_whatsapp),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
                     )

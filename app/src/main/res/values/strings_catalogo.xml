@@ -1,0 +1,34 @@
+<resources>
+    <!-- Módulo Catálogo / Especialidades / Detalle -->
+    <string name="catalogo_titulo_seleccionar">Elige tu especialidad</string>
+    <string name="catalogo_subt_seleccionar">Selecciona el área en la que deseas recibir atención.</string>
+    <string name="catalogo_badge_pausada">Pausada</string>
+    <string name="catalogo_badge_disponible">Disponible</string>
+    <string name="catalogo_label_especialistas">Especialistas</string>
+    <string name="catalogo_label_modalidad">Modalidad</string>
+    <string name="catalogo_estado_no_disponible">Agenda temporalmente no disponible</string>
+    <string name="catalogo_estado_toca_reservar">Toca para elegir especialista y reservar</string>
+
+    <!-- Selección de Especialista -->
+    <string name="especialista_topbar">Seleccionar especialista</string>
+    <string name="especialista_subt">Selecciona el profesional para tu atención.</string>
+    <string name="especialista_disponibles">Profesionales disponibles (%d)</string>
+    <string name="especialista_error_cargar">No se pudo cargar la especialidad seleccionada.</string>
+    <string name="especialista_error_pausada">La agenda de esta especialidad está pausada temporalmente.</string>
+    <string name="especialista_cargando">Cargando especialistas...</string>
+    <string name="especialista_error_incompatibles">No hay especialistas activos compatibles con la modalidad actual.</string>
+
+    <!-- Detalle de Servicio -->
+    <string name="detalle_profesional_cargo">Profesional a cargo: **%s**</string>
+    <string name="detalle_modalidad">Modalidad: %s</string>
+    <string name="detalle_aviso_agenda_pausada">⚠️ Agenda pausada temporalmente para esta especialidad. Intente más tarde o consulte por WhatsApp.</string>
+    <string name="detalle_btn_agendar">Agendar cita</string>
+    <string name="catalogo_detalle_topbar">Detalle del servicio</string>
+    <string name="catalogo_detalle_estado_pausada">Agenda pausada</string>
+    <string name="catalogo_detalle_estado_disponible">Disponible</string>
+    <string name="catalogo_detalle_seccion_atencion">Sobre esta atención</string>
+    <string name="catalogo_detalle_agenda_titulo">Agenda pausada temporalmente</string>
+    <string name="catalogo_detalle_agenda_mensaje">Esta especialidad no tiene horas disponibles por el momento. Puedes revisar nuevamente más adelante o esperar a que administración reactive la agenda.</string>
+    <string name="catalogo_detalle_agendar_desc">Seleccionarás modalidad, fecha y horario en el siguiente paso.</string>
+    <string name="catalogo_error_especialidad_predeterminada">Especialidad</string>
+</resources>

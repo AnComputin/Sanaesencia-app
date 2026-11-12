@@ -1,0 +1,16 @@
+<resources>
+    <!-- Módulo Beneficiarios -->
+    <string name="beneficiario_topbar">Registrar beneficiario</string>
+    <string name="beneficiario_titulo_principal">Persona a tu cargo</string>
+    <string name="beneficiario_subt_principal">Guarda sus datos una vez y podrás seleccionarlo al reservar futuras atenciones.</string>
+    <string name="beneficiario_titulo_card">Datos del beneficiario</string>
+    <string name="beneficiario_label_nombre">Nombre completo</string>
+    <string name="beneficiario_label_rut">RUT</string>
+    <string name="beneficiario_label_fecha">Fecha de nacimiento (DD/MM/AAAA)</string>
+    <string name="beneficiario_label_parentesco">Parentesco (hijo/a, sobrino/a, tutor/a...)</string>
+    <string name="beneficiario_btn_guardar">Guardar beneficiario</string>
+    <string name="beneficiario_btn_guardando">Guardando...</string>
+    <string name="beneficiario_aviso_asociado">Este beneficiario quedará asociado únicamente a tu cuenta.</string>
+    <string name="beneficiario_error_generico">No fue posible guardar el beneficiario</string>
+    <string name="beneficiario_accessibility_volver">Volver</string>
+</resources>

@@ -1,5 +1,8 @@
 package com.example.sanaesenciaapp.ui.views
 
+import androidx.compose.ui.res.stringResource
+import com.example.sanaesenciaapp.R
+
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -75,7 +78,7 @@ fun SplashScreen(
         )
 
         Text(
-            text = "SanaEsencia",
+            text = stringResource(R.string.inicio_app_name),
             fontSize = 40.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.secondary,
@@ -87,7 +90,7 @@ fun SplashScreen(
         )
 
         Text(
-            text = "Bienestar integral",
+            text = stringResource(R.string.splash_subt),
             fontSize = 18.sp,
             color = MaterialTheme.colorScheme.primary,
             textAlign = TextAlign.Center,

@@ -1,5 +1,8 @@
 package com.example.sanaesenciaapp.ui.views
 
+import androidx.compose.ui.res.stringResource
+import com.example.sanaesenciaapp.R
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -55,7 +58,7 @@ fun HomeScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "🌿 SanaEsencia",
+                        text = stringResource(R.string.inicio_brand_title),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
                     )
@@ -71,7 +74,7 @@ fun HomeScreen(
                             }
                         ) {
                             Text(
-                                text = "Ingresar",
+                                text = stringResource(R.string.inicio_topbar_ingresar),
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
@@ -79,7 +82,7 @@ fun HomeScreen(
                     } else {
 
                         Text(
-                            text = "Hola, ${usuario.nombre}",
+                            text = stringResource(R.string.inicio_saludo, usuario.nombre),
                             modifier = Modifier.padding(end = 16.dp),
                             color = MaterialTheme.colorScheme.secondary
                         )
@@ -190,7 +193,7 @@ fun HomeScreen(
 
                     // Presentación
                     Text(
-                        text = "Bienestar integral",
+                        text = stringResource(R.string.inicio_titulo_bienestar),
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
@@ -201,7 +204,7 @@ fun HomeScreen(
                     )
 
                     Text(
-                        text = "Acompañamos tu bienestar físico, emocional y mental.",
+                        text = stringResource(R.string.inicio_desc_bienestar),
                         fontSize = 17.sp,
                         color = MaterialTheme.colorScheme.onBackground
                     )
@@ -238,7 +241,7 @@ fun HomeScreen(
                     ) {
 
                         Text(
-                            text = "Reservar hora",
+                            text = stringResource(R.string.inicio_btn_reservar),
                             fontSize = 17.sp
                         )
                     }
@@ -263,7 +266,7 @@ fun HomeScreen(
                         ) {
 
                             Text(
-                                text = "Mis citas",
+                                text = stringResource(R.string.inicio_btn_mis_citas),
                                 fontSize = 17.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.secondary
@@ -276,7 +279,7 @@ fun HomeScreen(
                     )
 
                     Text(
-                        text = "Especialidades",
+                        text = stringResource(R.string.inicio_titulo_especialidades),
                         fontSize = 25.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
@@ -293,7 +296,7 @@ fun HomeScreen(
                     ) {
 
                         EspecialidadCard(
-                            nombre = "Psicología\nInfanto-Juvenil",
+                            nombre = stringResource(R.string.inicio_esp_psicologia_infantojuvenil),
                             icono = "🌱",
                             modifier = Modifier.weight(1f),
 
@@ -311,7 +314,7 @@ fun HomeScreen(
                         )
 
                         EspecialidadCard(
-                            nombre = "Psicología\nAdulto",
+                            nombre = stringResource(R.string.inicio_esp_psicologia_adulto),
                             icono = "🧠",
                             modifier = Modifier.weight(1f),
 
@@ -340,7 +343,7 @@ fun HomeScreen(
                     ) {
 
                         EspecialidadCard(
-                            nombre = "Terapia\nOcupacional",
+                            nombre = stringResource(R.string.inicio_esp_terapia_ocupacional_home),
                             icono = "🧩",
                             modifier = Modifier.weight(1f),
 
@@ -358,7 +361,7 @@ fun HomeScreen(
                         )
 
                         EspecialidadCard(
-                            nombre = "Nutrición\nIntegrativa",
+                            nombre = stringResource(R.string.inicio_esp_nutricion_integrativa),
                             icono = "🥗",
                             modifier = Modifier.weight(1f),
 
@@ -396,7 +399,7 @@ fun HomeScreen(
                         ) {
 
                             Text(
-                                text = "Atención presencial y online",
+                                text = stringResource(R.string.inicio_card_atencion_titulo),
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.secondary
@@ -407,7 +410,7 @@ fun HomeScreen(
                             )
 
                             Text(
-                                text = "Elige la modalidad que más se adapte a ti."
+                                text = stringResource(R.string.inicio_card_atencion_desc)
                             )
                         }
                     }
@@ -430,7 +433,7 @@ fun HomeScreen(
                     ) {
 
                         Text(
-                            text = "📍 Ver Sede y Distancia (GPS)",
+                            text = stringResource(R.string.inicio_btn_ubicacion),
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.secondary
                         )
@@ -459,7 +462,7 @@ fun HomeScreen(
                     ) {
 
                         Text(
-                            text = "🌿 Espacio de Bienestar",
+                            text = stringResource(R.string.inicio_btn_juegos),
                             fontWeight = FontWeight.Bold,
                             fontSize = 17.sp
                         )
@@ -481,7 +484,7 @@ fun HomeScreen(
                             )
                         ) {
 
-                            Text("Cerrar sesión")
+                            Text(stringResource(R.string.inicio_btn_cerrar_sesion))
                         }
                     }
 

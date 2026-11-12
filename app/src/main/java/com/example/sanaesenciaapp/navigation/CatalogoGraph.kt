@@ -45,16 +45,26 @@ fun NavGraphBuilder.catalogoGraph(
 
     composable("seleccionar_especialidad") {
         SeleccionEspecialidadScreen(
-            navController = navController,
-            appState = appState
+            appState = appState,
+            onEspecialidadClick = { especialidad ->
+                appState.especialidadSeleccionada = especialidad
+                appState.especialistaSeleccionado = null
+
+                if (especialidad.agendaPausada) {
+                    navController.navigate("detalle_servicio")
+                } else {
+                    navController.navigate("seleccionar_especialista")
+                }
+            }
         )
     }
 
     composable("seleccionar_especialista") {
         SeleccionEspecialistaScreen(
-            navController = navController,
             appState = appState,
-            citaViewModel = citaViewModel
+            citaViewModel = citaViewModel,
+            onNavigateBack = { navController.popBackStack() },
+            onEspecialistaSelected = { navController.navigate("agendar") }
         )
     }
 }

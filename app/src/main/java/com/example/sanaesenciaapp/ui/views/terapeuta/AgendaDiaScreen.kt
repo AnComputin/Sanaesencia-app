@@ -1,5 +1,8 @@
 package com.example.sanaesenciaapp.ui.views.terapeuta
 
+import androidx.compose.ui.res.stringResource
+import com.example.sanaesenciaapp.R
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,7 +54,7 @@ fun AgendaDiaScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Agenda del día",
+                        text = stringResource(R.string.terapeuta_agenda_titulo),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
                     )
@@ -80,7 +83,7 @@ fun AgendaDiaScreen(
                 ) {
 
                     Text(
-                        text = "Tus atenciones de hoy",
+                        text = stringResource(R.string.terapeuta_agenda_subtitulo),
                         fontSize = 27.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
@@ -91,7 +94,7 @@ fun AgendaDiaScreen(
                     )
 
                     Text(
-                        text = "Revisa tus pacientes y registra el resultado de cada atención.",
+                        text = stringResource(R.string.terapeuta_agenda_instruccion),
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onBackground
                             .copy(alpha = 0.70f)
@@ -107,7 +110,7 @@ fun AgendaDiaScreen(
                     ) {
 
                         Text(
-                            text = "📅 ${state.fechaSeleccionada}",
+                            text = stringResource(R.string.terapeuta_agenda_fecha, state.fechaSeleccionada),
                             fontSize = 15.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -140,7 +143,7 @@ fun AgendaDiaScreen(
                             )
 
                             Text(
-                                text = "No tienes citas para hoy",
+                                text = stringResource(R.string.terapeuta_agenda_vacia_titulo),
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.secondary
@@ -151,7 +154,7 @@ fun AgendaDiaScreen(
                             )
 
                             Text(
-                                text = "Tu agenda está libre por el momento.",
+                                text = stringResource(R.string.terapeuta_agenda_vacia_mensaje),
                                 fontSize = 14.sp,
                                 color = MaterialTheme.colorScheme.onBackground
                                     .copy(alpha = 0.65f)
@@ -247,16 +250,16 @@ fun AgendaDiaScreen(
                                                 text = when (cita.estado) {
 
                                                     EstadoCita.ASISTIDA ->
-                                                        "Asistida"
+                                                        stringResource(R.string.terapeuta_estado_asistida)
 
                                                     EstadoCita.INASISTENTE ->
-                                                        "Inasistente"
+                                                        stringResource(R.string.terapeuta_estado_inasistente)
 
                                                     EstadoCita.CANCELADA_TERAPEUTA ->
-                                                        "Cancelada"
+                                                        stringResource(R.string.terapeuta_estado_cancelada)
 
                                                     EstadoCita.PENDIENTE ->
-                                                        "Pendiente"
+                                                        stringResource(R.string.terapeuta_estado_pendiente)
 
                                                     else ->
                                                         cita.estado.name
@@ -280,7 +283,7 @@ fun AgendaDiaScreen(
                                     )
 
                                     Text(
-                                        text = "Paciente",
+                                        text = stringResource(R.string.terapeuta_label_paciente),
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         color =
@@ -298,7 +301,7 @@ fun AgendaDiaScreen(
                                     )
 
                                     Text(
-                                        text = "Box de atención",
+                                        text = stringResource(R.string.terapeuta_label_box_atencion),
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         color =
@@ -322,7 +325,7 @@ fun AgendaDiaScreen(
                                         )
 
                                         Text(
-                                            text = "Registrar atención",
+                                            text = stringResource(R.string.terapeuta_btn_registrar_atencion),
                                             fontSize = 13.sp,
                                             fontWeight =
                                                 FontWeight.SemiBold,
@@ -356,7 +359,7 @@ fun AgendaDiaScreen(
                                         ) {
 
                                             Text(
-                                                text = "Marcar como asistida",
+                                                text = stringResource(R.string.terapeuta_btn_marcar_asistida),
                                                 fontWeight =
                                                     FontWeight.SemiBold
                                             )
@@ -393,7 +396,7 @@ fun AgendaDiaScreen(
                                             ) {
 
                                                 Text(
-                                                    text = "Inasistente",
+                                                    text = stringResource(R.string.terapeuta_estado_inasistente),
                                                     fontSize = 12.sp
                                                 )
                                             }
@@ -425,7 +428,7 @@ fun AgendaDiaScreen(
                                             ) {
 
                                                 Text(
-                                                    text = "Cancelar",
+                                                    text = stringResource(R.string.terapeuta_btn_cancelar),
                                                     fontSize = 12.sp
                                                 )
                                             }

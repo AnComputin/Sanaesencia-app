@@ -17,8 +17,17 @@ fun NavGraphBuilder.terapeutaGraph(
 ) {
     composable("home_terapeuta") {
         HomeTerapeutaScreen(
-            navController = navController,
-            appState = appState
+            appState = appState,
+            onAgendaClick = { navController.navigate("agenda_terapeuta") },
+            onPacientesClick = { navController.navigate("pacientes_terapeuta") },
+            onLogoutClick = {
+                appState.logout()
+                navController.navigate("home") {
+                    popUpTo("home_terapeuta") {
+                        inclusive = true
+                    }
+                }
+            }
         )
     }
 

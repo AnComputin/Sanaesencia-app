@@ -1,5 +1,8 @@
 package com.example.sanaesenciaapp.ui.views.juegos
 
+import androidx.compose.ui.res.stringResource
+import com.example.sanaesenciaapp.R
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,14 +39,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import com.example.sanaesenciaapp.ui.components.SanaBackground
 import com.example.sanaesenciaapp.viewmodel.PausaConscienteViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PausaConscienteScreen(
-    navController: NavController,
+    onBackClick: () -> Unit,
     viewModel: PausaConscienteViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -58,16 +60,16 @@ fun PausaConscienteScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "🌿 Pausa Consciente",
+                        text = stringResource(R.string.juegos_pausa_titulo),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver",
+                            contentDescription = stringResource(R.string.juegos_accessibility_volver),
                             tint = MaterialTheme.colorScheme.secondary
                         )
                     }
@@ -94,7 +96,7 @@ fun PausaConscienteScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "Paso ${uiState.pasoIndex + 1} de $totalPasos",
+                            text = stringResource(R.string.juegos_pausa_paso, uiState.pasoIndex + 1, totalPasos),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.secondary
@@ -172,7 +174,7 @@ fun PausaConscienteScreen(
                                 shape = RoundedCornerShape(16.dp)
                             ) {
                                 Text(
-                                    text = "Anterior",
+                                    text = stringResource(R.string.juegos_pausa_anterior),
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.secondary
@@ -189,7 +191,7 @@ fun PausaConscienteScreen(
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
                             Text(
-                                text = if (uiState.pasoIndex + 1 == totalPasos) "Finalizar" else "Siguiente",
+                                text = stringResource(if (uiState.pasoIndex + 1 == totalPasos) R.string.juegos_pausa_finalizar else R.string.juegos_pausa_siguiente),
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -205,14 +207,14 @@ fun PausaConscienteScreen(
                 onDismissRequest = { viewModel.reiniciar() },
                 title = {
                     Text(
-                        text = "✨ Pausa Finalizada",
+                        text = stringResource(R.string.juegos_pausa_finalizada),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
                     )
                 },
                 text = {
                     Text(
-                        text = "Has completado la Pausa Consciente. Retoma tus labores con paz, claridad y presencia.",
+                        text = stringResource(R.string.juegos_pausa_completada),
                         fontSize = 16.sp
                     )
                 },
@@ -220,12 +222,12 @@ fun PausaConscienteScreen(
                     Button(
                         onClick = {
                             viewModel.reiniciar()
-                            navController.popBackStack()
+                            onBackClick()
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("Volver al inicio")
+                        Text(stringResource(R.string.juegos_pausa_volver_inicio))
                     }
                 }
             )

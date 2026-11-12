@@ -1,5 +1,8 @@
 package com.example.sanaesenciaapp.ui.views.catalogo
 
+import androidx.compose.ui.res.stringResource
+import com.example.sanaesenciaapp.R
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,7 +39,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import com.example.sanaesenciaapp.data.AppState
 import com.example.sanaesenciaapp.data.room.EspecialistaEntity
 import com.example.sanaesenciaapp.ui.components.SanaBackground
@@ -45,9 +47,10 @@ import com.example.sanaesenciaapp.viewmodel.CitaViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SeleccionEspecialistaScreen(
-    navController: NavController,
     appState: AppState,
-    citaViewModel: CitaViewModel
+    citaViewModel: CitaViewModel,
+    onNavigateBack: () -> Unit,
+    onEspecialistaSelected: () -> Unit
 ) {
     val especialidad = appState.especialidadSeleccionada
 
@@ -72,16 +75,16 @@ fun SeleccionEspecialistaScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Seleccionar especialista",
+                        text = stringResource(R.string.especialista_topbar),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver"
+                            contentDescription = stringResource(R.string.beneficiario_accessibility_volver)
                         )
                     }
                 }
@@ -100,7 +103,7 @@ fun SeleccionEspecialistaScreen(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Text(
-                        text = especialidad?.nombre ?: "Especialidad",
+                        text = especialidad?.nombre ?: stringResource(R.string.catalogo_error_especialidad_predeterminada),
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
@@ -110,7 +113,7 @@ fun SeleccionEspecialistaScreen(
 
                     Text(
                         text = especialidad?.descripcion
-                            ?: "Selecciona el profesional para tu atención.",
+                            ?: stringResource(R.string.especialista_subt),
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f)
                     )
@@ -118,7 +121,7 @@ fun SeleccionEspecialistaScreen(
                     Spacer(modifier = Modifier.height(10.dp))
 
                     Text(
-                        text = "Profesionales disponibles (${especialistasCompatibles.size})",
+                        text = stringResource(R.string.especialista_disponibles, especialistasCompatibles.size),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -129,22 +132,22 @@ fun SeleccionEspecialistaScreen(
 
                 if (especialidad == null) {
                     item {
-                        MensajeEspecialistas("No se pudo cargar la especialidad seleccionada.")
+                        MensajeEspecialistas(stringResource(R.string.especialista_error_cargar))
                     }
                 } else if (especialidad.agendaPausada) {
                     item {
                         MensajeEspecialistas(
-                            "La agenda de esta especialidad está pausada temporalmente."
+                            stringResource(R.string.especialista_error_pausada)
                         )
                     }
                 } else if (appState.especialistas.isEmpty()) {
                     item {
-                        MensajeEspecialistas("Cargando especialistas...")
+                        MensajeEspecialistas(stringResource(R.string.especialista_cargando))
                     }
                 } else if (especialistasCompatibles.isEmpty()) {
                     item {
                         MensajeEspecialistas(
-                            "No hay especialistas activos compatibles con la modalidad actual."
+                            stringResource(R.string.especialista_error_incompatibles)
                         )
                     }
                 } else {
@@ -168,7 +171,7 @@ fun SeleccionEspecialistaScreen(
                                         especialistaId = especialista.id
                                     )
 
-                                    navController.navigate("agendar")
+                                    onEspecialistaSelected()
                                 }
                             }
                         )
@@ -267,7 +270,7 @@ private fun EspecialistaCard(
                     color = MaterialTheme.colorScheme.secondaryContainer
                 ) {
                     Text(
-                        text = "Modalidad: ${especialista.modalidad}",
+                        text = stringResource(R.string.detalle_modalidad, especialista.modalidad),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSecondaryContainer,

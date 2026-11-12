@@ -1,5 +1,8 @@
 package com.example.sanaesenciaapp.ui.views.terapeuta
 
+import androidx.compose.ui.res.stringResource
+import com.example.sanaesenciaapp.R
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,7 +51,7 @@ fun PacientesAsignadosScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Mis pacientes",
+                        text = stringResource(R.string.terapeuta_pacientes_topbar),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
                     )
@@ -82,7 +85,7 @@ fun PacientesAsignadosScreen(
                         )
 
                         Text(
-                            text = "No hay pacientes asignados",
+                            text = stringResource(R.string.terapeuta_pacientes_vacio_titulo),
                             fontSize = 19.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.secondary
@@ -93,7 +96,7 @@ fun PacientesAsignadosScreen(
                         )
 
                         Text(
-                            text = "Tus pacientes aparecerán aquí cuando sean asignados.",
+                            text = stringResource(R.string.terapeuta_pacientes_vacio_mensaje),
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onBackground
                                 .copy(alpha = 0.65f)
@@ -120,7 +123,7 @@ fun PacientesAsignadosScreen(
                     item {
 
                         Text(
-                            text = "Seguimiento de pacientes",
+                            text = stringResource(R.string.terapeuta_pacientes_seguimiento_titulo),
                             fontSize = 27.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.secondary
@@ -131,7 +134,7 @@ fun PacientesAsignadosScreen(
                         )
 
                         Text(
-                            text = "Revisa el estado de continuidad de tus pacientes asignados.",
+                            text = stringResource(R.string.terapeuta_pacientes_seguimiento_desc),
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onBackground
                                 .copy(alpha = 0.70f)
@@ -209,9 +212,9 @@ fun PacientesAsignadosScreen(
                                         Text(
                                             text =
                                                 if (enRiesgo)
-                                                    "En riesgo"
+                                                    stringResource(R.string.terapeuta_estado_en_riesgo)
                                                 else
-                                                    "Seguimiento activo",
+                                                    stringResource(R.string.terapeuta_estado_seguimiento_activo),
 
                                             fontSize = 11.sp,
                                             fontWeight =
@@ -238,7 +241,7 @@ fun PacientesAsignadosScreen(
                                 )
 
                                 Text(
-                                    text = "RUT",
+                                    text = stringResource(R.string.terapeuta_label_rut),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color =
@@ -255,7 +258,7 @@ fun PacientesAsignadosScreen(
                                 )
 
                                 Text(
-                                    text = "Última atención",
+                                    text = stringResource(R.string.terapeuta_label_ultima_atencion),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color =
@@ -272,7 +275,7 @@ fun PacientesAsignadosScreen(
                                 )
 
                                 Text(
-                                    text = "Box asignado",
+                                    text = stringResource(R.string.terapeuta_label_box_asignado),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color =
@@ -291,9 +294,9 @@ fun PacientesAsignadosScreen(
                                 Text(
                                     text =
                                         if (enRiesgo)
-                                            "Requiere revisión de continuidad"
+                                            stringResource(R.string.terapeuta_estado_requiere_revision)
                                         else
-                                            "Toca para ver seguimiento",
+                                            stringResource(R.string.terapeuta_estado_tocar_seguimiento),
 
                                     fontSize = 13.sp,
 

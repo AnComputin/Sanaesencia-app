@@ -1,0 +1,106 @@
+<resources>
+    <!-- Módulo Inicio / Splash / Auth / Ubicación -->
+    <string name="inicio_app_name">SanaEsencia</string>
+    <string name="inicio_subt_bienestar">Bienestar integral para ti y tu familia</string>
+    <string name="inicio_btn_iniciar_sesion">Iniciar sesión</string>
+    <string name="inicio_btn_crear_cuenta">Crear cuenta</string>
+    <string name="inicio_topbar_ingresar">Ingresar</string>
+    <string name="inicio_saludo">Hola, %s</string>
+    <string name="inicio_titulo_bienestar">Bienestar integral</string>
+    <string name="inicio_desc_bienestar">Acompañamos tu bienestar físico, emocional y mental.</string>
+    <string name="inicio_btn_reservar">Reservar hora</string>
+    <string name="inicio_titulo_especialidades">Especialidades</string>
+    <string name="inicio_esp_psicologia">Psicología</string>
+    <string name="inicio_esp_fonoaudiologia">Fonoaudiología</string>
+    <string name="inicio_esp_terapia_ocupacional">Terapia Ocupacional</string>
+    <string name="inicio_esp_nutricion">Nutrición</string>
+    <string name="inicio_card_atencion_titulo">Atención presencial y online</string>
+    <string name="inicio_card_atencion_desc">Elige la modalidad que más se adapte a ti.</string>
+    <string name="inicio_btn_ubicacion">📍 Ver Sede y Distancia (GPS)</string>
+    <string name="inicio_btn_cerrar_sesion">Cerrar sesión</string>
+    <string name="splash_subt">Bienestar integral</string>
+    <string name="ubicacion_titulo">Ubicación Sede Los Vilos</string>
+    <string name="ubicacion_direccion">Dirección: Caupolicán 220</string>
+    <string name="ubicacion_distancia">Estás a %1$.1f km de la sede.</string>
+    <string name="ubicacion_aviso_lejos">💡 Estás lejos de la sede física. Te sugerimos agendar una **atención online**.</string>
+    <string name="ubicacion_aviso_cerca">📍 ¡Estás cerca! Te esperamos en nuestros boxes presenciales.</string>
+    <string name="ubicacion_presionar">Presiona el botón para calcular tu distancia a la sede presencial.</string>
+    <string name="ubicacion_permiso_denegado">⚠️ Permiso de ubicación denegado. Habilítalo en ajustes para calcular tu distancia.</string>
+    <string name="ubicacion_btn_distancia">Ver mi distancia</string>
+    <string name="ubicacion_btn_whatsapp">💬 Contactar por WhatsApp</string>
+    <string name="inicio_btn_mis_citas">Mis citas</string>
+    <string name="inicio_btn_juegos">🌿 Espacio de Bienestar</string>
+    <string name="inicio_titulo_sede">Ubicación de la Sede</string>
+    <string name="inicio_volver">← Volver</string>
+    <string name="inicio_sede_nombre">Sede Los Vilos</string>
+    <string name="inicio_sede_lejos">💡 Estás lejos de la sede física. Te sugerimos agendar una atención online.</string>
+    <string name="inicio_sede_cerca">🌱 ¡Estás cerca! Te esperamos en nuestros boxes presenciales.</string>
+    <string name="inicio_sede_instruccion">Presiona el botón para calcular tu distancia a la sede presencial mediante GPS.</string>
+    <string name="inicio_sede_permiso_denegado">⚠️ Permiso de ubicación denegado. Habilítalo en ajustes.</string>
+    <string name="inicio_btn_distancia_gps">Ver mi distancia (GPS)</string>
+    <string name="inicio_btn_google_maps">🗺️ Ver en Google Maps</string>
+    <string name="inicio_login_bienvenida">Bienvenido nuevamente</string>
+    <string name="inicio_login_subtitulo">Ingresa a tu cuenta SanaEsencia</string>
+    <string name="inicio_login_acceso">Accede a tu cuenta</string>
+    <string name="inicio_label_correo">Correo electrónico</string>
+    <string name="inicio_label_contrasena">Contraseña</string>
+    <string name="inicio_accessibility_email">Email</string>
+    <string name="inicio_accessibility_contrasena">Contraseña</string>
+    <string name="inicio_accessibility_ocultar_contrasena">Ocultar contraseña</string>
+    <string name="inicio_accessibility_ver_contrasena">Ver contraseña</string>
+    <string name="inicio_login_sin_cuenta">¿Aún no tienes una cuenta?</string>
+    <string name="inicio_login_crear_cuenta">Crear una cuenta</string>
+    <string name="inicio_registro_titulo">Únete a SanaEsencia</string>
+    <string name="inicio_registro_subtitulo">Completa tus datos para crear tu cuenta.</string>
+    <string name="inicio_registro_tipo_cuenta">Tipo de cuenta</string>
+    <string name="inicio_registro_tipo_cuenta_desc">Selecciona cómo utilizarás SanaEsencia.</string>
+    <string name="inicio_registro_paciente">Paciente</string>
+    <string name="inicio_registro_terapeuta">Terapeuta</string>
+    <string name="inicio_registro_datos_personales">Datos personales</string>
+    <string name="inicio_registro_nombre">Nombre completo</string>
+    <string name="inicio_registro_rut">RUT</string>
+    <string name="inicio_registro_fecha_nacimiento">Fecha de nacimiento</string>
+    <string name="inicio_registro_seleccionar_fecha">Seleccionar fecha</string>
+    <string name="inicio_registro_telefono">Teléfono</string>
+    <string name="inicio_registro_comuna">Comuna</string>
+    <string name="inicio_registro_seleccionar_comuna">Seleccionar comuna</string>
+    <string name="inicio_registro_datos_acceso">Datos de acceso</string>
+    <string name="inicio_registro_confirmar_contrasena">Confirmar contraseña</string>
+    <string name="inicio_registro_terminos">Acepto los Términos y Condiciones y la Política de Privacidad</string>
+    <string name="inicio_registro_error_bd">No se pudo acceder a la base de datos</string>
+    <string name="inicio_registro_exito">Cuenta creada con éxito</string>
+    <string name="inicio_registro_correo_existente">Ya existe una cuenta con este correo</string>
+    <string name="inicio_registro_aviso_privacidad">Tus datos serán utilizados únicamente dentro de este prototipo.</string>
+    <string name="inicio_registro_seleccionar_fecha_error">Selecciona una fecha</string>
+    <string name="inicio_dialogo_aceptar">Aceptar</string>
+    <string name="inicio_dialogo_cancelar">Cancelar</string>
+    <string name="inicio_brand_title">🌿 SanaEsencia</string>
+    <string name="inicio_esp_psicologia_infantojuvenil">Psicología\nInfanto-Juvenil</string>
+    <string name="inicio_esp_psicologia_adulto">Psicología\nAdulto</string>
+    <string name="inicio_esp_terapia_ocupacional_home">Terapia\nOcupacional</string>
+    <string name="inicio_esp_nutricion_integrativa">Nutrición\nIntegrativa</string>
+    <string name="inicio_registro_accessibility_nombre">Nombre</string>
+    <string-array name="inicio_registro_comunas">
+        <item>Los Vilos</item>
+        <item>Canela</item>
+        <item>Illapel</item>
+        <item>Salamanca</item>
+        <item>La Ligua</item>
+        <item>Papudo</item>
+        <item>Zapallar</item>
+        <item>Concón</item>
+        <item>Viña del Mar</item>
+        <item>Valparaíso</item>
+        <item>Quilpué</item>
+        <item>Villa Alemana</item>
+        <item>Quillota</item>
+        <item>Limache</item>
+        <item>Olmué</item>
+        <item>La Serena</item>
+        <item>Coquimbo</item>
+        <item>Ovalle</item>
+        <item>Santiago</item>
+        <item>Providencia</item>
+        <item>Las Condes</item>
+    </string-array>
+</resources>

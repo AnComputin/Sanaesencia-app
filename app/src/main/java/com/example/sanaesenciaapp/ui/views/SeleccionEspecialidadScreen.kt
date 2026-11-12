@@ -1,5 +1,8 @@
 package com.example.sanaesenciaapp.ui.views
 
+import androidx.compose.ui.res.stringResource
+import com.example.sanaesenciaapp.R
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,14 +25,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import com.example.sanaesenciaapp.data.AppState
+import com.example.sanaesenciaapp.data.room.EspecialidadEntity
 import com.example.sanaesenciaapp.ui.components.SanaBackground
 
 @Composable
 fun SeleccionEspecialidadScreen(
-    navController: NavController,
-    appState: AppState
+    appState: AppState,
+    onEspecialidadClick: (especialidad: EspecialidadEntity) -> Unit
 ) {
 
     SanaBackground {
@@ -46,7 +49,7 @@ fun SeleccionEspecialidadScreen(
                 Spacer(modifier = Modifier.height(28.dp))
 
                 Text(
-                    text = "Elige tu especialidad",
+                    text = stringResource(R.string.catalogo_titulo_seleccionar),
                     fontSize = 30.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.secondary
@@ -55,7 +58,7 @@ fun SeleccionEspecialidadScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Selecciona el área en la que deseas recibir atención.",
+                    text = stringResource(R.string.catalogo_subt_seleccionar),
                     fontSize = 15.sp,
                     color = MaterialTheme.colorScheme.onBackground.copy(
                         alpha = 0.7f
@@ -69,15 +72,7 @@ fun SeleccionEspecialidadScreen(
 
                 Card(
                     onClick = {
-
-                        appState.especialidadSeleccionada = especialidad
-                        appState.especialistaSeleccionado = null
-
-                        if (especialidad.agendaPausada) {
-                            navController.navigate("detalle_servicio")
-                        } else {
-                            navController.navigate("seleccionar_especialista")
-                        }
+                        onEspecialidadClick(especialidad)
                     },
 
                     modifier = Modifier.fillMaxWidth(),
@@ -128,9 +123,9 @@ fun SeleccionEspecialidadScreen(
                                 Text(
                                     text =
                                         if (especialidad.agendaPausada)
-                                            "Pausada"
+                                            stringResource(R.string.catalogo_badge_pausada)
                                         else
-                                            "Disponible",
+                                            stringResource(R.string.catalogo_badge_disponible),
 
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.SemiBold,
@@ -152,7 +147,7 @@ fun SeleccionEspecialidadScreen(
                         Spacer(modifier = Modifier.height(12.dp))
 
                         Text(
-                            text = "Especialistas",
+                            text = stringResource(R.string.catalogo_label_especialistas),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.primary
@@ -166,7 +161,7 @@ fun SeleccionEspecialidadScreen(
                         Spacer(modifier = Modifier.height(10.dp))
 
                         Text(
-                            text = "Modalidad",
+                            text = stringResource(R.string.catalogo_label_modalidad),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.primary
@@ -182,9 +177,9 @@ fun SeleccionEspecialidadScreen(
                         Text(
                             text =
                                 if (especialidad.agendaPausada)
-                                    "Agenda temporalmente no disponible"
+                                    stringResource(R.string.catalogo_estado_no_disponible)
                                 else
-                                    "Toca para elegir especialista y reservar",
+                                    stringResource(R.string.catalogo_estado_toca_reservar),
 
                             fontSize = 13.sp,
 

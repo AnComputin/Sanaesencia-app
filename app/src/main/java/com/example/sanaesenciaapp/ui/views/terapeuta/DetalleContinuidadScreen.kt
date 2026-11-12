@@ -1,5 +1,8 @@
 package com.example.sanaesenciaapp.ui.views.terapeuta
 
+import androidx.compose.ui.res.stringResource
+import com.example.sanaesenciaapp.R
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -54,7 +57,7 @@ fun DetalleContinuidadScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Seguimiento",
+                        text = stringResource(R.string.terapeuta_continuidad_topbar),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
                     )
@@ -67,7 +70,7 @@ fun DetalleContinuidadScreen(
                         Icon(
                             imageVector =
                                 Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver"
+                            contentDescription = stringResource(R.string.terapeuta_accessibility_volver)
                         )
                     }
                 }
@@ -97,7 +100,7 @@ fun DetalleContinuidadScreen(
                 item {
 
                     Text(
-                        text = "Continuidad del paciente",
+                        text = stringResource(R.string.terapeuta_continuidad_titulo),
                         fontSize = 27.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
@@ -108,7 +111,7 @@ fun DetalleContinuidadScreen(
                     )
 
                     Text(
-                        text = "Consulta sus antecedentes de atención y registra notas de seguimiento.",
+                        text = stringResource(R.string.terapeuta_continuidad_desc),
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onBackground
                             .copy(alpha = 0.70f)
@@ -139,7 +142,7 @@ fun DetalleContinuidadScreen(
                             Text(
                                 text =
                                     paciente?.nombre
-                                        ?: "Paciente no seleccionado",
+                                        ?: stringResource(R.string.terapeuta_paciente_no_seleccionado),
 
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 22.sp,
@@ -152,7 +155,7 @@ fun DetalleContinuidadScreen(
                             )
 
                             Text(
-                                text = "RUT",
+                                text = stringResource(R.string.terapeuta_label_rut),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color =
@@ -169,7 +172,7 @@ fun DetalleContinuidadScreen(
                             )
 
                             Text(
-                                text = "Última atención",
+                                text = stringResource(R.string.terapeuta_label_ultima_atencion),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color =
@@ -187,7 +190,7 @@ fun DetalleContinuidadScreen(
                             )
 
                             Text(
-                                text = "Box asignado",
+                                text = stringResource(R.string.terapeuta_label_box_asignado),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color =
@@ -228,7 +231,7 @@ fun DetalleContinuidadScreen(
 
                                         Text(
                                             text =
-                                                "Seguimiento requerido",
+                                                stringResource(R.string.terapeuta_seguimiento_requerido),
                                             fontWeight =
                                                 FontWeight.Bold,
                                             color =
@@ -244,7 +247,7 @@ fun DetalleContinuidadScreen(
 
                                         Text(
                                             text =
-                                                "Este paciente presenta riesgo de discontinuidad en su tratamiento.",
+                                                stringResource(R.string.terapeuta_riesgo_discontinuidad),
                                             fontSize = 13.sp,
                                             color =
                                                 MaterialTheme
@@ -280,7 +283,7 @@ fun DetalleContinuidadScreen(
                         ) {
 
                             Text(
-                                text = "Notas de evolución",
+                                text = stringResource(R.string.terapeuta_notas_evolucion),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 19.sp,
                                 color =
@@ -292,7 +295,7 @@ fun DetalleContinuidadScreen(
                             )
 
                             Text(
-                                text = "Registra observaciones relevantes sobre el seguimiento.",
+                                text = stringResource(R.string.terapeuta_notas_desc),
                                 fontSize = 13.sp,
                                 color =
                                     MaterialTheme.colorScheme.onSurface
@@ -313,7 +316,7 @@ fun DetalleContinuidadScreen(
 
                                 label = {
                                     Text(
-                                        "Notas clínicas / holísticas"
+                                        stringResource(R.string.terapeuta_notas_label)
                                     )
                                 },
 
@@ -334,7 +337,7 @@ fun DetalleContinuidadScreen(
                 item {
 
                     Text(
-                        text = "Historial de citas",
+                        text = stringResource(R.string.terapeuta_historial_titulo),
                         fontWeight = FontWeight.Bold,
                         fontSize = 21.sp,
                         color = MaterialTheme.colorScheme.secondary
@@ -345,7 +348,7 @@ fun DetalleContinuidadScreen(
                     )
 
                     Text(
-                        text = "Atenciones registradas para este paciente.",
+                        text = stringResource(R.string.terapeuta_historial_desc),
                         fontSize = 13.sp,
                         color =
                             MaterialTheme.colorScheme.onBackground
@@ -374,7 +377,7 @@ fun DetalleContinuidadScreen(
 
                             Text(
                                 text =
-                                    "No hay citas registradas para este paciente.",
+                                    stringResource(R.string.terapeuta_historial_vacio),
 
                                 modifier =
                                     Modifier.padding(20.dp),
@@ -482,16 +485,16 @@ fun DetalleContinuidadScreen(
                                                 when (cita.estado) {
 
                                                     EstadoCita.ASISTIDA ->
-                                                        "Asistida"
+                                                        stringResource(R.string.terapeuta_estado_asistida)
 
                                                     EstadoCita.INASISTENTE ->
-                                                        "Inasistente"
+                                                        stringResource(R.string.terapeuta_estado_inasistente)
 
                                                     EstadoCita.CANCELADA_TERAPEUTA ->
-                                                        "Cancelada"
+                                                        stringResource(R.string.terapeuta_estado_cancelada)
 
                                                     EstadoCita.PENDIENTE ->
-                                                        "Pendiente"
+                                                        stringResource(R.string.terapeuta_estado_pendiente)
 
                                                     else ->
                                                         cita.estado.name
@@ -517,7 +520,7 @@ fun DetalleContinuidadScreen(
                                 )
 
                                 Text(
-                                    text = "Fecha",
+                                    text = stringResource(R.string.terapeuta_label_fecha),
                                     fontSize = 12.sp,
                                     fontWeight =
                                         FontWeight.SemiBold,
@@ -539,7 +542,7 @@ fun DetalleContinuidadScreen(
                                 )
 
                                 Text(
-                                    text = "Box",
+                                    text = stringResource(R.string.terapeuta_label_box),
                                     fontSize = 12.sp,
                                     fontWeight =
                                         FontWeight.SemiBold,
