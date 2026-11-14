@@ -6,8 +6,10 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.MutableCreationExtras
 import com.example.sanaesenciaapp.di.AppContainer
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DummySimpleViewModel : ViewModel()
@@ -101,6 +103,30 @@ class AppViewModelProviderTest {
         assertNotNull(viewModel)
         val id = viewModel.savedStateHandle.get<Int>("especialidadId")
         assertEquals(3, id)
+    }
+
+    @Test
+    fun `AgendaViewModelModule soporta CitaViewModel y rechaza otros`() {
+        val module = AgendaViewModelModule()
+        assertTrue(module.supports(CitaViewModel::class.java))
+        assertFalse(module.supports(TerapeutaViewModel::class.java))
+        assertFalse(module.supports(DummySimpleViewModel::class.java))
+    }
+
+    @Test
+    fun `TerapeutaViewModelModule soporta TerapeutaViewModel y rechaza otros`() {
+        val module = TerapeutaViewModelModule()
+        assertTrue(module.supports(TerapeutaViewModel::class.java))
+        assertFalse(module.supports(CitaViewModel::class.java))
+        assertFalse(module.supports(DummySimpleViewModel::class.java))
+    }
+
+    @Test
+    fun `TerapeutaViewModelModule crea TerapeutaViewModel mediante AppViewModelProvider`() {
+        val fakeContainer = createDummyContainer()
+        val provider = AppViewModelProvider(fakeContainer, listOf(TerapeutaViewModelModule()))
+        val viewModel = provider.create(TerapeutaViewModel::class.java)
+        assertNotNull(viewModel)
     }
 
     private fun createDummyContainer(): AppContainer {
