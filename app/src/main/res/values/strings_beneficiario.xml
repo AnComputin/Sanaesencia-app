@@ -13,4 +13,18 @@
     <string name="beneficiario_aviso_asociado">Este beneficiario quedará asociado únicamente a tu cuenta.</string>
     <string name="beneficiario_error_generico">No fue posible guardar el beneficiario</string>
     <string name="beneficiario_accessibility_volver">Volver</string>
+    <string name="beneficiario_cargando">Cargando beneficiarios...</string>
+    <string name="beneficiario_sesion_requerida">Inicia sesión para administrar tus beneficiarios.</string>
+    <string name="beneficiario_lista_vacia">Aún no tienes beneficiarios registrados.</string>
+    <string name="beneficiario_resumen_rut">RUT: %1$s</string>
+    <string name="beneficiario_editar">Editar</string>
+    <string name="beneficiario_desactivar">Desactivar</string>
+    <string name="beneficiario_cancelar_edicion">Cancelar edición</string>
+    <string name="beneficiario_guardado">Beneficiario guardado.</string>
+    <string name="beneficiario_reactivado">Beneficiario reactivado.</string>
+    <string name="beneficiario_actualizado">Beneficiario actualizado.</string>
+    <string name="beneficiario_duplicado">Ya existe un beneficiario activo con ese RUT.</string>
+    <string name="beneficiario_error_validacion">Revisa los datos ingresados.</string>
+    <string name="beneficiario_no_encontrado">No se encontró el beneficiario.</string>
+    <string name="beneficiario_desactivado">Beneficiario desactivado.</string>
 </resources>

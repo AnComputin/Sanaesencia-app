@@ -2,168 +2,116 @@ package com.example.sanaesenciaapp.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.sanaesenciaapp.data.repository.SesionRepository
-import com.example.sanaesenciaapp.data.room.BeneficiarioDao
+import com.example.sanaesenciaapp.data.repository.BeneficiarioRepository
+import com.example.sanaesenciaapp.data.repository.ResultadoBeneficiario
 import com.example.sanaesenciaapp.data.room.BeneficiarioEntity
-import java.util.Locale
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 data class BeneficiarioUiState(
     val beneficiarios: List<BeneficiarioEntity> = emptyList(),
     val cargando: Boolean = true,
     val guardando: Boolean = false,
-    val error: ErrorBeneficiario? = null
+    val sinSesion: Boolean = false,
+    val errorPersistencia: Boolean = false
 )
 
-enum class ErrorBeneficiario {
-    SESION_REQUERIDA,
-    PERSISTENCIA
-}
-
-enum class ResultadoBeneficiario {
-    REGISTRADO,
-    DUPLICADO,
-    SESION_REQUERIDA,
-    ERROR
-}
-
-/**
- * Operaciones de beneficiarios restringidas al correo de la sesión autenticada.
- * Nunca recibe un propietario desde la pantalla y evita las consultas por ID sin propietario.
- */
-@OptIn(ExperimentalCoroutinesApi::class)
 class BeneficiarioViewModel(
-    private val beneficiarioDao: BeneficiarioDao,
-    private val sesionRepository: SesionRepository,
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val beneficiarioRepository: BeneficiarioRepository
 ) : ViewModel() {
-
     private val _uiState = MutableStateFlow(BeneficiarioUiState())
     val uiState: StateFlow<BeneficiarioUiState> = _uiState.asStateFlow()
 
     init {
-        observarBeneficiariosDeLaSesion()
-    }
-
-    fun registrarBeneficiario(
-        nombre: String,
-        rut: String,
-        fechaNacimiento: String,
-        parentesco: String,
-        onResultado: (ResultadoBeneficiario) -> Unit = {}
-    ) {
-        val propietario = sesionRepository.sesionActual.value?.email
-            ?.let(::normalizarCorreo)
-            ?.takeIf(String::isNotBlank)
-
-        if (propietario == null) {
-            _uiState.value = _uiState.value.copy(
-                guardando = false,
-                error = ErrorBeneficiario.SESION_REQUERIDA
-            )
-            onResultado(ResultadoBeneficiario.SESION_REQUERIDA)
-            return
-        }
-
-        if (_uiState.value.guardando) return
-        _uiState.value = _uiState.value.copy(guardando = true, error = null)
-
         viewModelScope.launch {
-            val rutNormalizado = normalizarRut(rut)
-            val resultado = try {
-                withContext(ioDispatcher) {
-                    val yaRegistrado = beneficiarioDao
-                        .obtenerPorPropietario(propietario)
-                        .any { normalizarRut(it.rut) == rutNormalizado }
-
-                    if (yaRegistrado) {
-                        ResultadoBeneficiario.DUPLICADO
-                    } else {
-                        val id = beneficiarioDao.insertar(
-                            BeneficiarioEntity(
-                                propietarioEmail = propietario,
-                                nombre = nombre.trim(),
-                                rut = rutNormalizado,
-                                fechaNacimiento = fechaNacimiento.trim(),
-                                parentesco = parentesco.trim()
+            beneficiarioRepository.observarBeneficiarios()
+                .catch { error ->
+                    if (error is CancellationException) throw error
+                    _uiState.value = _uiState.value.copy(
+                        cargando = false,
+                        beneficiarios = emptyList(),
+                        errorPersistencia = true,
+                        sinSesion = false
+                    )
+                }
+                .collect { resultado ->
+                    when (resultado) {
+                        is ResultadoBeneficiario.Exito -> _uiState.value =
+                            _uiState.value.copy(
+                                beneficiarios = resultado.valor,
+                                cargando = false,
+                                sinSesion = false,
+                                errorPersistencia = false
                             )
-                        )
-                        if (id > 0L) {
-                            ResultadoBeneficiario.REGISTRADO
-                        } else {
-                            // La restricción única del DAO también cubre duplicados inactivos.
-                            ResultadoBeneficiario.DUPLICADO
-                        }
+                        ResultadoBeneficiario.SesionNoAutenticada -> _uiState.value =
+                            _uiState.value.copy(
+                                beneficiarios = emptyList(),
+                                cargando = false,
+                                sinSesion = true,
+                                errorPersistencia = false
+                            )
+                        is ResultadoBeneficiario.ErrorPersistencia -> _uiState.value =
+                            _uiState.value.copy(
+                                beneficiarios = emptyList(),
+                                cargando = false,
+                                sinSesion = false,
+                                errorPersistencia = true
+                            )
+                        else -> Unit
                     }
                 }
-            } catch (cancellation: CancellationException) {
-                throw cancellation
-            } catch (_: Exception) {
-                ResultadoBeneficiario.ERROR
-            }
+        }
+    }
 
+    fun registrar(
+        nombre: String, rut: String, fechaNacimiento: String, parentesco: String,
+        onResult: (ResultadoBeneficiario<Nothing>) -> Unit
+    ) = ejecutar(
+        { beneficiarioRepository.registrar(nombre, rut, fechaNacimiento, parentesco) },
+        onResult
+    )
+
+    fun actualizar(
+        id: Int, nombre: String, rut: String, fechaNacimiento: String, parentesco: String,
+        onResult: (ResultadoBeneficiario<Nothing>) -> Unit
+    ) = ejecutar(
+        { beneficiarioRepository.actualizar(id, nombre, rut, fechaNacimiento, parentesco) },
+        onResult
+    )
+
+    fun desactivar(id: Int, onResult: (ResultadoBeneficiario<Nothing>) -> Unit) =
+        ejecutar({ beneficiarioRepository.desactivar(id) }, onResult)
+
+    fun reactivar(id: Int, onResult: (ResultadoBeneficiario<Nothing>) -> Unit) =
+        ejecutar({ beneficiarioRepository.reactivar(id) }, onResult)
+
+    suspend fun obtenerPorId(id: Int): ResultadoBeneficiario<BeneficiarioEntity> =
+        beneficiarioRepository.obtenerPorId(id)
+
+    private fun ejecutar(
+        operacion: suspend () -> ResultadoBeneficiario<Nothing>,
+        onResult: (ResultadoBeneficiario<Nothing>) -> Unit
+    ) {
+        if (_uiState.value.guardando) return
+        _uiState.value = _uiState.value.copy(guardando = true)
+        viewModelScope.launch {
+            val resultado = try {
+                operacion()
+            } catch (cancelacion: CancellationException) {
+                throw cancelacion
+            } catch (_: Exception) {
+                ResultadoBeneficiario.ErrorOperacion
+            }
             _uiState.value = _uiState.value.copy(
                 guardando = false,
-                error = if (resultado == ResultadoBeneficiario.ERROR) {
-                    ErrorBeneficiario.PERSISTENCIA
-                } else {
-                    null
-                }
+                errorPersistencia = resultado is ResultadoBeneficiario.ErrorPersistencia ||
+                    resultado == ResultadoBeneficiario.ErrorOperacion
             )
-            onResultado(resultado)
+            onResult(resultado)
         }
     }
-
-    private fun observarBeneficiariosDeLaSesion() {
-        viewModelScope.launch {
-            sesionRepository.sesionActual
-                .map { sesion -> sesion?.email?.let(::normalizarCorreo)?.takeIf(String::isNotBlank) }
-                .distinctUntilChanged()
-                .flatMapLatest { propietario ->
-                    _uiState.value = _uiState.value.copy(
-                        beneficiarios = emptyList(),
-                        cargando = propietario != null,
-                        error = null
-                    )
-                    if (propietario == null) {
-                        flowOf(emptyList())
-                    } else {
-                        beneficiarioDao.obtenerPorPropietarioFlow(propietario)
-                    }
-                }
-                .catch {
-                    _uiState.value = _uiState.value.copy(
-                        beneficiarios = emptyList(),
-                        cargando = false,
-                        error = ErrorBeneficiario.PERSISTENCIA
-                    )
-                }
-                .collect { beneficiarios ->
-                    _uiState.value = _uiState.value.copy(
-                        beneficiarios = beneficiarios,
-                        cargando = false,
-                        error = null
-                    )
-                }
-        }
-    }
-
-    private fun normalizarCorreo(email: String): String =
-        email.trim().lowercase(Locale.ROOT)
-
-    private fun normalizarRut(rut: String): String =
-        rut.trim().replace(".", "").uppercase(Locale.ROOT)
 }
