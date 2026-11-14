@@ -7,6 +7,7 @@ import com.example.sanaesenciaapp.data.room.CitaDao
 import com.example.sanaesenciaapp.data.room.EspecialidadDao
 import com.example.sanaesenciaapp.data.room.EspecialistaDao
 import com.example.sanaesenciaapp.data.room.UsuarioDao
+import com.example.sanaesenciaapp.data.repository.BeneficiarioRepository
 import com.example.sanaesenciaapp.data.repository.SesionRepository
 import com.example.sanaesenciaapp.data.repository.UsuarioRepository
 
@@ -24,4 +25,7 @@ open class AppContainer(context: Context) {
 
     open val usuarioRepository: UsuarioRepository by lazy { UsuarioRepository(usuarioDao) }
     open val sesionRepository: SesionRepository by lazy { SesionRepository(usuarioRepository) }
+    open val beneficiarioRepository: BeneficiarioRepository by lazy {
+        BeneficiarioRepository(beneficiarioDao, sesionRepository)
+    }
 }

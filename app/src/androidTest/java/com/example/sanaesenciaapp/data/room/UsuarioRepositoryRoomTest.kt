@@ -112,7 +112,7 @@ class UsuarioRepositoryRoomTest {
     @Test
     fun errorSqliteSeDevuelveComoErrorPersistencia() = runBlocking {
         val failingRepository = UsuarioRepository(
-            FailingUsuarioDao { throw SQLiteException("simulated storage failure") }
+            FailingUsuarioDao(insert = { throw SQLiteException("simulated storage failure") })
         )
 
         assertEquals(
@@ -124,7 +124,7 @@ class UsuarioRepositoryRoomTest {
     @Test
     fun cancelacionSePropaga() {
         val cancellingRepository = UsuarioRepository(
-            FailingUsuarioDao { throw CancellationException("cancelled") }
+            FailingUsuarioDao(insert = { throw CancellationException("cancelled") })
         )
 
         assertThrows(CancellationException::class.java) {
