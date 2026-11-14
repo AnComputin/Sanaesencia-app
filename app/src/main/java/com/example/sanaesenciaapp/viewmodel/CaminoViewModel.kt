@@ -14,16 +14,29 @@ enum class TipoCasillaCamino {
     MEDITACION
 }
 
+enum class TipoMensajeCamino {
+    INICIO,
+    META,
+    CASILLA_NORMAL,
+    CASILLA_AVANCE,
+    CASILLA_RETROCESO,
+    CASILLA_MEDITACION
+}
+
+data class MensajeCamino(
+    val tipo: TipoMensajeCamino,
+    val numeroCasilla: Int? = null
+)
+
 data class CasillaCamino(
     val numero: Int,
-    val tipo: TipoCasillaCamino,
-    val mensaje: String
+    val tipo: TipoCasillaCamino
 )
 
 data class CaminoUiState(
-    val posicionActual: Int = 1, // de 1 a 25
+    val posicionActual: Int = 1,
     val ultimoDado: Int? = null,
-    val mensajeEvento: String = "¡Bienvenido al Camino del Bienestar! Lanza el dado para comenzar.",
+    val mensajeEvento: MensajeCamino = MensajeCamino(TipoMensajeCamino.INICIO),
     val turnoCount: Int = 0,
     val juegoTerminado: Boolean = false,
     val tablero: List<CasillaCamino> = emptyList()
@@ -39,48 +52,32 @@ class CaminoViewModel : ViewModel() {
     }
 
     fun reiniciarJuego() {
-        val listaCasillas = mutableListOf<CasillaCamino>()
-        for (i in 1..25) {
-            val tipo = when (i) {
+        val listaCasillas = (1..25).map { numero ->
+            val tipo = when (numero) {
                 3, 9, 17 -> TipoCasillaCamino.AVANCE
                 7, 14, 21 -> TipoCasillaCamino.RETROCESO
                 5, 12, 19 -> TipoCasillaCamino.MEDITACION
                 else -> TipoCasillaCamino.NORMAL
             }
-            val mensaje = when (tipo) {
-                TipoCasillaCamino.AVANCE -> "Casilla $i: ¡Impulso de energía! Avanzas 2 casillas extra."
-                TipoCasillaCamino.RETROCESO -> "Casilla $i: Pausa reflexiva. Retrocedes 1 casilla."
-                TipoCasillaCamino.MEDITACION -> "Casilla $i: Momento de paz interior. Respira hondo."
-                TipoCasillaCamino.NORMAL -> "Casilla $i: Un paso firme hacia tu bienestar."
-            }
-            listaCasillas.add(CasillaCamino(numero = i, tipo = tipo, mensaje = mensaje))
+            CasillaCamino(numero = numero, tipo = tipo)
         }
 
-        _uiState.value = CaminoUiState(
-            posicionActual = 1,
-            ultimoDado = null,
-            mensajeEvento = "¡Bienvenido al Camino del Bienestar! Lanza el dado para comenzar.",
-            turnoCount = 0,
-            juegoTerminado = false,
-            tablero = listaCasillas
-        )
+        _uiState.value = CaminoUiState(tablero = listaCasillas)
     }
 
     fun tirarDado() {
         val state = _uiState.value
         if (state.juegoTerminado) return
 
-        val dado = Random.nextInt(1, 7) // 1 al 6
+        val dado = Random.nextInt(1, 7)
         var nuevaPosicion = state.posicionActual + dado
-        var mensajeExtra = ""
 
         if (nuevaPosicion >= 25) {
-            nuevaPosicion = 25
             _uiState.update {
                 it.copy(
                     posicionActual = 25,
                     ultimoDado = dado,
-                    mensajeEvento = "¡Has llegado a la meta (Casilla 25)! Tu bienestar integral es completo.",
+                    mensajeEvento = MensajeCamino(TipoMensajeCamino.META),
                     turnoCount = it.turnoCount + 1,
                     juegoTerminado = true
                 )
@@ -88,37 +85,31 @@ class CaminoViewModel : ViewModel() {
             return
         }
 
-        // Evaluar casilla especial
         val casillaDestino = state.tablero.find { it.numero == nuevaPosicion }
-        if (casillaDestino != null) {
-            when (casillaDestino.tipo) {
-                TipoCasillaCamino.AVANCE -> {
-                    nuevaPosicion = (nuevaPosicion + 2).coerceAtMost(25)
-                    mensajeExtra = " ⚡ ¡Casilla de Avance! Te impulsas +2 casillas."
-                }
-                TipoCasillaCamino.RETROCESO -> {
-                    nuevaPosicion = (nuevaPosicion - 1).coerceAtLeast(1)
-                    mensajeExtra = " 🧘 ¡Pausa reflexiva! Retrocedes -1 casilla."
-                }
-                TipoCasillaCamino.MEDITACION -> {
-                    mensajeExtra = " 🌿 ¡Meditación profunda! Mantienes tu posición y meditas."
-                }
-                TipoCasillaCamino.NORMAL -> {}
+        val tipoMensaje = when (casillaDestino?.tipo) {
+            TipoCasillaCamino.AVANCE -> {
+                nuevaPosicion = (nuevaPosicion + 2).coerceAtMost(25)
+                TipoMensajeCamino.CASILLA_AVANCE
             }
+            TipoCasillaCamino.RETROCESO -> {
+                nuevaPosicion = (nuevaPosicion - 1).coerceAtLeast(1)
+                TipoMensajeCamino.CASILLA_RETROCESO
+            }
+            TipoCasillaCamino.MEDITACION -> TipoMensajeCamino.CASILLA_MEDITACION
+            TipoCasillaCamino.NORMAL, null -> TipoMensajeCamino.CASILLA_NORMAL
         }
 
-        val mensajeFinal = (casillaDestino?.mensaje ?: "") + mensajeExtra
-
-        val ganado = nuevaPosicion >= 25
-        val posFinal = if (ganado) 25 else nuevaPosicion
-
+        val gano = nuevaPosicion >= 25
         _uiState.update {
             it.copy(
-                posicionActual = posFinal,
+                posicionActual = if (gano) 25 else nuevaPosicion,
                 ultimoDado = dado,
-                mensajeEvento = mensajeFinal,
+                mensajeEvento = MensajeCamino(
+                    tipo = tipoMensaje,
+                    numeroCasilla = casillaDestino?.numero ?: nuevaPosicion
+                ),
                 turnoCount = it.turnoCount + 1,
-                juegoTerminado = ganado
+                juegoTerminado = gano
             )
         }
     }

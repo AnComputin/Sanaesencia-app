@@ -46,6 +46,7 @@ import com.example.sanaesenciaapp.ui.components.SanaBackground
 import com.example.sanaesenciaapp.viewmodel.CaminoViewModel
 import com.example.sanaesenciaapp.viewmodel.CasillaCamino
 import com.example.sanaesenciaapp.viewmodel.TipoCasillaCamino
+import com.example.sanaesenciaapp.viewmodel.TipoMensajeCamino
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -122,7 +123,32 @@ fun CaminoBienestarScreen(
                         Spacer(modifier = Modifier.height(12.dp))
 
                         Text(
-                            text = uiState.mensajeEvento,
+                            text = when (uiState.mensajeEvento.tipo) {
+                                TipoMensajeCamino.INICIO ->
+                                    stringResource(R.string.juegos_camino_evento_inicio)
+                                TipoMensajeCamino.META ->
+                                    stringResource(R.string.juegos_camino_evento_meta)
+                                TipoMensajeCamino.CASILLA_NORMAL ->
+                                    stringResource(
+                                        R.string.juegos_camino_evento_normal,
+                                        uiState.mensajeEvento.numeroCasilla ?: uiState.posicionActual
+                                    )
+                                TipoMensajeCamino.CASILLA_AVANCE ->
+                                    stringResource(
+                                        R.string.juegos_camino_evento_avance,
+                                        uiState.mensajeEvento.numeroCasilla ?: uiState.posicionActual
+                                    )
+                                TipoMensajeCamino.CASILLA_RETROCESO ->
+                                    stringResource(
+                                        R.string.juegos_camino_evento_retroceso,
+                                        uiState.mensajeEvento.numeroCasilla ?: uiState.posicionActual
+                                    )
+                                TipoMensajeCamino.CASILLA_MEDITACION ->
+                                    stringResource(
+                                        R.string.juegos_camino_evento_meditacion,
+                                        uiState.mensajeEvento.numeroCasilla ?: uiState.posicionActual
+                                    )
+                            },
                             fontSize = 14.sp,
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colorScheme.onBackground

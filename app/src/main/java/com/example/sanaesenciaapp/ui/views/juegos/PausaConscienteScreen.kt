@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.sanaesenciaapp.ui.components.SanaBackground
+import com.example.sanaesenciaapp.viewmodel.ContenidoPasoConsciente
 import com.example.sanaesenciaapp.viewmodel.PausaConscienteViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -138,7 +139,18 @@ fun PausaConscienteScreen(
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
-                                text = pasoActual.titulo,
+                                text = stringResource(
+                                    when (pasoActual.contenido) {
+                                        ContenidoPasoConsciente.DETENERSE ->
+                                            R.string.juegos_pausa_detenerse_titulo
+                                        ContenidoPasoConsciente.RESPIRACION ->
+                                            R.string.juegos_pausa_respiracion_titulo
+                                        ContenidoPasoConsciente.ENTORNO ->
+                                            R.string.juegos_pausa_entorno_titulo
+                                        ContenidoPasoConsciente.RECONEXION ->
+                                            R.string.juegos_pausa_reconexion_titulo
+                                    }
+                                ),
                                 fontSize = 22.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.secondary,
@@ -146,7 +158,18 @@ fun PausaConscienteScreen(
                             )
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                text = pasoActual.descripcion,
+                                text = stringResource(
+                                    when (pasoActual.contenido) {
+                                        ContenidoPasoConsciente.DETENERSE ->
+                                            R.string.juegos_pausa_detenerse_descripcion
+                                        ContenidoPasoConsciente.RESPIRACION ->
+                                            R.string.juegos_pausa_respiracion_descripcion
+                                        ContenidoPasoConsciente.ENTORNO ->
+                                            R.string.juegos_pausa_entorno_descripcion
+                                        ContenidoPasoConsciente.RECONEXION ->
+                                            R.string.juegos_pausa_reconexion_descripcion
+                                    }
+                                ),
                                 fontSize = 16.sp,
                                 color = MaterialTheme.colorScheme.onBackground,
                                 textAlign = TextAlign.Center,

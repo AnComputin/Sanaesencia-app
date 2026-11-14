@@ -1,19 +1,21 @@
 package com.example.sanaesenciaapp.viewmodel
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+
+enum class ContenidoPasoConsciente {
+    DETENERSE,
+    RESPIRACION,
+    ENTORNO,
+    RECONEXION
+}
 
 data class PasoConsciente(
     val numero: Int,
-    val titulo: String,
-    val descripcion: String,
+    val contenido: ContenidoPasoConsciente,
     val icono: String
 )
 
@@ -30,48 +32,19 @@ class PausaConscienteViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(PausaConscienteUiState())
     val uiState: StateFlow<PausaConscienteUiState> = _uiState.asStateFlow()
 
-    private var autoTimerJob: Job? = null
-
     init {
         reiniciar()
     }
 
     fun reiniciar() {
-        autoTimerJob?.cancel()
         val listaPasos = listOf(
-            PasoConsciente(
-                numero = 1,
-                titulo = "Detente un momento",
-                descripcion = "Tómate un instante para hacer una pausa en lo que estás haciendo. Ajusta tu postura, apoya los pies firmemente en el suelo y relaja los hombros.",
-                icono = "🛑"
-            ),
-            PasoConsciente(
-                numero = 2,
-                titulo = "Observa tu respiración",
-                descripcion = "Lleva tu atención suavemente al aire al entrar y salir. No necesitas cambiar nada, solo siente el movimiento de tu pecho y abdomen.",
-                icono = "🌬️"
-            ),
-            PasoConsciente(
-                numero = 3,
-                titulo = "Reconoce tu entorno",
-                descripcion = "Abre ligeramente tus sentidos. Identifica 3 sonidos lejanos, siente la temperatura del ambiente o nota el contacto de tu cuerpo con la silla.",
-                icono = "👀"
-            ),
-            PasoConsciente(
-                numero = 4,
-                titulo = "Reconecta y continúa",
-                descripcion = "Agradece este pequeño espacio de serenidad que te has regalado. Inhala profundo una última vez y vuelve a tu rutina con mente renovada.",
-                icono = "✨"
-            )
+            PasoConsciente(1, ContenidoPasoConsciente.DETENERSE, "🛑"),
+            PasoConsciente(2, ContenidoPasoConsciente.RESPIRACION, "🌬️"),
+            PasoConsciente(3, ContenidoPasoConsciente.ENTORNO, "👀"),
+            PasoConsciente(4, ContenidoPasoConsciente.RECONEXION, "✨")
         )
 
-        _uiState.value = PausaConscienteUiState(
-            pasoIndex = 0,
-            estaActivo = false,
-            estaPausado = false,
-            estaCompletado = false,
-            pasos = listaPasos
-        )
+        _uiState.value = PausaConscienteUiState(pasos = listaPasos)
     }
 
     fun iniciar() {
@@ -81,7 +54,9 @@ class PausaConscienteViewModel : ViewModel() {
     fun siguientePaso() {
         val state = _uiState.value
         if (state.pasoIndex + 1 < state.pasos.size) {
-            _uiState.update { it.copy(pasoIndex = it.pasoIndex + 1) }
+            _uiState.update {
+                it.copy(pasoIndex = it.pasoIndex + 1, estaActivo = true, estaPausado = false)
+            }
         } else {
             _uiState.update { it.copy(estaCompletado = true, estaActivo = false) }
         }
@@ -96,10 +71,5 @@ class PausaConscienteViewModel : ViewModel() {
 
     fun pausarOReanudar() {
         _uiState.update { it.copy(estaPausado = !it.estaPausado) }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        autoTimerJob?.cancel()
     }
 }

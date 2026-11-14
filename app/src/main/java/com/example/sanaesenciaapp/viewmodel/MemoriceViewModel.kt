@@ -32,6 +32,7 @@ class MemoriceViewModel : ViewModel() {
     val uiState: StateFlow<MemoriceUiState> = _uiState.asStateFlow()
 
     private var timerJob: Job? = null
+    private var hideCardsJob: Job? = null
     private var primeraCartaSeleccionadaId: Int? = null
 
     init {
@@ -40,6 +41,8 @@ class MemoriceViewModel : ViewModel() {
 
     fun reiniciarJuego() {
         timerJob?.cancel()
+        hideCardsJob?.cancel()
+        hideCardsJob = null
         primeraCartaSeleccionadaId = null
 
         val simbolos = listOf("🌿", "🌸", "🧠", "🧩", "🥗", "🧘", "🍵", "🕯️")
@@ -131,7 +134,8 @@ class MemoriceViewModel : ViewModel() {
                     bloqueado = true
                 )
 
-                viewModelScope.launch {
+                hideCardsJob?.cancel()
+                hideCardsJob = viewModelScope.launch {
                     delay(800L)
                     val ocultadas = _uiState.value.cartas.map {
                         if (it.id == primeraId || it.id == cartaId) {
@@ -149,5 +153,6 @@ class MemoriceViewModel : ViewModel() {
     override fun onCleared() {
         super.onCleared()
         timerJob?.cancel()
+        hideCardsJob?.cancel()
     }
 }

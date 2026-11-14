@@ -79,4 +79,18 @@
     <string name="juegos_respiracion_inhalar">Inhala suavemente</string>
     <string name="juegos_respiracion_mantener">Mantén el aire</string>
     <string name="juegos_respiracion_exhalar">Exhala despacio</string>
+    <string name="juegos_camino_evento_inicio">¡Bienvenido al Camino del Bienestar! Lanza el dado para comenzar.</string>
+    <string name="juegos_camino_evento_meta">¡Has llegado a la meta (Casilla 25)! Tu bienestar integral es completo.</string>
+    <string name="juegos_camino_evento_normal">Casilla %1$d: Un paso firme hacia tu bienestar.</string>
+    <string name="juegos_camino_evento_avance">Casilla %1$d: ¡Impulso de energía! Avanzas 2 casillas extra. ⚡ ¡Casilla de Avance! Te impulsas +2 casillas.</string>
+    <string name="juegos_camino_evento_retroceso">Casilla %1$d: Pausa reflexiva. Retrocedes 1 casilla. 🧘 ¡Pausa reflexiva! Retrocedes -1 casilla.</string>
+    <string name="juegos_camino_evento_meditacion">Casilla %1$d: Momento de paz interior. Respira hondo. 🌿 ¡Meditación profunda! Mantienes tu posición y meditas.</string>
+    <string name="juegos_pausa_detenerse_titulo">Detente un momento</string>
+    <string name="juegos_pausa_detenerse_descripcion">Tómate un instante para hacer una pausa en lo que estás haciendo. Ajusta tu postura, apoya los pies firmemente en el suelo y relaja los hombros.</string>
+    <string name="juegos_pausa_respiracion_titulo">Observa tu respiración</string>
+    <string name="juegos_pausa_respiracion_descripcion">Lleva tu atención suavemente al aire al entrar y salir. No necesitas cambiar nada, solo siente el movimiento de tu pecho y abdomen.</string>
+    <string name="juegos_pausa_entorno_titulo">Reconoce tu entorno</string>
+    <string name="juegos_pausa_entorno_descripcion">Abre ligeramente tus sentidos. Identifica 3 sonidos lejanos, siente la temperatura del ambiente o nota el contacto de tu cuerpo con la silla.</string>
+    <string name="juegos_pausa_reconexion_titulo">Reconecta y continúa</string>
+    <string name="juegos_pausa_reconexion_descripcion">Agradece este pequeño espacio de serenidad que te has regalado. Inhala profundo una última vez y vuelve a tu rutina con mente renovada.</string>
 </resources>
