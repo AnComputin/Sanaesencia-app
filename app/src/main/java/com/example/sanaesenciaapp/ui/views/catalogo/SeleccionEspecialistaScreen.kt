@@ -32,37 +32,34 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.sanaesenciaapp.data.AppState
 import com.example.sanaesenciaapp.data.room.EspecialistaEntity
 import com.example.sanaesenciaapp.ui.components.SanaBackground
 import com.example.sanaesenciaapp.viewmodel.CitaViewModel
+import com.example.sanaesenciaapp.viewmodel.CatalogoViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SeleccionEspecialistaScreen(
-    appState: AppState,
+    catalogoViewModel: CatalogoViewModel,
     citaViewModel: CitaViewModel,
     onNavigateBack: () -> Unit,
     onEspecialistaSelected: () -> Unit
 ) {
-    val especialidad = appState.especialidadSeleccionada
+    val especialidades by catalogoViewModel.especialidades.collectAsStateWithLifecycle()
+    val especialistas by catalogoViewModel.especialistas.collectAsStateWithLifecycle()
+    val catalogoState by catalogoViewModel.uiState.collectAsStateWithLifecycle()
+    val especialidadId by catalogoViewModel.especialidadId.collectAsStateWithLifecycle()
+    val especialidad = especialidades.firstOrNull { it.id == especialidadId }
 
-    LaunchedEffect(especialidad?.id) {
-        appState.especialistas.clear()
-        appState.especialistaSeleccionado = null
-        especialidad?.let {
-            appState.cargarEspecialistasPorEspecialidad(it.id)
-        }
-    }
-
-    val especialistasCompatibles = appState.especialistas.filter { especialista ->
+    val especialistasCompatibles = especialistas.filter { especialista ->
         modalidadCompatible(
             modalidadEspecialidad = especialidad?.modalidad ?: "Ambas",
             modalidadEspecialista = especialista.modalidad
@@ -140,10 +137,10 @@ fun SeleccionEspecialistaScreen(
                             stringResource(R.string.especialista_error_pausada)
                         )
                     }
-                } else if (appState.especialistas.isEmpty()) {
-                    item {
-                        MensajeEspecialistas(stringResource(R.string.especialista_cargando))
-                    }
+                } else if (catalogoState.errorEspecialistas) {
+                    item { MensajeEspecialistas(stringResource(R.string.catalogo_error_carga)) }
+                } else if (catalogoState.cargandoEspecialidades || especialistas.isEmpty()) {
+                    item { MensajeEspecialistas(stringResource(R.string.especialista_cargando)) }
                 } else if (especialistasCompatibles.isEmpty()) {
                     item {
                         MensajeEspecialistas(
@@ -161,7 +158,6 @@ fun SeleccionEspecialistaScreen(
                                 )
 
                                 if (modalidadPermitida != null) {
-                                    appState.especialistaSeleccionado = especialista
 
                                     citaViewModel.seleccionarServicio(
                                         especialidad = especialidad.nombre,

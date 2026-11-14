@@ -61,11 +61,15 @@ class CatalogoViewModelModuleTest {
             backgroundScope.launch(dispatcher) {
                 viewModel.especialistas.collect()
             }
+            backgroundScope.launch(dispatcher) {
+                viewModel.especialidades.collect()
+            }
 
             advanceUntilIdle()
 
             assertEquals(4, viewModel.especialidadId.value)
             assertEquals(listOf(especialista), viewModel.especialistas.value)
+            assertEquals(listOf(4, 9), viewModel.especialidades.value.map { it.id })
                 } finally {
                     viewModelStore.clear()
                 }
@@ -79,6 +83,14 @@ class CatalogoViewModelModuleTest {
 private class FakeEspecialidadDao : EspecialidadDao {
     private val data = MutableStateFlow(
         listOf(
+            EspecialidadEntity(
+                id = 9,
+                nombre = "Especialidad posterior",
+                descripcion = "",
+                icono = "",
+                profesional = "",
+                modalidad = "Ambas"
+            ),
             EspecialidadEntity(
                 id = 4,
                 nombre = "Especialidad de prueba",

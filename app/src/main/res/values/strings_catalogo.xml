@@ -31,4 +31,8 @@
     <string name="catalogo_detalle_agenda_mensaje">Esta especialidad no tiene horas disponibles por el momento. Puedes revisar nuevamente más adelante o esperar a que administración reactive la agenda.</string>
     <string name="catalogo_detalle_agendar_desc">Seleccionarás modalidad, fecha y horario en el siguiente paso.</string>
     <string name="catalogo_error_especialidad_predeterminada">Especialidad</string>
+    <string name="catalogo_error_carga">No se pudo cargar el catálogo.</string>
+    <string name="catalogo_vacio">No hay especialidades disponibles.</string>
+    <string name="catalogo_cargando">Cargando especialidades...</string>
+    <string name="catalogo_detalle_error_carga">No se pudo cargar el servicio.</string>
 </resources>

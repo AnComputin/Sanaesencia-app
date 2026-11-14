@@ -2,6 +2,7 @@ package com.example.sanaesenciaapp.ui.views.catalogo
 
 import androidx.compose.ui.res.stringResource
 import com.example.sanaesenciaapp.R
+import androidx.compose.ui.tooling.preview.Preview
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -416,4 +417,21 @@ fun DetalleServicioScreen(
             }
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun DetalleServicioScreenPreview() {
+    DetalleServicioScreen(
+        especialidad = EspecialidadEntity(
+            id = 1,
+            nombre = "Psicología Infanto-Juvenil",
+            descripcion = "Acompañamiento psicológico integral para niños y jóvenes.",
+            icono = "🌱",
+            profesional = "5 Especialistas",
+            modalidad = "Ambas"
+        ),
+        onBackClick = {},
+        onReservarClick = {}
+    )
 }

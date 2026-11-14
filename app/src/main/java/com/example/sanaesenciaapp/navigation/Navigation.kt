@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -17,6 +18,9 @@ import com.example.sanaesenciaapp.ui.views.admin.HomeAdminScreen
 import com.example.sanaesenciaapp.viewmodel.AgendaViewModelModule
 import com.example.sanaesenciaapp.viewmodel.AppViewModelProvider
 import com.example.sanaesenciaapp.viewmodel.CitaViewModel
+import com.example.sanaesenciaapp.viewmodel.CatalogoViewModel
+import com.example.sanaesenciaapp.viewmodel.CatalogoViewModelModule
+import com.example.sanaesenciaapp.viewmodel.BeneficiarioViewModelModule
 import com.example.sanaesenciaapp.viewmodel.TerapeutaViewModel
 import com.example.sanaesenciaapp.viewmodel.TerapeutaViewModelModule
 
@@ -31,7 +35,9 @@ fun AppNavigation(
             appContainer = appContainer,
             modules = listOf(
                 TerapeutaViewModelModule(),
-                AgendaViewModelModule()
+                AgendaViewModelModule(),
+                CatalogoViewModelModule(),
+                BeneficiarioViewModelModule()
             )
         )
     }
@@ -44,17 +50,44 @@ fun AppNavigation(
         startDestination = "splash"
     ) {
         composable("splash") {
-            SplashScreen(navController)
+            SplashScreen(
+                onContinueClick = {
+                    navController.navigate("inicio") {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                }
+            )
         }
 
         composable("inicio") {
-            InicioScreen(navController)
+            InicioScreen(
+                onLoginClick = { navController.navigate("login") },
+                onRegisterClick = { navController.navigate("registro") }
+            )
         }
 
-        composable("home") {
+        composable("home") { entry ->
+            val catalogoViewModel: CatalogoViewModel =
+                viewModel(viewModelStoreOwner = entry, factory = appViewModelProvider)
+            val especialidades = catalogoViewModel.especialidades.collectAsStateWithLifecycle().value
+            val catalogoState = catalogoViewModel.uiState.collectAsStateWithLifecycle().value
             HomeScreen(
-                navController = navController,
-                appState = appState
+                appState = appState,
+                especialidades = especialidades,
+                cargandoCatalogo = catalogoState.cargandoEspecialidades,
+                errorCatalogo = catalogoState.errorEspecialidades,
+                onLoginClick = { navController.navigate("login") },
+                onReserveClick = { navController.navigate("seleccionar_especialidad") },
+                onMyAppointmentsClick = { navController.navigate("mis_citas") },
+                onSpecialtyClick = { id -> navController.navigate("detalle_servicio/$id") },
+                onLocationClick = { navController.navigate("ubicacion") },
+                onGamesClick = { navController.navigate("juegos_hub") },
+                onLogoutClick = {
+                    appState.logout()
+                    navController.navigate("inicio") {
+                        popUpTo("home") { inclusive = true }
+                    }
+                }
             )
         }
 
@@ -65,8 +98,8 @@ fun AppNavigation(
             )
         }
 
-        authGraph(navController, appState)
-        catalogoGraph(navController, appState, citaViewModel)
+        authGraph(navController, appState, appViewModelProvider)
+        catalogoGraph(navController, appState, citaViewModel, appViewModelProvider)
         agendaGraph(navController, appState, citaViewModel)
         terapeutaGraph(navController, appState, terapeutaViewModel)
         juegosGraph(navController)
