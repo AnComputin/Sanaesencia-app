@@ -28,12 +28,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import com.example.sanaesenciaapp.ui.components.SanaBackground
 
 @Composable
 fun InicioScreen(
-    navController: NavController
+    onLoginClick: () -> Unit,
+    onRegisterClick: () -> Unit
 ) {
 
     val hojaColor = MaterialTheme.colorScheme.primary
@@ -170,7 +170,7 @@ fun InicioScreen(
 
                 Button(
                     onClick = {
-                        navController.navigate("login")
+                        onLoginClick()
                     },
 
                     modifier = Modifier
@@ -198,7 +198,7 @@ fun InicioScreen(
 
                 OutlinedButton(
                     onClick = {
-                        navController.navigate("registro")
+                        onRegisterClick()
                     },
 
                     modifier = Modifier

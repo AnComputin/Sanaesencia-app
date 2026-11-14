@@ -21,12 +21,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import kotlinx.coroutines.delay
 
 @Composable
 fun SplashScreen(
-    navController: NavController
+    onContinueClick: () -> Unit
 ) {
     // Estados para controlar la animación
     var startAnimation by remember { mutableStateOf(false) }
@@ -49,11 +48,7 @@ fun SplashScreen(
     LaunchedEffect(key1 = true) {
         startAnimation = true
         delay(2000) // Tiempo que dura el Splash en pantalla antes de ir a home
-        navController.navigate("inicio") {
-            popUpTo("splash") {
-                inclusive = true
-            }
-        }
+        onContinueClick()
     }
 
     Column(

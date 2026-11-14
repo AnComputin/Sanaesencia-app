@@ -28,6 +28,7 @@
     <string name="ubicacion_permiso_denegado">⚠️ Permiso de ubicación denegado. Habilítalo en ajustes para calcular tu distancia.</string>
     <string name="ubicacion_btn_distancia">Ver mi distancia</string>
     <string name="ubicacion_btn_whatsapp">💬 Contactar por WhatsApp</string>
+    <string name="ubicacion_whatsapp_mensaje">Hola, deseo consultar sobre las terapias de SanaEsencia</string>
     <string name="inicio_btn_mis_citas">Mis citas</string>
     <string name="inicio_btn_juegos">🌿 Espacio de Bienestar</string>
     <string name="inicio_titulo_sede">Ubicación de la Sede</string>
@@ -103,4 +104,26 @@
         <item>Providencia</item>
         <item>Las Condes</item>
     </string-array>
+    <!-- Mensajes de validación compartidos por autenticación y beneficiarios -->
+    <string name="validation_email_required">El correo es obligatorio</string>
+    <string name="validation_email_format">Formato de correo inválido (ej: nombre@gmail.cl)</string>
+    <string name="validation_rut_too_short">RUT inválido: debe tener al menos 8 caracteres</string>
+    <string name="validation_rut_digits_only">El RUT solo debe contener números</string>
+    <string name="validation_rut_check_digit">Dígito verificador incorrecto. Debería ser %1$s</string>
+    <string name="validation_phone_format">Formato inválido. Use +56 9 XXXXXXXX o 9XXXXXXXX</string>
+    <string name="validation_phone_length">Debe tener 8 dígitos después del 9</string>
+    <string name="validation_phone_digits_only">Solo se permiten números</string>
+    <string name="validation_password_length">La contraseña debe tener al menos 8 caracteres</string>
+    <string name="validation_password_uppercase">Debe contener al menos una letra mayúscula</string>
+    <string name="validation_password_digit">Debe contener al menos un número</string>
+    <string name="validation_password_special">Debe contener al menos un carácter especial</string>
+    <string name="validation_birth_date_required">La fecha de nacimiento es obligatoria</string>
+    <string name="validation_birth_date_format">Formato inválido. Utilice DD/MM/AAAA</string>
+    <string name="validation_birth_date_past">la fecha debe ser anterior al día de hoy</string>
+    <string name="validation_city_required">Debe seleccionar o ingresar una comuna</string>
+    <string name="validation_name_required">El nombre es obligatorio</string>
+    <string name="validation_name_min_length">El nombre debe tener al menos 3 caracteres</string>
+    <string name="validation_name_letters_only">El nombre solo debe contener letras</string>
+    <string name="validation_relationship_required">Debe indicar el parentesco</string>
+    <string name="validation_relationship_min_length">El parentesco debe tener al menos 3 caracteres</string>
 </resources>

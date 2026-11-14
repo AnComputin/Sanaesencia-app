@@ -43,9 +43,9 @@ La aplicación tiene tres tipos de usuario: paciente, terapeuta y administrador.
 - En "Mis citas" ve sus citas próximas y su historial. Puede cancelar con 24 horas o más de anticipación.
 - Ve la distancia a la sede con GPS, abre la dirección en el mapa y escribe por WhatsApp.
 
-*Terapeuta*
-- Ve sus pacientes asignados y una alerta si alguno lleva más de 30 días sin atención.
-- Ve su agenda del día, cambia el estado de cada cita y revisa la continuidad del tratamiento.
+*Terapeuta (bloqueado)*
+- La agenda y la lista de pacientes no muestran datos hasta contar con una asociación persistida y verificable entre la cuenta autenticada y un especialista.
+- El módulo no consulta ni actualiza citas reales. Las notas clínicas están deshabilitadas porque no existe almacenamiento autorizado.
 
 *Administrador*
 - Cambia la modalidad de cada especialidad (presencial, online o ambas).
@@ -68,36 +68,57 @@ La aplicación tiene tres tipos de usuario: paciente, terapeuta y administrador.
 | GPS | Pantalla de ubicación, para calcular la distancia a la sede | Ubicación, que se pide al tocar el botón |
 | Calendario del teléfono | Confirmación y Mis citas, botón "Agregar a mi calendario" | No necesita (usa un Intent) |
 
-## Estructura del proyecto
+## Arquitectura y estado de implementación
 
-La arquitectura es MVVM. Las pantallas solo dibujan, los ViewModels manejan el estado y las reglas, y Room guarda los datos.
+La interfaz usa Jetpack Compose y Material 3 con arquitectura MVVM. `AppContainer` expone los componentes compartidos y `AppViewModelProvider` registra módulos por funcionalidad mediante `AppViewModelModule`. La sesión y algunos datos compartidos de agenda aún usan `AppState`; las pantallas propias de catálogo y ficha de beneficiarios usan ViewModels. Los grafos conservan la navegación y las pantallas reciben eventos mediante callbacks.
 
-Carpetas dentro de app/src/main/java/com/example/sanaesenciaapp/:
+Carpetas dentro de `app/src/main/java/com/example/sanaesenciaapp/`:
 
-- data: el estado global (AppState) y la base de datos Room, con sus tablas y consultas.
-- navigation: el mapa de pantallas y rutas.
-- viewmodel: los ViewModels de cada flujo (autenticación, citas, terapeuta y administrador).
-- ui/theme: colores, tipografía y tema.
-- ui/components: botones, campos y fondos reutilizables.
-- ui/views: las pantallas, ordenadas por módulo (auth, catalogo, agenda, citas, terapeuta y admin).
-- utils: validaciones, cifrado de contraseñas, calendario y GPS.
+- `data`: `AppState`, repositorios y base de datos Room.
+- `di`: `AppContainer` crea y expone la base de datos, DAO, `UsuarioRepository` y `SesionRepository`.
+- `data/room`: entidades, DAO, migraciones y datos iniciales. El esquema actual de Room es versión 7.
+- `navigation`: `Navigation.kt` define el `NavHost`; los módulos Catálogo, Juegos y Terapeuta usan grafos separados. Juegos comunica navegación a sus pantallas mediante callbacks.
+- `viewmodel`: ViewModels de autenticación, citas, catálogo, administración, terapeuta y juegos.
+- `viewmodel/AppViewModelProvider.kt`: fábrica modular con soporte para `CreationExtras` y `SavedStateHandle`; Navigation registra los módulos de Agenda, Terapeuta, Catálogo y Beneficiarios.
+- `data/repository/CatalogoRepository.kt` y `CatalogoViewModel.kt`: observan especialidades y especialistas desde Room con StateFlow. El seed incluye 7 especialidades y 30 especialistas.
+- `data/repository/BeneficiarioRepository.kt` y `BeneficiarioViewModel.kt`: realizan operaciones de beneficiarios vinculadas a la sesión, con aislamiento de propietario en DAO/repositorio.
+- `ui/theme` y `ui/components`: tema y componentes compartidos.
+- `ui/views`: pantallas agrupadas por flujo (`auth`, `catalogo`, `agenda`, `citas`, `terapeuta`, `juegos` y `admin`).
+- `utils`: validaciones, hashing de contraseñas, calendario y ubicación.
 
-Las pruebas unitarias están en app/src/test y revisan las validaciones y el cifrado.
+Estado de los flujos según el código:
 
-## Cómo ejecutar
+- Catálogo: especialidades y especialistas se observan desde Room mediante `CatalogoRepository` y `CatalogoViewModel`. La selección que comparte con la agenda todavía usa estado de `AppState`.
+- Beneficiarios: la pantalla de ficha usa `BeneficiarioViewModel` y `BeneficiarioRepository`. El propietario se determina desde la sesión; las operaciones están restringidas por propietario. La agenda aún consume el estado compartido de beneficiarios de `AppState`.
+- Terapeuta: el módulo está registrado, pero permanece bloqueado y sin datos porque no existe asociación persistida cuenta-terapeuta a especialista. Las notas no se guardan y están deshabilitadas.
+- Juegos: los juegos usan ViewModels propios, estado en memoria, navegación mediante callbacks y pruebas unitarias.
+- Sesión: `SesionRepository` mantiene la sesión en memoria; no se restaura al cerrar y volver a abrir la aplicación.
+- Servicios remotos: Retrofit y un backend no están configurados en las dependencias actuales.
 
-1. Abrir el proyecto con Android Studio.
-2. Esperar a que Gradle termine de sincronizar.
-3. Conectar un celular o iniciar un emulador con Android 7.0 (API 24) o superior.
-4. Si la app ya estaba instalada de antes, desinstalarla o borrar sus datos.
-5. Presionar el botón Run.
+Las pruebas unitarias están en `app/src/test` y cubren utilidades, repositorios y ViewModels, incluidos módulos de catálogo, beneficiarios y juegos. Las pruebas Room instrumentadas están en `app/src/androidTest`. Validación local del 14 de noviembre de 2026: `compileDebugKotlin`, `testDebugUnitTest` (109 aprobadas, 0 omitidas, 0 fallidas), `compileDebugAndroidTestKotlin` y `assembleDebug` finalizaron correctamente. `connectedDebugAndroidTest` no se ejecutó: `adb devices -l` no mostró dispositivos conectados.
 
-Para probar el calendario se necesita una app de calendario instalada. Para el GPS hay que activar la ubicación.
+## Requisitos y ejecución
 
-## Usuarios de prueba
+- Android Studio con el Android SDK requerido por el proyecto (compile SDK 37).
+- JDK compatible con la versión de Gradle Wrapper configurada (Gradle 9.5.0).
+- La aplicación admite Android 7.0 (API 24) o superior.
 
-- *Paciente y terapeuta:* se crean desde la pantalla de Registro, eligiendo el rol.
-- *Administrador:* admin@sanaesencia.cl con contraseña admin123. Es una cuenta de demostración.
+Abre el proyecto en Android Studio y espera a que termine la sincronización de Gradle. Desde PowerShell en la raíz del proyecto puedes ejecutar:
+
+```powershell
+.\gradlew.bat :app:compileDebugKotlin
+.\gradlew.bat :app:testDebugUnitTest
+.\gradlew.bat :app:compileDebugAndroidTestKotlin
+.\gradlew.bat :app:assembleDebug
+```
+
+Las pruebas instrumentadas requieren un dispositivo o emulador conectado y pueden ejecutarse con `.\gradlew.bat :app:connectedDebugAndroidTest`. No hay configuración de firma release en `app/build.gradle.kts`; el artefacto release, si se genera, no está firmado para distribución.
+
+Para probar el calendario se necesita una aplicación de calendario instalada. La ubicación se solicita al tocar el botón correspondiente.
+
+## Datos de demostración
+
+La carga inicial incluye datos de demostración para el prototipo. No se publican credenciales de acceso en este README.
 
 ## Ramas de Git
 
@@ -107,7 +128,8 @@ Para probar el calendario se necesita una app de calendario instalada. Para el G
 
 ## Limitaciones conocidas
 
-- Los datos del módulo terapeuta son de demostración. Las citas, los especialistas y los beneficiarios de los pacientes sí se guardan en Room.
+- El portal terapeuta no tiene acceso a citas reales hasta que exista una asociación persistida y verificable entre la cuenta autenticada y `especialistaId`.
+- Las notas clínicas no se persisten y la edición está deshabilitada.
 - El pago es una simulación, sin conexión a una pasarela real.
-- Las contraseñas se guardan con un cifrado educativo (SHA-256 con sal). En un sistema real se usaría PBKDF2, bcrypt o Argon2.
-- La sesión no se conserva al cerrar la aplicación.
+- La autenticación migra credenciales históricas al formato PBKDF2 implementado por `Seguridad`; la sesión permanece solo en memoria y no se restaura al reiniciar la aplicación.
+- Los recursos de texto se encuentran en `res/values`; no se declaran traducciones a otros idiomas.
