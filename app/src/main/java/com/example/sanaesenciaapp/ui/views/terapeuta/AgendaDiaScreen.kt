@@ -104,21 +104,22 @@ fun AgendaDiaScreen(
                         modifier = Modifier.height(16.dp)
                     )
 
-                    Surface(
-                        shape = RoundedCornerShape(14.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer
-                    ) {
-
-                        Text(
-                            text = stringResource(R.string.terapeuta_agenda_fecha, state.fechaSeleccionada),
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.padding(
-                                horizontal = 14.dp,
-                                vertical = 10.dp
+                    if (state.fechaSeleccionada.isNotBlank()) {
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer
+                        ) {
+                            Text(
+                                text = stringResource(R.string.terapeuta_agenda_fecha, state.fechaSeleccionada),
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.padding(
+                                    horizontal = 14.dp,
+                                    vertical = 10.dp
+                                )
                             )
-                        )
+                        }
                     }
                 }
 

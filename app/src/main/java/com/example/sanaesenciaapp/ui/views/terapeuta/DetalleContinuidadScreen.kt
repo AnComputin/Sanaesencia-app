@@ -2,6 +2,7 @@ package com.example.sanaesenciaapp.ui.views.terapeuta
 
 import androidx.compose.ui.res.stringResource
 import com.example.sanaesenciaapp.R
+import androidx.compose.ui.tooling.preview.Preview
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -22,7 +23,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -98,6 +98,29 @@ fun DetalleContinuidadScreen(
 
                 // Encabezado
                 item {
+                    if (paciente == null) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(18.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer
+                            )
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text(
+                                    text = stringResource(R.string.terapeuta_detalle_bloqueado_titulo),
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = stringResource(R.string.terapeuta_detalle_bloqueado_mensaje),
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
 
                     Text(
                         text = stringResource(R.string.terapeuta_continuidad_titulo),
@@ -261,76 +284,13 @@ fun DetalleContinuidadScreen(
                     }
                 }
 
-                // Notas de evolución
+                // Las notas clínicas no se habilitan mientras no exista persistencia autorizada.
                 item {
-
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(22.dp),
-
-                        colors = CardDefaults.cardColors(
-                            containerColor =
-                                MaterialTheme.colorScheme.surface
-                        ),
-
-                        elevation = CardDefaults.cardElevation(
-                            defaultElevation = 2.dp
-                        )
-                    ) {
-
-                        Column(
-                            modifier = Modifier.padding(20.dp)
-                        ) {
-
-                            Text(
-                                text = stringResource(R.string.terapeuta_notas_evolucion),
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 19.sp,
-                                color =
-                                    MaterialTheme.colorScheme.secondary
-                            )
-
-                            Spacer(
-                                modifier = Modifier.height(6.dp)
-                            )
-
-                            Text(
-                                text = stringResource(R.string.terapeuta_notas_desc),
-                                fontSize = 13.sp,
-                                color =
-                                    MaterialTheme.colorScheme.onSurface
-                                        .copy(alpha = 0.65f)
-                            )
-
-                            Spacer(
-                                modifier = Modifier.height(14.dp)
-                            )
-
-                            OutlinedTextField(
-                                value = state.notasEvolucion,
-
-                                onValueChange = {
-                                    terapeutaViewModel
-                                        .onNotasEvolucionChange(it)
-                                },
-
-                                label = {
-                                    Text(
-                                        stringResource(R.string.terapeuta_notas_label)
-                                    )
-                                },
-
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(140.dp),
-
-                                maxLines = 6,
-
-                                shape =
-                                    RoundedCornerShape(16.dp)
-                            )
-                        }
-                    }
+                    Text(
+                        text = stringResource(R.string.terapeuta_notas_bloqueadas),
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
 
                 // Historial
@@ -569,4 +529,12 @@ fun DetalleContinuidadScreen(
             }
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun DetalleContinuidadScreenPreview() {
+    DetalleContinuidadScreen(
+        onNavigateBack = {},
+    )
 }

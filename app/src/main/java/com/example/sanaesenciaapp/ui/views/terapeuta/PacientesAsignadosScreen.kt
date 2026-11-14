@@ -2,6 +2,7 @@ package com.example.sanaesenciaapp.ui.views.terapeuta
 
 import androidx.compose.ui.res.stringResource
 import com.example.sanaesenciaapp.R
+import androidx.compose.ui.tooling.preview.Preview
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -321,4 +322,12 @@ fun PacientesAsignadosScreen(
             }
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PacientesAsignadosScreenPreview() {
+    PacientesAsignadosScreen(
+        onPacienteClick = {},
+    )
 }

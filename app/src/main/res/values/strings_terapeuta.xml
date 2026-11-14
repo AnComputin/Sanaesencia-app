@@ -5,18 +5,18 @@
     <string name="terapeuta_saludo">Hola, %s</string>
     <string name="terapeuta_subt_panel">Gestiona tus atenciones y el seguimiento de tus pacientes.</string>
     <string name="terapeuta_card_jornada_titulo">Tu jornada</string>
-    <string name="terapeuta_card_jornada_desc">Revisa tus citas programadas para hoy.</string>
+    <string name="terapeuta_card_jornada_desc">La agenda estará disponible cuando exista una asociación segura entre tu cuenta y tu perfil profesional.</string>
     <string name="terapeuta_btn_agenda">Ver agenda del día</string>
     <string name="terapeuta_card_pacientes_titulo">Pacientes</string>
-    <string name="terapeuta_card_pacientes_desc">Consulta tus pacientes asignados y su continuidad.</string>
+    <string name="terapeuta_card_pacientes_desc">La lista de pacientes requiere una asociación segura entre tu cuenta y tu perfil profesional.</string>
     <string name="terapeuta_btn_pacientes">Ver mis pacientes</string>
     <string name="terapeuta_btn_cerrar_sesion">Cerrar sesión</string>
     <string name="terapeuta_agenda_titulo">Agenda del día</string>
     <string name="terapeuta_agenda_subtitulo">Tus atenciones de hoy</string>
     <string name="terapeuta_agenda_instruccion">Revisa tus pacientes y registra el resultado de cada atención.</string>
     <string name="terapeuta_agenda_fecha">📅 %1$s</string>
-    <string name="terapeuta_agenda_vacia_titulo">No tienes citas para hoy</string>
-    <string name="terapeuta_agenda_vacia_mensaje">Tu agenda está libre por el momento.</string>
+    <string name="terapeuta_agenda_vacia_titulo">Agenda no disponible</string>
+    <string name="terapeuta_agenda_vacia_mensaje">No se muestran citas hasta poder asociar tu cuenta a un especialista de forma verificable.</string>
     <string name="terapeuta_estado_asistida">Asistida</string>
     <string name="terapeuta_estado_inasistente">Inasistente</string>
     <string name="terapeuta_estado_cancelada">Cancelada</string>
@@ -36,7 +36,7 @@
     <string name="terapeuta_seguimiento_requerido">Seguimiento requerido</string>
     <string name="terapeuta_riesgo_discontinuidad">Este paciente presenta riesgo de discontinuidad en su tratamiento.</string>
     <string name="terapeuta_notas_evolucion">Notas de evolución</string>
-    <string name="terapeuta_notas_desc">Registra observaciones relevantes sobre el seguimiento.</string>
+    <string name="terapeuta_notas_desc">El registro de notas está deshabilitado porque todavía no existe almacenamiento autorizado.</string>
     <string name="terapeuta_notas_label">Notas clínicas / holísticas</string>
     <string name="terapeuta_historial_titulo">Historial de citas</string>
     <string name="terapeuta_historial_desc">Atenciones registradas para este paciente.</string>
@@ -44,8 +44,8 @@
     <string name="terapeuta_label_fecha">Fecha</string>
     <string name="terapeuta_label_box">Box</string>
     <string name="terapeuta_pacientes_topbar">Mis pacientes</string>
-    <string name="terapeuta_pacientes_vacio_titulo">No hay pacientes asignados</string>
-    <string name="terapeuta_pacientes_vacio_mensaje">Tus pacientes aparecerán aquí cuando sean asignados.</string>
+    <string name="terapeuta_pacientes_vacio_titulo">Pacientes no disponibles</string>
+    <string name="terapeuta_pacientes_vacio_mensaje">No se muestran pacientes hasta poder asociar tu cuenta a un especialista de forma verificable.</string>
     <string name="terapeuta_pacientes_seguimiento_titulo">Seguimiento de pacientes</string>
     <string name="terapeuta_pacientes_seguimiento_desc">Revisa el estado de continuidad de tus pacientes asignados.</string>
     <string name="terapeuta_estado_en_riesgo">En riesgo</string>
@@ -54,4 +54,7 @@
     <string name="terapeuta_estado_tocar_seguimiento">Toca para ver seguimiento</string>
     <string name="terapeuta_accessibility_volver">Volver</string>
     <string name="terapeuta_rol_predeterminado">Terapeuta</string>
+    <string name="terapeuta_detalle_bloqueado_titulo">Seguimiento no disponible</string>
+    <string name="terapeuta_detalle_bloqueado_mensaje">No hay una asociación verificada entre la cuenta y un especialista. Los datos de pacientes y las notas clínicas permanecen ocultos.</string>
+    <string name="terapeuta_notas_bloqueadas">Las notas clínicas no se guardan. Esta función permanecerá deshabilitada hasta que exista almacenamiento autorizado.</string>
 </resources>
