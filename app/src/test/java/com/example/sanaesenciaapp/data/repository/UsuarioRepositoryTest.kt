@@ -8,6 +8,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class UsuarioRepositoryTest {
@@ -36,6 +37,17 @@ class UsuarioRepositoryTest {
         override suspend fun obtenerPorEmail(email: String): UsuarioEntity? {
             if (throwCancellationOnGet) throw CancellationException("cancelled")
             return usuarios[email.lowercase()]
+        }
+
+        override suspend fun actualizarPassword(email: String, nuevaPassword: String): Int {
+            val key = email.lowercase()
+            val previo = usuarios[key] ?: return 0
+            usuarios[key] = previo.copy(password = nuevaPassword)
+            return 1
+        }
+
+        override suspend fun contarCuentasSinFormatoPbkdf2(): Int {
+            return usuarios.values.count { !it.password.startsWith("pbkdf2:sha256:") }
         }
     }
 
@@ -109,6 +121,21 @@ class UsuarioRepositoryTest {
     }
 
     @Test
+    fun `actualizarPassword modifica la contrasena hasheada exitosamente`() = runBlocking {
+        val fakeDao = FakeUsuarioDao()
+        val repository = UsuarioRepository(fakeDao)
+
+        val user = usuario("paciente@sanaesencia.cl", password = "old-hash")
+        repository.registrar(user)
+
+        val exito = repository.actualizarPassword("paciente@sanaesencia.cl", "pbkdf2:sha256:10000:new-hash")
+        assertTrue(exito)
+
+        val actualizado = repository.obtenerPorEmail("paciente@sanaesencia.cl")
+        assertEquals("pbkdf2:sha256:10000:new-hash", actualizado?.password)
+    }
+
+    @Test
     fun `registrar cuando ocurre SQLiteException retorna ErrorPersistencia`() = runBlocking {
         val fakeDao = FakeUsuarioDao().apply {
             throwOnInsert = SQLiteException("DB error")
@@ -145,5 +172,45 @@ class UsuarioRepositoryTest {
                 repository.obtenerPorEmail("test@dominio.cl")
             }
         }
+    }
+
+    @Test
+    fun `contarCuentasSinFormatoPbkdf2 devuelve 0 cuando la base de datos esta vacia`() = runBlocking {
+        val fakeDao = FakeUsuarioDao()
+        val repository = UsuarioRepository(fakeDao)
+
+        assertEquals(0, repository.contarCuentasSinFormatoPbkdf2())
+    }
+
+    @Test
+    fun `contarCuentasSinFormatoPbkdf2 contabiliza texto plano, SHA256 legacy y malformados sin prefijo pbkdf2`() = runBlocking {
+        val fakeDao = FakeUsuarioDao()
+        val repository = UsuarioRepository(fakeDao)
+
+        // Scenario A: Texto plano histórico
+        repository.registrar(usuario("plano@dominio.cl", password = "texto_plano_123"))
+
+        // Scenario B: SHA-256 legacy con sal (0123456789abcdef0123456789abcdef:hash)
+        repository.registrar(usuario("sha256@dominio.cl", password = "0123456789abcdef0123456789abcdef:a1b2c3d4e5f6"))
+
+        // Scenario C: PBKDF2 válido (no debe ser contabilizado)
+        repository.registrar(usuario("pbkdf2@dominio.cl", password = "pbkdf2:sha256:600000:salHex:hashHex"))
+
+        // Scenario F: Formato malformado que no comienza con prefijo pbkdf2 (contabilizado)
+        repository.registrar(usuario("malformado@dominio.cl", password = "invalid_format_hash"))
+
+        // Total esperado: 3 (plano, sha256, malformado) de 4 registros
+        assertEquals(3, repository.contarCuentasSinFormatoPbkdf2())
+    }
+
+    @Test
+    fun `contarCuentasSinFormatoPbkdf2 devuelve 0 cuando todas las cuentas tienen formato PBKDF2`() = runBlocking {
+        val fakeDao = FakeUsuarioDao()
+        val repository = UsuarioRepository(fakeDao)
+
+        repository.registrar(usuario("user1@dominio.cl", password = "pbkdf2:sha256:600000:sal1:hash1"))
+        repository.registrar(usuario("user2@dominio.cl", password = "pbkdf2:sha256:600000:sal2:hash2"))
+
+        assertEquals(0, repository.contarCuentasSinFormatoPbkdf2())
     }
 }
