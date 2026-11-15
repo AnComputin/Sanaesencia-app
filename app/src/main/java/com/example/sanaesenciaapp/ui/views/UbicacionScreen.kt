@@ -34,6 +34,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun UbicacionScreen(onBackClick: () -> Unit = {}) {
     val context = LocalContext.current
+    val whatsappMessage = stringResource(R.string.ubicacion_whatsapp_mensaje)
     val scope = rememberCoroutineScope()
     var distanciaKm by remember { mutableStateOf<Float?>(null) }
     var mensajePermisoRechazado by remember { mutableStateOf(false) }
@@ -215,7 +216,10 @@ fun UbicacionScreen(onBackClick: () -> Unit = {}) {
                     onClick = {
                         val intent = Intent(
                             Intent.ACTION_VIEW,
-                            Uri.parse("https://wa.me/56912345678?text=Hola,%20deseo%20consultar%20sobre%20las%20terapias%20de%20SanaEsencia")
+                            Uri.parse("https://wa.me/56912345678")
+                                .buildUpon()
+                                .appendQueryParameter("text", whatsappMessage)
+                                .build()
                         )
                         context.startActivity(intent)
                     },

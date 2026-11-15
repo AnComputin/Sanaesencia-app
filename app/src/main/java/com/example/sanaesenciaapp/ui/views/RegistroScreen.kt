@@ -65,6 +65,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.sanaesenciaapp.data.AppState
 import com.example.sanaesenciaapp.ui.components.SanaBackground
+import com.example.sanaesenciaapp.ui.components.validationMessageText
 import com.example.sanaesenciaapp.viewmodel.AuthViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -342,8 +343,7 @@ fun RegistroScreen(
 
                                     Text(
                                         text =
-                                            state.errorNombre
-                                                ?: "",
+                                            validationMessageText(state.errorNombre),
 
                                         color =
                                             MaterialTheme
@@ -406,8 +406,7 @@ fun RegistroScreen(
 
                                     Text(
                                         text =
-                                            state.errorRut
-                                                ?: "",
+                                            validationMessageText(state.errorRut),
 
                                         color =
                                             MaterialTheme
@@ -501,8 +500,7 @@ fun RegistroScreen(
 
                             Text(
                                 text =
-                                    state.errorFechaNacimiento
-                                        ?: "",
+                                    validationMessageText(state.errorFechaNacimiento),
 
                                 color =
                                     MaterialTheme
@@ -565,8 +563,7 @@ fun RegistroScreen(
 
                                     Text(
                                         text =
-                                            state.errorTelefono
-                                                ?: "",
+                                            validationMessageText(state.errorTelefono),
 
                                         color =
                                             MaterialTheme
@@ -702,7 +699,7 @@ fun RegistroScreen(
 
                             Text(
                                 text =
-                                    state.errorComuna ?: "",
+                                    validationMessageText(state.errorComuna),
 
                                 color =
                                     MaterialTheme
@@ -808,8 +805,7 @@ fun RegistroScreen(
 
                                     Text(
                                         text =
-                                            state.errorEmail
-                                                ?: "",
+                                            validationMessageText(state.errorEmail),
 
                                         color =
                                             MaterialTheme
@@ -916,8 +912,7 @@ fun RegistroScreen(
 
                                     Text(
                                         text =
-                                            state.errorPassword
-                                                ?: "",
+                                            validationMessageText(state.errorPassword),
 
                                         color =
                                             MaterialTheme

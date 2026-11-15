@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.sanaesenciaapp.data.AppState
 import com.example.sanaesenciaapp.ui.components.SanaBackground
+import com.example.sanaesenciaapp.ui.components.validationMessageText
 import com.example.sanaesenciaapp.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -197,7 +198,7 @@ fun LoginScreen(
 
                                     Text(
                                         text =
-                                            state.errorEmail ?: "",
+                                            validationMessageText(state.errorEmail),
 
                                         color =
                                             MaterialTheme
@@ -292,7 +293,7 @@ fun LoginScreen(
 
                                     Text(
                                         text =
-                                            state.errorPassword ?: "",
+                                            validationMessageText(state.errorPassword),
 
                                         color =
                                             MaterialTheme
