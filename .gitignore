@@ -18,3 +18,8 @@ local.properties
 *.jks
 *.keystore
 keystore.properties
+
+# Local artifacts and device configurations
+/.artifacts/
+/.idea/deploymentTargetSelector.xml
+/.idea/deviceManager.xml
