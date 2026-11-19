@@ -58,6 +58,20 @@ class MisCitasViewModel(
         }
     }
 
+    /*Verifica si una cita puede cancelarse (confirmada y con 24h de anticipación).*/
+    fun puedeCancelar(cita: CitaEntity): Boolean {
+        if (cita.estado != "CONFIRMADA") return false
+        val ahora = System.currentTimeMillis()
+        val horasRestantes = (cita.inicioMillis - ahora) / (1000 * 60 * 60)
+        return horasRestantes >= 24
+    }
+
+    /*Formatea una fecha en milisegundos a texto legible.*/
+    fun formatearFecha(millis: Long): String {
+        val formato = java.text.SimpleDateFormat("EEE d MMM", java.util.Locale("es", "CL"))
+        return formato.format(java.util.Date(millis))
+    }
+
     /*Limpia el error general.*/
     fun limpiarError() {
         _errorGeneral.value = null

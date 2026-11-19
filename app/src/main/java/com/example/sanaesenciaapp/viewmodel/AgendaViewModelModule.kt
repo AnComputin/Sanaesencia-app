@@ -6,7 +6,7 @@ import com.example.sanaesenciaapp.di.AppContainer
 
 class AgendaViewModelModule : AppViewModelModule {
     override fun supports(modelClass: Class<out ViewModel>): Boolean{
-        return modelClass == AgendarviewModel::class.java ||
+        return modelClass == AgendarViewModel::class.java ||
                 modelClass == PagoViewModel::class.java ||
                 modelClass == MisCitasViewModel::class.java
     }
@@ -18,7 +18,7 @@ class AgendaViewModelModule : AppViewModelModule {
         val citaRepository = CitaRepository(appContainer.citaDao)
 
         return when (modelClass){
-            AgendarviewModel::class.java -> AgendarviewModel(
+            AgendarViewModel::class.java -> AgendarViewModel(
                 citaRepository = citaRepository,
                 sesionRepository = appContainer.sesionRepository
             )
