@@ -2,6 +2,7 @@ package com.example.sanaesenciaapp.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.CreationExtras
 import com.example.sanaesenciaapp.di.AppContainer
 
 /**
@@ -13,8 +14,9 @@ import com.example.sanaesenciaapp.di.AppContainer
  * Guía de integración para el equipo:
  * 1. Implementar [supports] para responder `true` únicamente con las clases ViewModel asignadas a su módulo.
  * 2. Implementar [create] para instanciar sus ViewModels obteniendo dependencias compartidas de [AppContainer].
- * 3. Pasar su módulo a la lista de [AppViewModelProvider].
- * 4. NO modificar los archivos ni módulos pertenecientes a otros integrantes.
+ * 3. Para ViewModels que requieran [androidx.lifecycle.SavedStateHandle], implementar la sobrecarga de [create] que recibe [CreationExtras].
+ * 4. Pasar su módulo a la lista de [AppViewModelProvider].
+ * 5. NO modificar los archivos ni módulos pertenecientes a otros integrantes.
  */
 interface AppViewModelModule {
     fun supports(modelClass: Class<out ViewModel>): Boolean
@@ -23,6 +25,12 @@ interface AppViewModelModule {
         modelClass: Class<out ViewModel>,
         appContainer: AppContainer
     ): ViewModel
+
+    fun create(
+        modelClass: Class<out ViewModel>,
+        appContainer: AppContainer,
+        extras: CreationExtras
+    ): ViewModel = create(modelClass, appContainer)
 }
 
 /**
@@ -43,6 +51,10 @@ class AppViewModelProvider(
     }
 
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        return create(modelClass, CreationExtras.Empty)
+    }
+
+    override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
         val matchingModules = modules.filter { module ->
             module.supports(modelClass)
         }
@@ -50,7 +62,7 @@ class AppViewModelProvider(
             "Expected exactly one ViewModel module for ${modelClass.name}, found ${matchingModules.size}"
         }
 
-        val viewModel = matchingModules.single().create(modelClass, appContainer)
+        val viewModel = matchingModules.single().create(modelClass, appContainer, extras)
         require(modelClass.isInstance(viewModel)) {
             "The ViewModel module returned ${viewModel::class.java.name} for ${modelClass.name}"
         }

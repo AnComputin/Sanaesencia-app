@@ -7,21 +7,25 @@ import com.example.sanaesenciaapp.data.room.CitaDao
 import com.example.sanaesenciaapp.data.room.EspecialidadDao
 import com.example.sanaesenciaapp.data.room.EspecialistaDao
 import com.example.sanaesenciaapp.data.room.UsuarioDao
+import com.example.sanaesenciaapp.data.repository.BeneficiarioRepository
 import com.example.sanaesenciaapp.data.repository.SesionRepository
 import com.example.sanaesenciaapp.data.repository.UsuarioRepository
 
-class AppContainer(context: Context) {
+open class AppContainer(context: Context) {
 
     private val appContext = context.applicationContext
 
-    val database: AppDatabase = AppDatabase.getInstance(appContext)
+    open val database: AppDatabase by lazy { AppDatabase.getInstance(appContext) }
 
-    val usuarioDao: UsuarioDao = database.usuarioDao()
-    val especialidadDao: EspecialidadDao = database.especialidadDao()
-    val especialistaDao: EspecialistaDao = database.especialistaDao()
-    val citaDao: CitaDao = database.citaDao()
-    val beneficiarioDao: BeneficiarioDao = database.beneficiarioDao()
+    open val usuarioDao: UsuarioDao by lazy { database.usuarioDao() }
+    open val especialidadDao: EspecialidadDao by lazy { database.especialidadDao() }
+    open val especialistaDao: EspecialistaDao by lazy { database.especialistaDao() }
+    open val citaDao: CitaDao by lazy { database.citaDao() }
+    open val beneficiarioDao: BeneficiarioDao by lazy { database.beneficiarioDao() }
 
-    val usuarioRepository = UsuarioRepository(usuarioDao)
-    val sesionRepository = SesionRepository(usuarioRepository)
+    open val usuarioRepository: UsuarioRepository by lazy { UsuarioRepository(usuarioDao) }
+    open val sesionRepository: SesionRepository by lazy { SesionRepository(usuarioRepository) }
+    open val beneficiarioRepository: BeneficiarioRepository by lazy {
+        BeneficiarioRepository(beneficiarioDao, sesionRepository)
+    }
 }

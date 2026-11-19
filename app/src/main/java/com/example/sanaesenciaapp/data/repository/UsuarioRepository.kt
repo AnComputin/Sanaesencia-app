@@ -46,8 +46,29 @@ class UsuarioRepository(
     }
 
     /**
+     * Actualiza la contraseña hasheada de un usuario por su correo.
+     */
+    suspend fun actualizarPassword(email: String, nuevaPassword: String): Boolean {
+        return try {
+            val filasAfectadas = usuarioDao.actualizarPassword(email.trim(), nuevaPassword)
+            filasAfectadas > 0
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    /**
      * Inserción de bajo nivel usada por la carga inicial existente.
      * IGNORE garantiza que una fila previa no sea reemplazada.
      */
     suspend fun insertar(usuario: UsuarioEntity): Long = usuarioDao.insertar(usuario)
+
+    /**
+     * Contabiliza las cuentas cuyo campo password no comienza con el prefijo "pbkdf2:sha256:".
+     * Retorna exclusivamente un valor escalar entero sin exponer credenciales ni entidades.
+     */
+    suspend fun contarCuentasSinFormatoPbkdf2(): Int =
+        usuarioDao.contarCuentasSinFormatoPbkdf2()
 }
