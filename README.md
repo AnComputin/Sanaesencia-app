@@ -88,14 +88,14 @@ Carpetas dentro de `app/src/main/java/com/example/sanaesenciaapp/`:
 
 Estado de los flujos según el código:
 
-- Catálogo: especialidades y especialistas se observan desde Room mediante `CatalogoRepository` y `CatalogoViewModel`. La selección que comparte con la agenda todavía usa estado de `AppState`.
+- Catálogo: especialidades y especialistas se observan desde Room mediante `CatalogoRepository` y `CatalogoViewModel`. El detalle y la selección de especialista recuperan `especialidadId` desde `SavedStateHandle`. El grafo conserva `AppState` para la sesión y la transición a Agenda, que mantiene el contrato vigente con `CitaViewModel`.
 - Beneficiarios: la pantalla de ficha usa `BeneficiarioViewModel` y `BeneficiarioRepository`. El propietario se determina desde la sesión; las operaciones están restringidas por propietario. La agenda aún consume el estado compartido de beneficiarios de `AppState`.
-- Terapeuta: el módulo está registrado, pero permanece bloqueado y sin datos porque no existe asociación persistida cuenta-terapeuta a especialista. Las notas no se guardan y están deshabilitadas.
+- Terapeuta: el módulo está registrado, pero permanece bloqueado y sin datos porque no existe asociación persistida cuenta-terapeuta a especialista. Room almacena las citas de Agenda con `especialistaId`. El portal conserva en memoria el estado de pantalla y la selección, con las listas clínicas vacías. La lectura y actualización de citas requieren una relación verificable entre la sesión y el especialista. La edición de notas está deshabilitada. Su persistencia requiere definir un modelo y reglas de acceso.
 - Juegos: los juegos usan ViewModels propios, estado en memoria, navegación mediante callbacks y pruebas unitarias.
 - Sesión: `SesionRepository` mantiene la sesión en memoria; no se restaura al cerrar y volver a abrir la aplicación.
 - Servicios remotos: Retrofit y un backend no están configurados en las dependencias actuales.
 
-Las pruebas unitarias están en `app/src/test` y cubren utilidades, repositorios y ViewModels, incluidos módulos de catálogo, beneficiarios y juegos. Las pruebas Room instrumentadas están en `app/src/androidTest`. Validación local del 14 de noviembre de 2026: `compileDebugKotlin`, `testDebugUnitTest` (109 aprobadas, 0 omitidas, 0 fallidas), `compileDebugAndroidTestKotlin` y `assembleDebug` finalizaron correctamente. `connectedDebugAndroidTest` no se ejecutó: `adb devices -l` no mostró dispositivos conectados.
+Las pruebas unitarias están en `app/src/test` y las instrumentadas de Room en `app/src/androidTest`. En la validación de la rama Ale, `compileDebugKotlin`, `testDebugUnitTest` (110 aprobadas, 0 fallidas, 0 omitidas), `assembleDebug` y `connectedDebugAndroidTest` (25 aprobadas en un emulador API 37) terminaron correctamente.
 
 ## Requisitos y ejecución
 
@@ -112,7 +112,7 @@ Abre el proyecto en Android Studio y espera a que termine la sincronización de 
 .\gradlew.bat :app:assembleDebug
 ```
 
-Las pruebas instrumentadas requieren un dispositivo o emulador conectado y pueden ejecutarse con `.\gradlew.bat :app:connectedDebugAndroidTest`. No hay configuración de firma release en `app/build.gradle.kts`; el artefacto release, si se genera, no está firmado para distribución.
+Las pruebas instrumentadas requieren un dispositivo o emulador conectado y pueden ejecutarse con `.\gradlew.bat :app:connectedDebugAndroidTest`. El APK debug se genera en `app/build/outputs/apk/debug/`. Para generar el APK release, ejecuta `.\gradlew.bat :app:assembleRelease`. La variante release no tiene firma configurada. Para distribuirla, usa **Generate Signed App Bundle or APK** en Android Studio y una clave gestionada fuera del repositorio.
 
 Para probar el calendario se necesita una aplicación de calendario instalada. La ubicación se solicita al tocar el botón correspondiente.
 
