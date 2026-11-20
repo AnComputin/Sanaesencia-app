@@ -8,6 +8,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * Estado del proceso de pago.
@@ -96,5 +99,30 @@ class PagoViewModel(
      */
     fun limpiarError() {
         _uiState.update { it.copy(errorGeneral = null) }
+    }
+
+    // ── Compatibilidad con PagoScreen ──────────────
+
+    val puedeContinuar: StateFlow<Boolean> = MutableStateFlow(true)
+
+    val duracionPagoSegundos: Int = 0  // Sin temporizador aprobado
+
+    fun iniciarPago() {
+        // No hay temporizador aprobado, solo carga datos
+    }
+
+    fun segundosRestantesPago(): Int = 0  // Sin temporizador
+
+    fun formatearFecha(millis: Long): String {
+        val formato = SimpleDateFormat("EEE d MMM", Locale("es", "CL"))
+        return formato.format(Date(millis))
+    }
+
+    fun confirmarCita(usuarioEmail: String, onResultado: (Boolean) -> Unit) {
+        procesarPago()
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(1600)
+            onResultado(_uiState.value.pagoExitoso)
+        }
     }
 }

@@ -23,7 +23,7 @@ fun NavGraphBuilder.agendaGraph(
 ) {
     composable("agendar") {
         AgendarScreen(
-            citaViewModel = citaViewModel,
+            agendarViewModel = agendarViewModel,
             onContinuar = {
                 navController.navigate("pago")
             },
