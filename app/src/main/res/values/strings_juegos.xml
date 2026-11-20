@@ -1,5 +1,8 @@
 <resources>
     <!-- Módulo Juegos / Bienestar -->
+    <string name="juegos_camino_posicion_formato">%1$d / %2$d</string>
+    <string name="juegos_progreso_formato">%1$d%%</string>
+    <string name="juegos_tiempo_formato">%1$02d:%2$02d</string>
     <string name="juegos_topbar">🌿 Espacio de Bienestar</string>
     <string name="juegos_titulo_principal">Tu momento de autocuidado</string>
     <string name="juegos_subt_principal">Dedica unos minutos a tu bienestar. Explora actividades para ejercitar la mente, relajarte y conectar con el presente.</string>

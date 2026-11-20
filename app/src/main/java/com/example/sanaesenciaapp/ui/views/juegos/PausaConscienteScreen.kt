@@ -103,7 +103,7 @@ fun PausaConscienteScreen(
                             color = MaterialTheme.colorScheme.secondary
                         )
                         Text(
-                            text = "${(progreso * 100).toInt()}%",
+                            text = stringResource(R.string.juegos_progreso_formato, (progreso * 100).toInt()),
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.primary
                         )
