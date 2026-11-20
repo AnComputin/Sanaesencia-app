@@ -2,7 +2,6 @@ package com.example.sanaesenciaapp.ui.views
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,196 +11,66 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
-import com.example.sanaesenciaapp.data.AppState
+import com.example.sanaesenciaapp.R
+import com.example.sanaesenciaapp.data.room.EspecialidadEntity
 import com.example.sanaesenciaapp.ui.components.SanaBackground
 
 @Composable
 fun SeleccionEspecialidadScreen(
-    navController: NavController,
-    appState: AppState
+    especialidades: List<EspecialidadEntity>,
+    cargando: Boolean,
+    error: Boolean,
+    onEspecialidadClick: (Int) -> Unit
 ) {
-
     SanaBackground {
-
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 20.dp),
+            modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-
             item {
-
-                Spacer(modifier = Modifier.height(28.dp))
-
+                Spacer(Modifier.height(28.dp))
                 Text(
-                    text = "Elige tu especialidad",
+                    stringResource(R.string.catalogo_titulo_seleccionar),
                     fontSize = 30.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.secondary
                 )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "Selecciona el área en la que deseas recibir atención.",
-                    fontSize = 15.sp,
-                    color = MaterialTheme.colorScheme.onBackground.copy(
-                        alpha = 0.7f
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(Modifier.height(8.dp))
+                Text(stringResource(R.string.catalogo_subt_seleccionar))
+                Spacer(Modifier.height(10.dp))
             }
-
-            items(appState.especialidades) { especialidad ->
-
+            if (cargando) item { CircularProgressIndicator() }
+            else if (error) item { Text(stringResource(R.string.catalogo_error_carga), color = MaterialTheme.colorScheme.error) }
+            else if (especialidades.isEmpty()) item { Text(stringResource(R.string.catalogo_vacio)) }
+            else items(especialidades, key = { it.id }) { especialidad ->
                 Card(
-                    onClick = {
-
-                        appState.especialidadSeleccionada = especialidad
-                        appState.especialistaSeleccionado = null
-
-                        if (especialidad.agendaPausada) {
-                            navController.navigate("detalle_servicio")
-                        } else {
-                            navController.navigate("seleccionar_especialista")
-                        }
-                    },
-
+                    onClick = { onEspecialidadClick(especialidad.id) },
                     modifier = Modifier.fillMaxWidth(),
-
-                    shape = RoundedCornerShape(22.dp),
-
-                    colors = CardDefaults.cardColors(
-                        containerColor =
-                            MaterialTheme.colorScheme.surface
-                    ),
-
-                    elevation = CardDefaults.cardElevation(
-                        defaultElevation = 2.dp
-                    )
+                    shape = RoundedCornerShape(22.dp)
                 ) {
-
-                    Column(
-                        modifier = Modifier.padding(20.dp)
-                    ) {
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement =
-                                Arrangement.SpaceBetween,
-                            verticalAlignment =
-                                Alignment.CenterVertically
-                        ) {
-
-                            Text(
-                                text = especialidad.nombre,
-                                fontSize = 19.sp,
-                                fontWeight = FontWeight.Bold,
-                                color =
-                                    MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.weight(1f)
-                            )
-
-                            Surface(
-                                shape = RoundedCornerShape(50.dp),
-
-                                color =
-                                    if (especialidad.agendaPausada)
-                                        MaterialTheme.colorScheme.errorContainer
-                                    else
-                                        MaterialTheme.colorScheme.primaryContainer
-                            ) {
-
-                                Text(
-                                    text =
-                                        if (especialidad.agendaPausada)
-                                            "Pausada"
-                                        else
-                                            "Disponible",
-
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.SemiBold,
-
-                                    color =
-                                        if (especialidad.agendaPausada)
-                                            MaterialTheme.colorScheme.onErrorContainer
-                                        else
-                                            MaterialTheme.colorScheme.onPrimaryContainer,
-
-                                    modifier = Modifier.padding(
-                                        horizontal = 10.dp,
-                                        vertical = 6.dp
-                                    )
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
+                    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(especialidad.nombre, fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                        Text(especialidad.profesional)
+                        Text(especialidad.modalidad)
                         Text(
-                            text = "Especialistas",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-
-                        Text(
-                            text = especialidad.profesional,
-                            fontSize = 15.sp
-                        )
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        Text(
-                            text = "Modalidad",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-
-                        Text(
-                            text = especialidad.modalidad,
-                            fontSize = 15.sp
-                        )
-
-                        Spacer(modifier = Modifier.height(14.dp))
-
-                        Text(
-                            text =
-                                if (especialidad.agendaPausada)
-                                    "Agenda temporalmente no disponible"
-                                else
-                                    "Toca para elegir especialista y reservar",
-
-                            fontSize = 13.sp,
-
-                            color =
-                                if (especialidad.agendaPausada)
-                                    MaterialTheme.colorScheme.error
-                                else
-                                    MaterialTheme.colorScheme.onSurface.copy(
-                                        alpha = 0.6f
-                                    )
+                            stringResource(
+                                if (especialidad.agendaPausada) R.string.catalogo_badge_pausada
+                                else R.string.catalogo_estado_toca_reservar
+                            ),
+                            color = if (especialidad.agendaPausada) MaterialTheme.colorScheme.error
+                            else MaterialTheme.colorScheme.primary
                         )
                     }
                 }
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(28.dp))
             }
         }
     }

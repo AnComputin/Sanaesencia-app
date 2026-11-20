@@ -1,5 +1,8 @@
 package com.example.sanaesenciaapp.ui.views.juegos
 
+import androidx.compose.ui.res.stringResource
+import com.example.sanaesenciaapp.R
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,16 +42,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import com.example.sanaesenciaapp.ui.components.SanaBackground
 import com.example.sanaesenciaapp.viewmodel.CaminoViewModel
 import com.example.sanaesenciaapp.viewmodel.CasillaCamino
 import com.example.sanaesenciaapp.viewmodel.TipoCasillaCamino
+import com.example.sanaesenciaapp.viewmodel.TipoMensajeCamino
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CaminoBienestarScreen(
-    navController: NavController,
+    onBackClick: () -> Unit,
     viewModel: CaminoViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -59,16 +62,16 @@ fun CaminoBienestarScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "🎲 Camino del Bienestar",
+                        text = stringResource(R.string.juegos_camino_titulo),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver",
+                            contentDescription = stringResource(R.string.juegos_accessibility_volver),
                             tint = MaterialTheme.colorScheme.secondary
                         )
                     }
@@ -104,15 +107,15 @@ fun CaminoBienestarScreen(
                             horizontalArrangement = Arrangement.SpaceAround
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("Posición", fontSize = 13.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f))
+                                Text(stringResource(R.string.juegos_camino_posicion), fontSize = 13.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f))
                                 Text("${uiState.posicionActual} / 25", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                             }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("Lanzamientos", fontSize = 13.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f))
+                                Text(stringResource(R.string.juegos_camino_lanzamientos), fontSize = 13.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f))
                                 Text("${uiState.turnoCount}", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                             }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("Último Dado", fontSize = 13.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f))
+                                Text(stringResource(R.string.juegos_camino_ultimo_dado), fontSize = 13.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f))
                                 Text(uiState.ultimoDado?.let { "🎲 $it" } ?: "-", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                             }
                         }
@@ -120,7 +123,32 @@ fun CaminoBienestarScreen(
                         Spacer(modifier = Modifier.height(12.dp))
 
                         Text(
-                            text = uiState.mensajeEvento,
+                            text = when (uiState.mensajeEvento.tipo) {
+                                TipoMensajeCamino.INICIO ->
+                                    stringResource(R.string.juegos_camino_evento_inicio)
+                                TipoMensajeCamino.META ->
+                                    stringResource(R.string.juegos_camino_evento_meta)
+                                TipoMensajeCamino.CASILLA_NORMAL ->
+                                    stringResource(
+                                        R.string.juegos_camino_evento_normal,
+                                        uiState.mensajeEvento.numeroCasilla ?: uiState.posicionActual
+                                    )
+                                TipoMensajeCamino.CASILLA_AVANCE ->
+                                    stringResource(
+                                        R.string.juegos_camino_evento_avance,
+                                        uiState.mensajeEvento.numeroCasilla ?: uiState.posicionActual
+                                    )
+                                TipoMensajeCamino.CASILLA_RETROCESO ->
+                                    stringResource(
+                                        R.string.juegos_camino_evento_retroceso,
+                                        uiState.mensajeEvento.numeroCasilla ?: uiState.posicionActual
+                                    )
+                                TipoMensajeCamino.CASILLA_MEDITACION ->
+                                    stringResource(
+                                        R.string.juegos_camino_evento_meditacion,
+                                        uiState.mensajeEvento.numeroCasilla ?: uiState.posicionActual
+                                    )
+                            },
                             fontSize = 14.sp,
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colorScheme.onBackground
@@ -162,7 +190,7 @@ fun CaminoBienestarScreen(
                             .weight(1f)
                             .height(50.dp)
                     ) {
-                        Text(text = "🎲 Lanzar Dado", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text(text = stringResource(R.string.juegos_camino_lanzar_dado), fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
 
                     Button(
@@ -172,7 +200,7 @@ fun CaminoBienestarScreen(
                         modifier = Modifier
                             .height(50.dp)
                     ) {
-                        Text(text = "Reiniciar", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text(text = stringResource(R.string.juegos_reiniciar), fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -183,14 +211,14 @@ fun CaminoBienestarScreen(
                 onDismissRequest = { viewModel.reiniciarJuego() },
                 title = {
                     Text(
-                        text = "🏆 ¡Meta Alcanzada!",
+                        text = stringResource(R.string.juegos_camino_meta),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
                     )
                 },
                 text = {
                     Text(
-                        text = "¡Felicitaciones! Has completado el Camino del Bienestar en ${uiState.turnoCount} lanzamientos. Tu mente y espíritu han alcanzado la armonía.",
+                        text = stringResource(R.string.juegos_camino_completado, uiState.turnoCount),
                         fontSize = 16.sp
                     )
                 },
@@ -200,7 +228,7 @@ fun CaminoBienestarScreen(
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("Volver a jugar")
+                        Text(stringResource(R.string.juegos_volver_jugar))
                     }
                 }
             )

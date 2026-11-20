@@ -1,0 +1,30 @@
+<resources>
+    <!-- Módulo Beneficiarios -->
+    <string name="beneficiario_topbar">Registrar beneficiario</string>
+    <string name="beneficiario_titulo_principal">Persona a tu cargo</string>
+    <string name="beneficiario_subt_principal">Guarda sus datos una vez y podrás seleccionarlo al reservar futuras atenciones.</string>
+    <string name="beneficiario_titulo_card">Datos del beneficiario</string>
+    <string name="beneficiario_label_nombre">Nombre completo</string>
+    <string name="beneficiario_label_rut">RUT</string>
+    <string name="beneficiario_label_fecha">Fecha de nacimiento (DD/MM/AAAA)</string>
+    <string name="beneficiario_label_parentesco">Parentesco (hijo/a, sobrino/a, tutor/a...)</string>
+    <string name="beneficiario_btn_guardar">Guardar beneficiario</string>
+    <string name="beneficiario_btn_guardando">Guardando...</string>
+    <string name="beneficiario_aviso_asociado">Este beneficiario quedará asociado únicamente a tu cuenta.</string>
+    <string name="beneficiario_error_generico">No fue posible guardar el beneficiario</string>
+    <string name="beneficiario_accessibility_volver">Volver</string>
+    <string name="beneficiario_cargando">Cargando beneficiarios...</string>
+    <string name="beneficiario_sesion_requerida">Inicia sesión para administrar tus beneficiarios.</string>
+    <string name="beneficiario_lista_vacia">Aún no tienes beneficiarios registrados.</string>
+    <string name="beneficiario_resumen_rut">RUT: %1$s</string>
+    <string name="beneficiario_editar">Editar</string>
+    <string name="beneficiario_desactivar">Desactivar</string>
+    <string name="beneficiario_cancelar_edicion">Cancelar edición</string>
+    <string name="beneficiario_guardado">Beneficiario guardado.</string>
+    <string name="beneficiario_reactivado">Beneficiario reactivado.</string>
+    <string name="beneficiario_actualizado">Beneficiario actualizado.</string>
+    <string name="beneficiario_duplicado">Ya existe un beneficiario activo con ese RUT.</string>
+    <string name="beneficiario_error_validacion">Revisa los datos ingresados.</string>
+    <string name="beneficiario_no_encontrado">No se encontró el beneficiario.</string>
+    <string name="beneficiario_desactivado">Beneficiario desactivado.</string>
+</resources>

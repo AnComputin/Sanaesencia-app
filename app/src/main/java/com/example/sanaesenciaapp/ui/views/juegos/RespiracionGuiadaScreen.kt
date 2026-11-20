@@ -1,5 +1,8 @@
 package com.example.sanaesenciaapp.ui.views.juegos
 
+import androidx.compose.ui.res.stringResource
+import com.example.sanaesenciaapp.R
+
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -42,7 +45,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import com.example.sanaesenciaapp.ui.components.SanaBackground
 import com.example.sanaesenciaapp.viewmodel.FaseRespiracion
 import com.example.sanaesenciaapp.viewmodel.RespiracionViewModel
@@ -50,7 +52,7 @@ import com.example.sanaesenciaapp.viewmodel.RespiracionViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RespiracionGuiadaScreen(
-    navController: NavController,
+    onBackClick: () -> Unit,
     viewModel: RespiracionViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -74,16 +76,16 @@ fun RespiracionGuiadaScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "🫁 Respiración Guiada",
+                        text = stringResource(R.string.juegos_respiracion_titulo),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver",
+                            contentDescription = stringResource(R.string.juegos_accessibility_volver),
                             tint = MaterialTheme.colorScheme.secondary
                         )
                     }
@@ -117,7 +119,7 @@ fun RespiracionGuiadaScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Tiempo de sesión",
+                            text = stringResource(R.string.juegos_respiracion_tiempo_sesion),
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                         )
@@ -159,7 +161,17 @@ fun RespiracionGuiadaScreen(
                     Spacer(modifier = Modifier.height(24.dp))
 
                     Text(
-                        text = if (uiState.estaActivo) uiState.fase.texto else "Presiona Iniciar para comenzar la respiración guiada",
+                        text = if (uiState.estaActivo) {
+                            stringResource(
+                                when (uiState.fase) {
+                                    FaseRespiracion.INHALAR -> R.string.juegos_respiracion_inhalar
+                                    FaseRespiracion.MANTENER -> R.string.juegos_respiracion_mantener
+                                    FaseRespiracion.EXHALAR -> R.string.juegos_respiracion_exhalar
+                                }
+                            )
+                        } else {
+                            stringResource(R.string.juegos_respiracion_instruccion)
+                        },
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary,
@@ -181,7 +193,7 @@ fun RespiracionGuiadaScreen(
                             shape = RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
-                            Text("Iniciar Respiración", fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.juegos_respiracion_iniciar), fontSize = 17.sp, fontWeight = FontWeight.Bold)
                         }
                     } else {
                         Row(
@@ -199,7 +211,7 @@ fun RespiracionGuiadaScreen(
                                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                             ) {
                                 Text(
-                                    text = if (uiState.estaPausado) "Reanudar" else "Pausar",
+                                    text = stringResource(if (uiState.estaPausado) R.string.juegos_respiracion_reanudar else R.string.juegos_respiracion_pausar),
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -213,7 +225,7 @@ fun RespiracionGuiadaScreen(
                                 shape = RoundedCornerShape(16.dp)
                             ) {
                                 Text(
-                                    text = "Reiniciar",
+                                    text = stringResource(R.string.juegos_reiniciar),
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.secondary
@@ -231,14 +243,14 @@ fun RespiracionGuiadaScreen(
                 onDismissRequest = { viewModel.reiniciar() },
                 title = {
                     Text(
-                        text = "🌿 Sesión Completada",
+                        text = stringResource(R.string.juegos_respiracion_sesion_completada),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
                     )
                 },
                 text = {
                     Text(
-                        text = "Siente la tranquilidad y serenidad en tu cuerpo. Te has regalado un momento de pausa consciente.",
+                        text = stringResource(R.string.juegos_respiracion_mensaje_final),
                         fontSize = 16.sp
                     )
                 },
@@ -248,7 +260,7 @@ fun RespiracionGuiadaScreen(
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("Aceptar")
+                        Text(stringResource(R.string.juegos_aceptar))
                     }
                 }
             )
