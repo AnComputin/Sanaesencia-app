@@ -1,9 +1,15 @@
 package com.example.sanaesenciaapp.navigation
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
-import com.example.sanaesenciaapp.data.AppState
+import com.example.sanaesenciaapp.data.repository.BeneficiarioRepository
+import com.example.sanaesenciaapp.data.repository.SesionRepository
+import com.example.sanaesenciaapp.data.room.BeneficiarioEntity
 import com.example.sanaesenciaapp.ui.views.agenda.AgendarScreen
 import com.example.sanaesenciaapp.ui.views.agenda.ConfirmacionScreen
 import com.example.sanaesenciaapp.ui.views.agenda.PagoScreen
@@ -15,13 +21,17 @@ import com.example.sanaesenciaapp.viewmodel.PagoViewModel
 
 fun NavGraphBuilder.agendaGraph(
     navController: NavHostController,
-    appState: AppState,
+    sesionRepository: SesionRepository,
+    beneficiarioRepository: BeneficiarioRepository,
     citaViewModel: CitaViewModel,
     agendarViewModel: AgendarViewModel,
     pagoViewModel: PagoViewModel,
     misCitasViewModel: MisCitasViewModel
 ) {
     composable("agendar") {
+        val sesion = sesionRepository.sesionActual.value
+        var beneficiarioSeleccionado by remember { mutableStateOf<BeneficiarioEntity?>(null) }
+
         AgendarScreen(
             agendarViewModel = agendarViewModel,
             onContinuar = {
@@ -30,14 +40,14 @@ fun NavGraphBuilder.agendaGraph(
             onVolver = {
                 navController.popBackStack()
             },
-            nombreTitular = appState.usuarioActual?.nombre.orEmpty(),
-            beneficiarios = appState.beneficiarios,
-            beneficiarioSeleccionadoId = appState.beneficiarioSeleccionado?.id,
+            nombreTitular = sesion?.nombre.orEmpty(),
+            beneficiarios = emptyList(), // Se cargará desde BeneficiarioRepository
+            beneficiarioSeleccionadoId = beneficiarioSeleccionado?.id,
             onPacienteTitularSeleccionado = {
-                appState.seleccionarBeneficiario(null)
+                beneficiarioSeleccionado = null
             },
             onBeneficiarioSeleccionado = { beneficiario ->
-                appState.seleccionarBeneficiario(beneficiario)
+                beneficiarioSeleccionado = beneficiario
             },
             onRegistrarBeneficiario = {
                 navController.navigate("ficha_beneficiario")
@@ -46,9 +56,10 @@ fun NavGraphBuilder.agendaGraph(
     }
 
     composable("pago") {
+        val sesion = sesionRepository.sesionActual.value
         PagoScreen(
             pagoViewModel = pagoViewModel,
-            usuarioEmail = appState.usuarioActual?.email ?: "",
+            usuarioEmail = sesion?.email ?: "",
             onPagoExitoso = {
                 navController.navigate("confirmacion") {
                     popUpTo("pago") { inclusive = true }
@@ -72,9 +83,10 @@ fun NavGraphBuilder.agendaGraph(
     }
 
     composable("mis_citas") {
+        val sesion = sesionRepository.sesionActual.value
         MisCitasScreen(
             misCitasViewModel = misCitasViewModel,
-            usuarioEmail = appState.usuarioActual?.email ?: "",
+            usuarioEmail = sesion?.email ?: "",
             onVolver = {
                 navController.popBackStack()
             }

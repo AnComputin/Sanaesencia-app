@@ -81,7 +81,7 @@ fun AppNavigation(
 
         authGraph(navController, appState)
         catalogoGraph(navController, appState, citaViewModel)
-        agendaGraph(navController, appState, citaViewModel, agendarViewModel, pagoViewModel, misCitasViewModel)
+        agendaGraph(navController, appContainer.sesionRepository, appContainer.beneficiarioRepository, citaViewModel, agendarViewModel, pagoViewModel, misCitasViewModel)
         terapeutaGraph(navController, appState, terapeutaViewModel)
         juegosGraph(navController)
         tiendaGraph(navController, appState, tiendaViewModel)

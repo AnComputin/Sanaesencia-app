@@ -22,7 +22,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -48,8 +48,8 @@ fun PagoScreen(
     onExpirado: () -> Unit
 ) {
 
-    val uiState by pagoViewModel.uiState.collectAsState()
-    val puedeConfirmar by pagoViewModel.puedeContinuar.collectAsState()
+    val uiState by pagoViewModel.uiState.collectAsStateWithLifecycle()
+    val puedeConfirmar by pagoViewModel.puedeContinuar.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         pagoViewModel.iniciarPago()

@@ -33,7 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -62,7 +62,7 @@ fun MisCitasScreen(
     usuarioEmail: String = "",
     onVolver: () -> Unit
 ) {
-    val todasLasCitas by misCitasViewModel.citas.collectAsState()
+    val todasLasCitas by misCitasViewModel.citas.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
