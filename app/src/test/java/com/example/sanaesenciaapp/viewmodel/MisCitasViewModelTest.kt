@@ -36,6 +36,8 @@ class MisCitasViewModelTest {
                         override suspend fun insertar(usuario: com.example.sanaesenciaapp.data.room.UsuarioEntity): Long = 1
                         override suspend fun obtenerTodos(): List<com.example.sanaesenciaapp.data.room.UsuarioEntity> = emptyList()
                         override suspend fun obtenerPorEmail(email: String): com.example.sanaesenciaapp.data.room.UsuarioEntity? = null
+                        override suspend fun actualizarPassword(email: String, nuevaPassword: String): Int = 0
+                        override suspend fun contarCuentasSinFormatoPbkdf2(): Int = 0
                     }
                 )
             )

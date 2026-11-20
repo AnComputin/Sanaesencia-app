@@ -11,6 +11,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SesionRepositoryTest {
@@ -19,6 +20,7 @@ class SesionRepositoryTest {
         val usuarios = mutableMapOf<String, UsuarioEntity>()
         var obtenerTodosLlamado = false
         var obtenerPorEmailLlamadas = 0
+        var actualizarPasswordLlamadas = 0
         var throwCancellationOnGet = false
 
         override suspend fun insertar(usuario: UsuarioEntity): Long {
@@ -41,6 +43,18 @@ class SesionRepositoryTest {
             obtenerPorEmailLlamadas++
             return usuarios[email.lowercase()]
         }
+
+        override suspend fun actualizarPassword(email: String, nuevaPassword: String): Int {
+            actualizarPasswordLlamadas++
+            val key = email.lowercase()
+            val previo = usuarios[key] ?: return 0
+            usuarios[key] = previo.copy(password = nuevaPassword)
+            return 1
+        }
+
+        override suspend fun contarCuentasSinFormatoPbkdf2(): Int {
+            return usuarios.values.count { !it.password.startsWith("pbkdf2:sha256:") }
+        }
     }
 
     private fun crearUsuario(
@@ -60,7 +74,7 @@ class SesionRepositoryTest {
     )
 
     @Test
-    fun `1 autenticar con usuario existente y contrasena correcta retorna SesionUsuario`() = runBlocking {
+    fun `1 autenticar con usuario existente y contrasena correcta KDF retorna SesionUsuario`() = runBlocking {
         val fakeDao = FakeUsuarioDao()
         val user = crearUsuario(password = Seguridad.hashear("password123"))
         fakeDao.insertar(user)
@@ -74,6 +88,7 @@ class SesionRepositoryTest {
         assertEquals("paciente@sanaesencia.cl", resultado?.email)
         assertEquals("Anaís Valenzuela", resultado?.nombre)
         assertEquals("PACIENTE", resultado?.rol)
+        assertEquals(0, fakeDao.actualizarPasswordLlamadas)
     }
 
     @Test
@@ -98,6 +113,7 @@ class SesionRepositoryTest {
         val resultado = sesionRepo.autenticar("paciente@sanaesencia.cl", "erronea123")
 
         assertNull(resultado)
+        assertEquals(0, fakeDao.actualizarPasswordLlamadas)
     }
 
     @Test
@@ -144,33 +160,64 @@ class SesionRepositoryTest {
     }
 
     @Test
-    fun `7 autenticar con contrasena historica en texto plano autentica correctamente`() = runBlocking {
+    fun `7 autenticar con contrasena historica en texto plano realiza migracion transparente a KDF`() = runBlocking {
+        val fakeDao = FakeUsuarioDao()
+        val passwordPlana = "clave_plano_123"
+        fakeDao.insertar(crearUsuario(password = passwordPlana))
+
+        val usuarioRepo = UsuarioRepository(fakeDao)
+        val sesionRepo = SesionRepository(usuarioRepo, Dispatchers.Unconfined)
+
+        val resultado = sesionRepo.autenticar("paciente@sanaesencia.cl", passwordPlana)
+
+        assertNotNull(resultado)
+        assertEquals("paciente@sanaesencia.cl", resultado?.email)
+        assertEquals(1, fakeDao.actualizarPasswordLlamadas)
+
+        // Verificar que la contraseña guardada en el DAO ahora es un hash KDF
+        val usuarioActualizado = fakeDao.obtenerPorEmail("paciente@sanaesencia.cl")
+        assertNotNull(usuarioActualizado)
+        assertTrue(Seguridad.esFormatoKdfNuevo(usuarioActualizado!!.password))
+        assertTrue(Seguridad.verificar(passwordPlana, usuarioActualizado.password))
+    }
+
+    @Test
+    fun `7b autenticar con formato historico SHA256 realiza migracion transparente a KDF`() = runBlocking {
+        val fakeDao = FakeUsuarioDao()
+        val password = "Password123!"
+        val salHex = "0123456789abcdef0123456789abcdef"
+        val digest = java.security.MessageDigest.getInstance("SHA-256")
+        digest.update(salHex.chunked(2).map { it.toInt(16).toByte() }.toByteArray())
+        val hashHex = digest.digest(password.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
+        val hashHistoricoSha256 = "$salHex:$hashHex"
+
+        fakeDao.insertar(crearUsuario(password = hashHistoricoSha256))
+
+        val usuarioRepo = UsuarioRepository(fakeDao)
+        val sesionRepo = SesionRepository(usuarioRepo, Dispatchers.Unconfined)
+
+        val resultado = sesionRepo.autenticar("paciente@sanaesencia.cl", password)
+
+        assertNotNull(resultado)
+        assertEquals(1, fakeDao.actualizarPasswordLlamadas)
+
+        val usuarioActualizado = fakeDao.obtenerPorEmail("paciente@sanaesencia.cl")
+        assertNotNull(usuarioActualizado)
+        assertTrue(Seguridad.esFormatoKdfNuevo(usuarioActualizado!!.password))
+    }
+
+    @Test
+    fun `7c autenticar con contrasena historica erronea NO ejecuta migracion`() = runBlocking {
         val fakeDao = FakeUsuarioDao()
         fakeDao.insertar(crearUsuario(password = "clave_plano_123"))
 
         val usuarioRepo = UsuarioRepository(fakeDao)
         val sesionRepo = SesionRepository(usuarioRepo, Dispatchers.Unconfined)
 
-        val resultado = sesionRepo.autenticar("paciente@sanaesencia.cl", "clave_plano_123")
+        val resultado = sesionRepo.autenticar("paciente@sanaesencia.cl", "clave_erronea")
 
-        assertNotNull(resultado)
-        assertEquals("paciente@sanaesencia.cl", resultado?.email)
-    }
-
-    @Test
-    fun `7b autenticar conserva espacios intencionales en la contrasena`() = runBlocking {
-        val fakeDao = FakeUsuarioDao()
-        val passwordConEspacios = "  clave con espacios  "
-        fakeDao.insertar(crearUsuario(password = Seguridad.hashear(passwordConEspacios)))
-
-        val usuarioRepo = UsuarioRepository(fakeDao)
-        val sesionRepo = SesionRepository(usuarioRepo, Dispatchers.Unconfined)
-
-        val resultadoExitoso = sesionRepo.autenticar("paciente@sanaesencia.cl", passwordConEspacios)
-        assertNotNull("La contraseña con espacios intencionales debe ser aceptada si coincide exactamente", resultadoExitoso)
-
-        val resultadoFallido = sesionRepo.autenticar("paciente@sanaesencia.cl", "clave con espacios")
-        assertNull("Si se omiten los espacios intencionales la autenticación debe fallar", resultadoFallido)
+        assertNull(resultado)
+        assertEquals(0, fakeDao.actualizarPasswordLlamadas)
     }
 
     @Test

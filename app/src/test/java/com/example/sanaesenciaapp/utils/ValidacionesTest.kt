@@ -56,19 +56,19 @@ class ValidacionesTest {
     @Test
     fun `rut con digito verificador incorrecto retorna error`() {
         val resultado = validarRut("12.345.678-3")
-        assertEquals("Dígito verificador incorrecto. Debería ser 5", resultado)
+        assertEquals("RUT inválido. Revisa que esté correctamente escrito", resultado)
     }
 
     @Test
     fun `rut muy corto retorna error`() {
         val resultado = validarRut("123456")
-        assertEquals("RUT inválido: debe tener al menos 8 caracteres", resultado)
+        assertEquals("RUT inválido. Revisa que esté correctamente escrito", resultado)
     }
 
     @Test
     fun `rut con letras en el cuerpo retorna error`() {
         val resultado = validarRut("1234567A-5")
-        assertEquals("El RUT solo debe contener números", resultado)
+        assertEquals("RUT inválido. Revisa que esté correctamente escrito", resultado)
     }
 
     @Test

@@ -52,23 +52,27 @@ class SesionRepository(
             throw e
         } ?: return@withContext null
 
-        val passwordValida = if (esFormatoHashValido(usuario.password)) {
-            // Verificación criptográfica con sal y SHA-256 (prototipo).
-            // Se rechaza explícitamente cualquier coincidencia literal con el hash almacenado
-            // para evitar que la cadena codificada de la base de datos se utilice como contraseña.
-            if (password == usuario.password) {
-                false
-            } else {
-                Seguridad.verificar(password, usuario.password)
-            }
-        } else {
-            // Compatibilidad transicional con cuentas históricas almacenadas en texto plano.
-            // Se preservan espacios intencionales de la contraseña.
-            usuario.password == password
+        // Rechaza el intento de ingresar el hash KDF codificado almacenado como si fuera la contraseña
+        if (Seguridad.esFormatoKdfNuevo(usuario.password) && password == usuario.password) {
+            return@withContext null
         }
+
+        val passwordValida = Seguridad.verificar(password, usuario.password)
 
         if (!passwordValida) {
             return@withContext null
+        }
+
+        // Migración transparente de credenciales históricas hacia KDF PBKDF2 al iniciar sesión exitosamente
+        if (!Seguridad.esFormatoKdfNuevo(usuario.password)) {
+            try {
+                val nuevoHash = Seguridad.hashear(password)
+                usuarioRepository.actualizarPassword(usuario.email, nuevoHash)
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (_: Exception) {
+                // Si falla la persistencia de la migración, la autenticación no se interrumpe
+            }
         }
 
         SesionUsuario(
@@ -84,13 +88,5 @@ class SesionRepository(
 
     fun cerrarSesion() {
         _sesionActual.value = null
-    }
-
-    private fun esFormatoHashValido(almacenado: String): Boolean {
-        val partes = almacenado.split(":")
-        if (partes.size != 2) return false
-        val (salHex, hashHex) = partes
-        return salHex.length == 32 && salHex.all { it.isDigit() || it in 'a'..'f' || it in 'A'..'F' } &&
-            hashHex.length == 64 && hashHex.all { it.isDigit() || it in 'a'..'f' || it in 'A'..'F' }
     }
 }

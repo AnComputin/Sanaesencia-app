@@ -4,8 +4,11 @@ import androidx.lifecycle.ViewModel
 import com.example.sanaesenciaapp.data.repository.CitaRepository
 import com.example.sanaesenciaapp.di.AppContainer
 
+/**
+ * Módulo de inyección ViewModel para las características de Agenda y Citas.
+ */
 class AgendaViewModelModule : AppViewModelModule {
-    override fun supports(modelClass: Class<out ViewModel>): Boolean{
+    override fun supports(modelClass: Class<out ViewModel>): Boolean {
         return modelClass == AgendarViewModel::class.java ||
                 modelClass == PagoViewModel::class.java ||
                 modelClass == MisCitasViewModel::class.java
@@ -14,19 +17,17 @@ class AgendaViewModelModule : AppViewModelModule {
     override fun create(
         modelClass: Class<out ViewModel>,
         appContainer: AppContainer
-    ): ViewModel{
+    ): ViewModel {
         val citaRepository = CitaRepository(appContainer.citaDao)
 
-        return when (modelClass){
+        return when (modelClass) {
             AgendarViewModel::class.java -> AgendarViewModel(
                 citaRepository = citaRepository,
                 sesionRepository = appContainer.sesionRepository
             )
-
             PagoViewModel::class.java -> PagoViewModel(
                 citaRepository = citaRepository
             )
-
             MisCitasViewModel::class.java -> MisCitasViewModel(
                 citaRepository = citaRepository,
                 sesionRepository = appContainer.sesionRepository
