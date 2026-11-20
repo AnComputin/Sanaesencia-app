@@ -17,6 +17,9 @@ import com.example.sanaesenciaapp.ui.views.admin.HomeAdminScreen
 import com.example.sanaesenciaapp.viewmodel.AgendaViewModelModule
 import com.example.sanaesenciaapp.viewmodel.AppViewModelProvider
 import com.example.sanaesenciaapp.viewmodel.CitaViewModel
+import com.example.sanaesenciaapp.viewmodel.AgendarViewModel
+import com.example.sanaesenciaapp.viewmodel.PagoViewModel
+import com.example.sanaesenciaapp.viewmodel.MisCitasViewModel
 import com.example.sanaesenciaapp.viewmodel.TerapeutaViewModel
 import com.example.sanaesenciaapp.viewmodel.TerapeutaViewModelModule
 
@@ -38,6 +41,9 @@ fun AppNavigation(
 
     val terapeutaViewModel: TerapeutaViewModel = viewModel(factory = appViewModelProvider)
     val citaViewModel: CitaViewModel = viewModel(factory = appViewModelProvider)
+    val agendarViewModel: AgendarViewModel = viewModel(factory = appViewModelProvider)
+    val pagoViewModel: PagoViewModel = viewModel(factory = appViewModelProvider)
+    val misCitasViewModel: MisCitasViewModel = viewModel(factory = appViewModelProvider)
 
     NavHost(
         navController = navController,
@@ -67,7 +73,7 @@ fun AppNavigation(
 
         authGraph(navController, appState)
         catalogoGraph(navController, appState, citaViewModel)
-        agendaGraph(navController, appState, citaViewModel)
+        agendaGraph(navController, appState, citaViewModel, agendarViewModel, pagoViewModel, misCitasViewModel)
         terapeutaGraph(navController, appState, terapeutaViewModel)
         juegosGraph(navController)
     }

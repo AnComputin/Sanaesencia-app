@@ -8,12 +8,18 @@ import com.example.sanaesenciaapp.ui.views.agenda.AgendarScreen
 import com.example.sanaesenciaapp.ui.views.agenda.ConfirmacionScreen
 import com.example.sanaesenciaapp.ui.views.agenda.PagoScreen
 import com.example.sanaesenciaapp.ui.views.citas.MisCitasScreen
+import com.example.sanaesenciaapp.viewmodel.AgendarViewModel
 import com.example.sanaesenciaapp.viewmodel.CitaViewModel
+import com.example.sanaesenciaapp.viewmodel.MisCitasViewModel
+import com.example.sanaesenciaapp.viewmodel.PagoViewModel
 
 fun NavGraphBuilder.agendaGraph(
     navController: NavHostController,
     appState: AppState,
-    citaViewModel: CitaViewModel
+    citaViewModel: CitaViewModel,
+    agendarViewModel: AgendarViewModel,
+    pagoViewModel: PagoViewModel,
+    misCitasViewModel: MisCitasViewModel
 ) {
     composable("agendar") {
         AgendarScreen(
@@ -54,7 +60,6 @@ fun NavGraphBuilder.agendaGraph(
         )
     }
 
-    // Ruta con parámetro citaId (para futura integración)
     composable("confirmacion/{citaId}") {
         ConfirmacionScreen(
             citaViewModel = citaViewModel,
@@ -68,7 +73,7 @@ fun NavGraphBuilder.agendaGraph(
 
     composable("mis_citas") {
         MisCitasScreen(
-            citaViewModel = citaViewModel,
+            misCitasViewModel = misCitasViewModel,
             usuarioEmail = appState.usuarioActual?.email ?: "",
             onVolver = {
                 navController.popBackStack()
