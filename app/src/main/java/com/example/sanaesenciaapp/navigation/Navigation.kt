@@ -22,6 +22,8 @@ import com.example.sanaesenciaapp.viewmodel.PagoViewModel
 import com.example.sanaesenciaapp.viewmodel.MisCitasViewModel
 import com.example.sanaesenciaapp.viewmodel.TerapeutaViewModel
 import com.example.sanaesenciaapp.viewmodel.TerapeutaViewModelModule
+import com.example.sanaesenciaapp.viewmodel.TiendaViewModel
+import com.example.sanaesenciaapp.viewmodel.TiendaViewModelFactory
 
 @Composable
 fun AppNavigation(
@@ -44,6 +46,7 @@ fun AppNavigation(
     val agendarViewModel: AgendarViewModel = viewModel(factory = appViewModelProvider)
     val pagoViewModel: PagoViewModel = viewModel(factory = appViewModelProvider)
     val misCitasViewModel: MisCitasViewModel = viewModel(factory = appViewModelProvider)
+    val tiendaViewModel: TiendaViewModel = viewModel(factory = TiendaViewModelFactory(appContainer.database))
 
     NavHost(
         navController = navController,
@@ -60,14 +63,19 @@ fun AppNavigation(
         composable("home") {
             HomeScreen(
                 navController = navController,
-                appState = appState
+                appState = appState,
+                onLogout = {
+                    tiendaViewModel.limpiarCarrito()
+                    appState.logout()
+                }
             )
         }
 
         composable("home_admin") {
             HomeAdminScreen(
                 navController = navController,
-                appState = appState
+                appState = appState,
+                tiendaViewModel = tiendaViewModel
             )
         }
 
@@ -76,5 +84,6 @@ fun AppNavigation(
         agendaGraph(navController, appState, citaViewModel, agendarViewModel, pagoViewModel, misCitasViewModel)
         terapeutaGraph(navController, appState, terapeutaViewModel)
         juegosGraph(navController)
+        tiendaGraph(navController, appState, tiendaViewModel)
     }
 }

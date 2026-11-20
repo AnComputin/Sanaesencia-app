@@ -41,6 +41,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.sanaesenciaapp.data.AppState
 import com.example.sanaesenciaapp.data.room.EspecialidadEntity
+import com.example.sanaesenciaapp.ui.views.admin.ProductosAdminContent
+import com.example.sanaesenciaapp.viewmodel.TiendaViewModel
 import com.example.sanaesenciaapp.ui.components.SanaBackground
 import com.example.sanaesenciaapp.viewmodel.AdminViewModel
 import com.example.sanaesenciaapp.viewmodel.AdminViewModelFactory
@@ -54,9 +56,11 @@ import java.util.Locale
 fun HomeAdminScreen(
     navController: NavController,
     appState: AppState,
+    tiendaViewModel: TiendaViewModel,
     adminViewModel: AdminViewModel = viewModel(factory = AdminViewModelFactory(appState.db))
 ) {
     val especialidades by adminViewModel.especialidades.collectAsState()
+    val productos by tiendaViewModel.todosProductos.collectAsState()
     val usuario = appState.usuarioActual
     var pestañaSeleccionada by remember { mutableStateOf(0) }
 
@@ -74,6 +78,7 @@ fun HomeAdminScreen(
                 actions = {
                     TextButton(
                         onClick = {
+                            tiendaViewModel.limpiarCarrito()
                             appState.logout()
                             navController.navigate("home") {
                                 popUpTo("home_admin") { inclusive = true }
@@ -131,6 +136,11 @@ fun HomeAdminScreen(
                         onClick = { pestañaSeleccionada = 1 },
                         text = { Text("Boxes") }
                     )
+                    Tab(
+                        selected = pestañaSeleccionada == 2,
+                        onClick = { pestañaSeleccionada = 2 },
+                        text = { Text("Productos") }
+                    )
                 }
 
                 when (pestañaSeleccionada) {
@@ -140,8 +150,14 @@ fun HomeAdminScreen(
                         modifier = Modifier.weight(1f)
                     )
 
-                    else -> BoxesAdminContent(
+                    1 -> BoxesAdminContent(
                         adminViewModel = adminViewModel,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    else -> ProductosAdminContent(
+                        productos = productos,
+                        tiendaViewModel = tiendaViewModel,
                         modifier = Modifier.weight(1f)
                     )
                 }

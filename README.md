@@ -36,6 +36,7 @@ La aplicación tiene tres tipos de usuario: paciente, terapeuta y administrador.
 
 *Paciente*
 - Se registra e inicia sesión. Cada campo se valida (RUT, teléfono, contraseña y fecha de nacimiento).
+- Revisa la tienda virtual del centro, agrega o quita productos del carrito y realiza un pago de demostración.
 - Revisa las especialidades y el detalle de cada una.
 - Elige un especialista y reserva con modalidad, fecha y hora. Puede reservar para sí mismo o para un menor o persona a cargo.
 - Paga en una pasarela simulada con un temporizador de 10 minutos.
@@ -51,6 +52,7 @@ La aplicación tiene tres tipos de usuario: paciente, terapeuta y administrador.
 - Cambia la modalidad de cada especialidad (presencial, online o ambas).
 - Pausa o reactiva la agenda de una especialidad.
 - Ve en tiempo real cuáles de los 8 boxes del centro están ocupados.
+- Administra los productos de la tienda: agrega productos, los quita y ajusta el stock.
 
 ## Cómo se reservan las citas
 
@@ -108,6 +110,6 @@ Para probar el calendario se necesita una app de calendario instalada. Para el G
 ## Limitaciones conocidas
 
 - Los datos del módulo terapeuta son de demostración. Las citas, los especialistas y los beneficiarios de los pacientes sí se guardan en Room.
-- El pago es una simulación, sin conexión a una pasarela real.
+- Los pagos de citas y de la tienda son simulaciones, sin conexión a una pasarela real. Las compras de la tienda se registran localmente y descuentan stock.
 - Las contraseñas se guardan con un cifrado educativo (SHA-256 con sal). En un sistema real se usaría PBKDF2, bcrypt o Argon2.
 - La sesión no se conserva al cerrar la aplicación.
