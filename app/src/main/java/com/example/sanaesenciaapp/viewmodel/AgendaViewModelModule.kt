@@ -11,7 +11,8 @@ class AgendaViewModelModule : AppViewModelModule {
     override fun supports(modelClass: Class<out ViewModel>): Boolean {
         return modelClass == AgendarViewModel::class.java ||
                 modelClass == PagoViewModel::class.java ||
-                modelClass == MisCitasViewModel::class.java
+                modelClass == MisCitasViewModel::class.java ||
+                modelClass == CitaViewModel::class.java
     }
 
     override fun create(
@@ -31,6 +32,9 @@ class AgendaViewModelModule : AppViewModelModule {
             MisCitasViewModel::class.java -> MisCitasViewModel(
                 citaRepository = citaRepository,
                 sesionRepository = appContainer.sesionRepository
+            )
+            CitaViewModel::class.java -> CitaViewModel(
+                citaDao = appContainer.citaDao
             )
             else -> throw IllegalArgumentException("ViewModel no soportado: ${modelClass.name}")
         }
