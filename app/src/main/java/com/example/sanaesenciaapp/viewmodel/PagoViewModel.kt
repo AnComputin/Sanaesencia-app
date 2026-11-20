@@ -22,8 +22,12 @@ import java.util.Locale
 data class PagoUiState(
     val citaId: Int = 0,
     val especialidadNombre: String = "",
+    val especialidad: String = "",
     val especialistaNombre: String = "",
+    val profesional: String = "",
     val modalidad: String = "",
+    val fechaMillis: Long? = null,
+    val hora: String = "",
     val fechaHora: String = "",
     val nombrePaciente: String = "",
     val totalAPagar: Int = 35000,
@@ -80,14 +84,20 @@ class PagoViewModel(
         especialista: String,
         modalidad: String,
         fechaHora: String,
-        paciente: String
+        paciente: String,
+        fechaMillis: Long? = null,
+        hora: String = ""
     ) {
         _uiState.update {
             it.copy(
                 citaId = citaId,
                 especialidadNombre = especialidad,
+                especialidad = especialidad,
                 especialistaNombre = especialista,
+                profesional = especialista,
                 modalidad = modalidad,
+                fechaMillis = fechaMillis,
+                hora = hora,
                 fechaHora = fechaHora,
                 nombrePaciente = paciente
             )

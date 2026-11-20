@@ -35,29 +35,29 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sanaesenciaapp.ui.components.SanaBackground
-import com.example.sanaesenciaapp.viewmodel.CitaViewModel
+import com.example.sanaesenciaapp.viewmodel.PagoViewModel
 import com.example.sanaesenciaapp.viewmodel.Modalidad
 import kotlinx.coroutines.delay
 import java.util.Locale
 
 @Composable
 fun PagoScreen(
-    citaViewModel: CitaViewModel,
+    pagoViewModel: PagoViewModel,
     usuarioEmail: String = "",
     onPagoExitoso: () -> Unit,
     onExpirado: () -> Unit
 ) {
 
-    val uiState by citaViewModel.uiState.collectAsState()
-    val puedeConfirmar by citaViewModel.puedeContinuar.collectAsState()
+    val uiState by pagoViewModel.uiState.collectAsState()
+    val puedeConfirmar by pagoViewModel.puedeContinuar.collectAsState()
 
     LaunchedEffect(Unit) {
-        citaViewModel.iniciarPago()
+        pagoViewModel.iniciarPago()
     }
 
     var tiempoRestante by remember {
         mutableIntStateOf(
-            citaViewModel.segundosRestantesPago()
+            pagoViewModel.segundosRestantesPago()
         )
     }
 
@@ -80,7 +80,7 @@ fun PagoScreen(
             delay(1000L)
 
             val nuevoTiempo =
-                citaViewModel.segundosRestantesPago()
+                pagoViewModel.segundosRestantesPago()
 
             tiempoRestante = nuevoTiempo
 
@@ -96,7 +96,7 @@ fun PagoScreen(
     val progreso =
         (
                 tiempoRestante.toFloat() /
-                        citaViewModel.duracionPagoSegundos.toFloat()
+                        pagoViewModel.duracionPagoSegundos.toFloat()
                 ).coerceIn(0f, 1f)
 
     val progresoAnimado by animateFloatAsState(
@@ -123,20 +123,15 @@ fun PagoScreen(
 
     val modalidadTexto =
         when (uiState.modalidad) {
-
-            Modalidad.PRESENCIAL ->
-                "Presencial"
-
-            Modalidad.ONLINE ->
-                "Online"
-
-            null ->
-                "-"
+            "PRESENCIAL" -> "Presencial"
+            "ONLINE" -> "Online"
+            null -> "-"
+            else -> uiState.modalidad
         }
 
     val fechaTexto =
         uiState.fechaMillis?.let {
-            citaViewModel.formatearFecha(it)
+            pagoViewModel.formatearFecha(it)
         } ?: "-"
 
     SanaBackground {
@@ -280,8 +275,7 @@ fun PagoScreen(
                         Text(
                             text =
                                 if (
-                                    uiState.modalidad ==
-                                    Modalidad.PRESENCIAL
+                                    uiState.modalidad == "PRESENCIAL"
                                 )
                                     "📍 $modalidadTexto"
                                 else
@@ -477,7 +471,7 @@ fun PagoScreen(
                     procesandoPago = true
                     errorReserva = null
 
-                    citaViewModel.confirmarCita(usuarioEmail) { exito ->
+                    pagoViewModel.confirmarCita(usuarioEmail) { exito ->
                         procesandoPago = false
 
                         if (exito) {
@@ -571,10 +565,7 @@ fun PagoScreen(
 
                 Button(
                     onClick = {
-
-                        citaViewModel
-                            .reiniciarPago()
-
+                        pagoViewModel.limpiarError()
                         onExpirado()
                     }
                 ) {
@@ -622,7 +613,7 @@ private fun DatoPago(
 private fun PagoScreenPreview() {
 
     PagoScreen(
-        citaViewModel = CitaViewModel(),
+        pagoViewModel = TODO("Preview requiere dependencias"),
         onPagoExitoso = {},
         onExpirado = {}
     )

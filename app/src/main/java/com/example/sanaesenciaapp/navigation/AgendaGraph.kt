@@ -47,7 +47,7 @@ fun NavGraphBuilder.agendaGraph(
 
     composable("pago") {
         PagoScreen(
-            citaViewModel = citaViewModel,
+            pagoViewModel = pagoViewModel,
             usuarioEmail = appState.usuarioActual?.email ?: "",
             onPagoExitoso = {
                 navController.navigate("confirmacion") {
