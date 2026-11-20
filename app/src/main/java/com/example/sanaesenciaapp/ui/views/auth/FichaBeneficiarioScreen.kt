@@ -56,16 +56,16 @@ fun FichaBeneficiarioScreen(
 ) {
     val state by beneficiarioViewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    var nombre by remember { mutableStateOf("") }
-    var rut by remember { mutableStateOf("") }
-    var fechaNacimiento by remember { mutableStateOf("") }
-    var parentesco by remember { mutableStateOf("") }
-    var editandoId by remember { mutableStateOf<Int?>(null) }
-    var mensaje by remember { mutableStateOf<String?>(null) }
-    var errorNombre by remember { mutableStateOf<String?>(null) }
-    var errorRut by remember { mutableStateOf<String?>(null) }
-    var errorFecha by remember { mutableStateOf<String?>(null) }
-    var errorParentesco by remember { mutableStateOf<String?>(null) }
+    var nombre by remember(state.versionSesion) { mutableStateOf("") }
+    var rut by remember(state.versionSesion) { mutableStateOf("") }
+    var fechaNacimiento by remember(state.versionSesion) { mutableStateOf("") }
+    var parentesco by remember(state.versionSesion) { mutableStateOf("") }
+    var editandoId by remember(state.versionSesion) { mutableStateOf<Int?>(null) }
+    var mensaje by remember(state.versionSesion) { mutableStateOf<String?>(null) }
+    var errorNombre by remember(state.versionSesion) { mutableStateOf<String?>(null) }
+    var errorRut by remember(state.versionSesion) { mutableStateOf<String?>(null) }
+    var errorFecha by remember(state.versionSesion) { mutableStateOf<String?>(null) }
+    var errorParentesco by remember(state.versionSesion) { mutableStateOf<String?>(null) }
 
     fun cargarEdicion(beneficiario: BeneficiarioEntity) {
         editandoId = beneficiario.id
@@ -145,10 +145,10 @@ fun FichaBeneficiarioScreen(
                     stringResource(if (editandoId == null) R.string.beneficiario_titulo_card else R.string.beneficiario_editar),
                     fontWeight = FontWeight.Bold
                 )
-                OutlinedTextField(nombre, { nombre = it; errorNombre = null }, label = { Text(stringResource(R.string.beneficiario_label_nombre)) }, isError = errorNombre != null, supportingText = { errorNombre?.let { Text(validationMessageText(it)) } }, enabled = !state.guardando, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(rut, { rut = it; errorRut = null }, label = { Text(stringResource(R.string.beneficiario_label_rut)) }, isError = errorRut != null, supportingText = { errorRut?.let { Text(validationMessageText(it)) } }, enabled = !state.guardando, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(fechaNacimiento, { fechaNacimiento = it; errorFecha = null }, label = { Text(stringResource(R.string.beneficiario_label_fecha)) }, isError = errorFecha != null, supportingText = { errorFecha?.let { Text(validationMessageText(it)) } }, enabled = !state.guardando, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(parentesco, { parentesco = it; errorParentesco = null }, label = { Text(stringResource(R.string.beneficiario_label_parentesco)) }, isError = errorParentesco != null, supportingText = { errorParentesco?.let { Text(validationMessageText(it)) } }, enabled = !state.guardando, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(nombre, { nombre = it; errorNombre = null }, label = { Text(stringResource(R.string.beneficiario_label_nombre)) }, isError = errorNombre != null, supportingText = { errorNombre?.let { Text(validationMessageText(it)) } }, enabled = !state.guardando && !state.sinSesion && !state.cargando, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(rut, { rut = it; errorRut = null }, label = { Text(stringResource(R.string.beneficiario_label_rut)) }, isError = errorRut != null, supportingText = { errorRut?.let { Text(validationMessageText(it)) } }, enabled = !state.guardando && !state.sinSesion && !state.cargando, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(fechaNacimiento, { fechaNacimiento = it; errorFecha = null }, label = { Text(stringResource(R.string.beneficiario_label_fecha)) }, isError = errorFecha != null, supportingText = { errorFecha?.let { Text(validationMessageText(it)) } }, enabled = !state.guardando && !state.sinSesion && !state.cargando, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(parentesco, { parentesco = it; errorParentesco = null }, label = { Text(stringResource(R.string.beneficiario_label_parentesco)) }, isError = errorParentesco != null, supportingText = { errorParentesco?.let { Text(validationMessageText(it)) } }, enabled = !state.guardando && !state.sinSesion && !state.cargando, modifier = Modifier.fillMaxWidth())
 
                 mensaje?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 if (state.sinSesion) {
@@ -156,7 +156,7 @@ fun FichaBeneficiarioScreen(
                 }
 
                 Button(
-                    enabled = !state.guardando && !state.sinSesion,
+                    enabled = !state.guardando && !state.sinSesion && !state.cargando,
                     modifier = Modifier.fillMaxWidth().height(54.dp),
                     onClick = {
                         errorNombre = validarNombre(nombre)
