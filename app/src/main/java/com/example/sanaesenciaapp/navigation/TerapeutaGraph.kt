@@ -17,7 +17,7 @@ fun NavGraphBuilder.terapeutaGraph(
 ) {
     composable("home_terapeuta") {
         HomeTerapeutaScreen(
-            appState = appState,
+            nombreUsuario = appState.usuarioActual?.nombre,
             onAgendaClick = { navController.navigate("agenda_terapeuta") },
             onPacientesClick = { navController.navigate("pacientes_terapeuta") },
             onLogoutClick = {

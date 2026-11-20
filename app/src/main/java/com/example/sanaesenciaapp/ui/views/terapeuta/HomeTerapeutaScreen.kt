@@ -26,19 +26,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.sanaesenciaapp.data.AppState
 import com.example.sanaesenciaapp.ui.components.SanaBackground
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeTerapeutaScreen(
-    appState: AppState,
+    nombreUsuario: String?,
     onAgendaClick: () -> Unit,
     onPacientesClick: () -> Unit,
     onLogoutClick: () -> Unit
 ) {
-
-    val usuario = appState.usuarioActual
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -78,7 +75,7 @@ fun HomeTerapeutaScreen(
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
-                    text = stringResource(R.string.terapeuta_saludo, usuario?.nombre ?: stringResource(R.string.terapeuta_rol_predeterminado)),
+                    text = stringResource(R.string.terapeuta_saludo, nombreUsuario ?: stringResource(R.string.terapeuta_rol_predeterminado)),
                     fontSize = 17.sp,
                     color = MaterialTheme.colorScheme.onBackground
                 )
