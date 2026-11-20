@@ -14,6 +14,9 @@ class BeneficiarioViewModelModule : AppViewModelModule {
         require(supports(modelClass)) {
             "BeneficiarioViewModelModule does not support ${modelClass.name}"
         }
-        return BeneficiarioViewModel(appContainer.beneficiarioRepository)
+        return BeneficiarioViewModel(
+            appContainer.beneficiarioRepository,
+            appContainer.sesionRepository.sesionActual
+        )
     }
 }
