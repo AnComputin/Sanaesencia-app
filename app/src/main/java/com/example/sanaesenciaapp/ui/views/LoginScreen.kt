@@ -33,9 +33,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -46,7 +43,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.sanaesenciaapp.data.AppState
 import com.example.sanaesenciaapp.ui.components.SanaBackground
-import com.example.sanaesenciaapp.utils.validarPassword
 import com.example.sanaesenciaapp.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -59,11 +55,6 @@ fun LoginScreen(
 ) {
 
     val state by authViewModel.uiState.collectAsState()
-
-    // Solo mostrar la validación de requisitos después de intentar iniciar sesión.
-    var intentoInicioSesion by remember { mutableStateOf(false) }
-    val errorPasswordLogin = state.errorPassword
-        ?: if (intentoInicioSesion) validarPassword(state.password) else null
 
     val app = appState
 
@@ -286,15 +277,24 @@ fun LoginScreen(
                                 else
                                     PasswordVisualTransformation(),
 
-                            isError = errorPasswordLogin != null,
+                            isError =
+                                state.errorPassword != null,
 
                             supportingText = {
+
                                 AnimatedVisibility(
-                                    visible = errorPasswordLogin != null
+                                    visible =
+                                        state.errorPassword != null
                                 ) {
+
                                     Text(
-                                        text = errorPasswordLogin ?: "",
-                                        color = MaterialTheme.colorScheme.error
+                                        text =
+                                            state.errorPassword ?: "",
+
+                                        color =
+                                            MaterialTheme
+                                                .colorScheme
+                                                .error
                                     )
                                 }
                             },
@@ -354,7 +354,6 @@ fun LoginScreen(
 
                         Button(
                             onClick = {
-                                intentoInicioSesion = true
                                 authViewModel.iniciarSesion(appState = app)
                             },
                             enabled = !state.isLoading,
