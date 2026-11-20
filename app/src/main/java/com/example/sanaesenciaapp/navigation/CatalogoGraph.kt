@@ -35,7 +35,7 @@ fun NavGraphBuilder.catalogoGraph(
             viewModel(viewModelStoreOwner = entry, factory = appViewModelProvider)
         val especialidades by catalogoViewModel.especialidades.collectAsStateWithLifecycle()
         val state by catalogoViewModel.uiState.collectAsStateWithLifecycle()
-        val id = entry.arguments?.getInt("especialidadId")
+        val id by catalogoViewModel.especialidadId.collectAsStateWithLifecycle()
         val especialidad = especialidades.firstOrNull { it.id == id }
         if (especialidad != null) {
             DetalleServicioScreen(
@@ -52,7 +52,7 @@ fun NavGraphBuilder.catalogoGraph(
                     }
                 }
             )
-        } else if (state.errorEspecialidades) {
+        } else if (state.errorEspecialidades || !state.cargandoEspecialidades) {
             androidx.compose.material3.Text(androidx.compose.ui.res.stringResource(com.example.sanaesenciaapp.R.string.catalogo_detalle_error_carga))
         } else {
             androidx.compose.material3.CircularProgressIndicator()
