@@ -85,6 +85,8 @@ class PausasViewModelTest {
 
         val state = viewModel.uiState.value
         assertEquals(1, state.pasoIndex)
+        assertTrue(state.estaActivo)
+        assertFalse(state.estaPausado)
     }
 
     @Test
