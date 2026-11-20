@@ -42,7 +42,8 @@ import com.example.sanaesenciaapp.ui.components.SanaBackground
 @Composable
 fun HomeScreen(
     navController: NavController,
-    appState: AppState
+    appState: AppState,
+    onLogout: () -> Unit = { appState.logout() }
 ) {
 
     val usuario = appState.usuarioActual
@@ -240,6 +241,24 @@ fun HomeScreen(
                         Text(
                             text = "Reservar hora",
                             fontSize = 17.sp
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Acceso a la tienda virtual del centro.
+                    OutlinedButton(
+                        onClick = { navController.navigate("tienda") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(55.dp),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Text(
+                            text = "🌿 Tienda de bienestar",
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.secondary
                         )
                     }
 
@@ -472,9 +491,7 @@ fun HomeScreen(
                     if (usuario != null) {
 
                         TextButton(
-                            onClick = {
-                                appState.logout()
-                            },
+                            onClick = onLogout,
 
                             modifier = Modifier.align(
                                 Alignment.CenterHorizontally

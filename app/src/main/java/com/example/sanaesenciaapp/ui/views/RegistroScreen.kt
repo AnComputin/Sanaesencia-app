@@ -65,6 +65,7 @@ import com.example.sanaesenciaapp.data.AppState
 import com.example.sanaesenciaapp.ui.components.RutVisualTransformation
 import com.example.sanaesenciaapp.ui.components.SanaBackground
 import com.example.sanaesenciaapp.viewmodel.AuthViewModel
+import com.example.sanaesenciaapp.utils.validarPassword
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -79,6 +80,8 @@ fun RegistroScreen(
 ) {
 
     val state by authViewModel.uiState.collectAsState()
+    val errorPasswordActual = state.errorPassword
+        ?: if (state.password.isNotEmpty()) validarPassword(state.password) else null
 
     val context = LocalContext.current
 
@@ -899,19 +902,16 @@ fun RegistroScreen(
                                     PasswordVisualTransformation(),
 
                             isError =
-                                state.errorPassword != null,
+                                errorPasswordActual != null,
 
                             supportingText = {
 
                                 AnimatedVisibility(
-                                    visible =
-                                        state.errorPassword != null
+                                    visible = errorPasswordActual != null
                                 ) {
 
                                     Text(
-                                        text =
-                                            state.errorPassword
-                                                ?: "",
+                                        text = errorPasswordActual ?: "",
 
                                         color =
                                             MaterialTheme
