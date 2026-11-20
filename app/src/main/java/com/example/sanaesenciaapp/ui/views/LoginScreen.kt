@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.sanaesenciaapp.data.AppState
 import com.example.sanaesenciaapp.ui.components.SanaBackground
+import com.example.sanaesenciaapp.utils.validarPassword
 import com.example.sanaesenciaapp.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -55,6 +56,7 @@ fun LoginScreen(
 ) {
 
     val state by authViewModel.uiState.collectAsState()
+    val errorPassword = state.password.takeIf { it.isNotEmpty() }?.let(::validarPassword)
 
     val app = appState
 
@@ -278,18 +280,18 @@ fun LoginScreen(
                                     PasswordVisualTransformation(),
 
                             isError =
-                                state.errorPassword != null,
+                                errorPassword != null || state.errorPassword != null,
 
                             supportingText = {
 
                                 AnimatedVisibility(
                                     visible =
-                                        state.errorPassword != null
+                                        errorPassword != null || state.errorPassword != null
                                 ) {
 
                                     Text(
                                         text =
-                                            state.errorPassword ?: "",
+                                            errorPassword ?: state.errorPassword ?: "",
 
                                         color =
                                             MaterialTheme
