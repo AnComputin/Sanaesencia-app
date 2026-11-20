@@ -106,9 +106,11 @@ class AppViewModelProviderTest {
     }
 
     @Test
-    fun `AgendaViewModelModule soporta CitaViewModel y rechaza otros`() {
+    fun `AgendaViewModelModule soporta ViewModels de agenda y rechaza otros`() {
         val module = AgendaViewModelModule()
-        assertTrue(module.supports(CitaViewModel::class.java))
+        assertTrue(module.supports(AgendarViewModel::class.java))
+        assertTrue(module.supports(PagoViewModel::class.java))
+        assertTrue(module.supports(MisCitasViewModel::class.java))
         assertFalse(module.supports(TerapeutaViewModel::class.java))
         assertFalse(module.supports(DummySimpleViewModel::class.java))
     }
@@ -117,7 +119,7 @@ class AppViewModelProviderTest {
     fun `TerapeutaViewModelModule soporta TerapeutaViewModel y rechaza otros`() {
         val module = TerapeutaViewModelModule()
         assertTrue(module.supports(TerapeutaViewModel::class.java))
-        assertFalse(module.supports(CitaViewModel::class.java))
+        assertFalse(module.supports(AgendarViewModel::class.java))
         assertFalse(module.supports(DummySimpleViewModel::class.java))
     }
 

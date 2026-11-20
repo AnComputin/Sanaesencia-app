@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--titulo-->
+    <string name="agenda_titulo">Agenda tu atención</string>
+    <string name="pago_titulo">Confirma tu respuesta</string>
+    <string name="mis_citas_titulo">Tus atenciones</string>
+
+    <!--campos-->
+    <string name="agenda_modalidad">Modalidad</string>
+    <string name="agenda_fecha">Fecha</string>
+    <string name="agenda_hora">Hora</string>
+    <string name="agenda_nombre_paciente">Nombre del paciente</string>
+
+    <!--modalidad-->
+    <string name="modalidad_presencial">Presencial</string>
+    <string name="modalidad_online">Online</string>
+
+    <!--estados-->
+    <string name="estado_confirmada">CONFIRMADA</string>
+    <string name="estado_completada">COMPLETADA</string>
+    <string name="estado_cancelada">CANCELADA</string>
+
+    <!-- Botones -->
+    <string name="btn_continuar_pago">Continuar al pago</string>
+    <string name="btn_pagar">Pagar</string>
+    <string name="btn_cancelar_cita">Cancelar cita</string>
+    <string name="btn_ver_mis_citas">Ver mis citas</string>
+    <string name="btn_volver">Volver</string>
+
+    <!-- Mensajes -->
+    <string name="msg_sin_citas">No tienes citas registradas</string>
+    <string name="msg_pago_expirado">El tiempo de pago expiró</string>
+    <string name="msg_cita_confirmada">¡Cita confirmada!</string>
+    <string name="msg_horario_no_disponible">El horario ya no está disponible</string>
+
+    <!--pago -->
+    <string name="pago_total">Total a pagar</string>
+    <string name="pago_temporizador">Tiempo para completar el pago</string>
+    <string name="pago_simulado">Pago simulado</string>
+
+    <string name="tab_proximas">Próximas</string>
+    <string name="tab_historial">Historial</string>
+</resources>

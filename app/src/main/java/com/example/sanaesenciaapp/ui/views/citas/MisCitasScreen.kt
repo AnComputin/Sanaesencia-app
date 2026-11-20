@@ -33,7 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -47,9 +47,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.sanaesenciaapp.utils.CalendarioHelper
-import com.example.sanaesenciaapp.viewmodel.CitaItem
-import com.example.sanaesenciaapp.viewmodel.CitaViewModel
-import com.example.sanaesenciaapp.viewmodel.EstadoReserva
+import com.example.sanaesenciaapp.data.room.CitaEntity
+import com.example.sanaesenciaapp.viewmodel.MisCitasViewModel
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
@@ -59,17 +58,17 @@ import com.example.sanaesenciaapp.ui.components.SanaBackground
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MisCitasScreen(
-    citaViewModel: CitaViewModel,
+    misCitasViewModel: MisCitasViewModel,
     usuarioEmail: String = "",
     onVolver: () -> Unit
 ) {
-    val todasLasCitas by citaViewModel.citas.collectAsState()
+    val todasLasCitas by misCitasViewModel.citas.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-    var citaACancelar by remember { mutableStateOf<CitaItem?>(null) }
+    var citaACancelar by remember { mutableStateOf<CitaEntity?>(null) }
 
     val citas = remember(todasLasCitas, usuarioEmail) {
         if (usuarioEmail.isBlank()) {
@@ -82,10 +81,10 @@ fun MisCitasScreen(
     }
 
     val proximasCitas = remember(citas) {
-        citas.filter { it.estado == EstadoReserva.CONFIRMADA }
+        citas.filter { it.estado == "CONFIRMADA" }
     }
     val historialCitas = remember(citas) {
-        citas.filter { it.estado == EstadoReserva.COMPLETADA || it.estado == EstadoReserva.CANCELADA }
+        citas.filter { it.estado == "COMPLETADA" || it.estado == "CANCELADA" }
     }
 
     Scaffold(
@@ -193,11 +192,11 @@ fun MisCitasScreen(
                             esProxima = true,
 
                             formatearFecha = {
-                                citaViewModel.formatearFecha(it)
+                                misCitasViewModel.formatearFecha(it)
                             },
 
                             puedeCancelar = {
-                                citaViewModel.puedeCancelar(it)
+                                misCitasViewModel.puedeCancelar(it)
                             },
 
                             onAgregarCalendario = { cita ->
@@ -206,21 +205,21 @@ fun MisCitasScreen(
                                     CalendarioHelper.agregarACalendario(
                                         context = context,
                                         titulo =
-                                            "Cita: ${cita.especialidad}",
+                                            "Cita: ${cita.especialidadNombre}",
 
                                         descripcion =
-                                            "Cita médica de ${cita.especialidad} " +
-                                                    "con ${cita.profesional}. " +
-                                                    "Paciente: ${cita.paciente}.",
+                                            "Cita médica de ${cita.especialidadNombre} " +
+                                                    "con ${cita.especialistaNombre}. " +
+                                                    "Paciente: ${cita.pacienteNombre}.",
 
                                         inicioMillis =
                                             cita.inicioMillis,
 
                                         ubicacion =
-                                            if (cita.modalidad == com.example.sanaesenciaapp.viewmodel.Modalidad.PRESENCIAL && cita.boxAsignado != null)
-                                                "Presencial · Box ${cita.boxAsignado}"
+                                            if (cita.modalidad == "PRESENCIAL" && cita.boxAsignado != null)
+                                                "Presencial - Box ${cita.boxAsignado}"
                                             else
-                                                "Modalidad: ${cita.modalidad.name}"
+                                                "Modalidad: ${cita.modalidad}"
                                     )
 
                                 if (!exito) {
@@ -244,7 +243,7 @@ fun MisCitasScreen(
                             esProxima = false,
 
                             formatearFecha = {
-                                citaViewModel.formatearFecha(it)
+                                misCitasViewModel.formatearFecha(it)
                             },
 
                             puedeCancelar = {
@@ -265,18 +264,16 @@ fun MisCitasScreen(
                 onDismissRequest = { citaACancelar = null },
                 title = { Text("Cancelar cita") },
                 text = {
-                    Text("¿Estás seguro de que deseas cancelar la cita de ${cita.especialidad} con ${cita.profesional}?")
+                    Text("¿Estás seguro de que deseas cancelar la cita de ${cita.especialidadNombre} con ${cita.especialistaNombre}?")
                 },
                 confirmButton = {
                     TextButton(
                         onClick = {
                             val id = cita.id
                             citaACancelar = null
-                            val cancelada = citaViewModel.cancelarCita(id)
-                            if (cancelada) {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("Cita cancelada")
-                                }
+                            misCitasViewModel.cancelarCita(id)
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Cita cancelada")
                             }
                         }
                     ) {
@@ -295,12 +292,12 @@ fun MisCitasScreen(
 
 @Composable
 private fun ListaCitas(
-    citas: List<CitaItem>,
+    citas: List<CitaEntity>,
     esProxima: Boolean,
     formatearFecha: (Long) -> String,
-    puedeCancelar: (CitaItem) -> Boolean,
-    onAgregarCalendario: (CitaItem) -> Unit,
-    onSolicitarCancelar: (CitaItem) -> Unit
+    puedeCancelar: (CitaEntity) -> Boolean,
+    onAgregarCalendario: (CitaEntity) -> Unit,
+    onSolicitarCancelar: (CitaEntity) -> Unit
 ) {
     if (citas.isEmpty()) {
         Box(
@@ -335,7 +332,7 @@ private fun ListaCitas(
 
 @Composable
 private fun CitaTarjeta(
-    cita: CitaItem,
+    cita: CitaEntity,
     esProxima: Boolean,
     formatearFecha: (Long) -> String,
     puedeCancelar: Boolean,
@@ -379,7 +376,7 @@ private fun CitaTarjeta(
             ) {
 
                 Text(
-                    text = cita.especialidad,
+                    text = cita.especialidadNombre,
                     fontSize = 19.sp,
                     fontWeight = FontWeight.Bold,
                     color =
@@ -392,50 +389,45 @@ private fun CitaTarjeta(
                     shape = RoundedCornerShape(50.dp),
 
                     color = when (cita.estado) {
-
-                        EstadoReserva.CONFIRMADA ->
+                        "CONFIRMADA" ->
                             MaterialTheme.colorScheme
                                 .primaryContainer
-
-                        EstadoReserva.COMPLETADA ->
+                        "COMPLETADA" ->
                             MaterialTheme.colorScheme
                                 .surfaceVariant
-
-                        EstadoReserva.CANCELADA ->
+                        "CANCELADA" ->
                             MaterialTheme.colorScheme
                                 .errorContainer
+                        else ->
+                            MaterialTheme.colorScheme
+                                .surfaceVariant
                     }
                 ) {
 
                     Text(
                         text = when (cita.estado) {
-
-                            EstadoReserva.CONFIRMADA ->
-                                "Confirmada"
-
-                            EstadoReserva.COMPLETADA ->
-                                "Completada"
-
-                            EstadoReserva.CANCELADA ->
-                                "Cancelada"
+                            "CONFIRMADA" -> "Confirmada"
+                            "COMPLETADA" -> "Completada"
+                            "CANCELADA" -> "Cancelada"
+                            else -> cita.estado
                         },
 
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
 
                         color = when (cita.estado) {
-
-                            EstadoReserva.CONFIRMADA ->
+                            "CONFIRMADA" ->
                                 MaterialTheme.colorScheme
                                     .onPrimaryContainer
-
-                            EstadoReserva.COMPLETADA ->
+                            "COMPLETADA" ->
                                 MaterialTheme.colorScheme
                                     .onSurfaceVariant
-
-                            EstadoReserva.CANCELADA ->
+                            "CANCELADA" ->
                                 MaterialTheme.colorScheme
                                     .onErrorContainer
+                            else ->
+                                MaterialTheme.colorScheme
+                                    .onSurfaceVariant
                         },
 
                         modifier = Modifier.padding(
@@ -459,7 +451,7 @@ private fun CitaTarjeta(
             )
 
             Text(
-                text = cita.profesional,
+                text = cita.especialistaNombre,
                 fontSize = 15.sp,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -497,7 +489,7 @@ private fun CitaTarjeta(
                     Text(
                         text =
                             if (
-                                cita.modalidad.name ==
+                                cita.modalidad ==
                                 "PRESENCIAL"
                             )
                                 "📍 Presencial${cita.boxAsignado?.let { " · Box $it" } ?: ""}"
@@ -519,7 +511,7 @@ private fun CitaTarjeta(
             }
 
             Text(
-                text = "Paciente: ${cita.paciente}",
+                text = "Paciente: ${cita.pacienteNombre}",
                 fontSize = 14.sp,
                 color =
                     MaterialTheme.colorScheme.onSurface
@@ -585,9 +577,9 @@ private fun CitaTarjeta(
 @Preview(showBackground = true)
 @Composable
 private fun MisCitasScreenPreview() {
-    val viewModel = remember { CitaViewModel() }
+    val viewModel = remember { TODO("Preview requiere dependencias") }
     MisCitasScreen(
-        citaViewModel = viewModel,
+        misCitasViewModel = viewModel,
         onVolver = {}
     )
 }
