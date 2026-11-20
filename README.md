@@ -79,7 +79,7 @@ Carpetas dentro de `app/src/main/java/com/example/sanaesenciaapp/`:
 - `data/room`: entidades, DAO, migraciones y datos iniciales. El esquema actual de Room es versión 7.
 - `navigation`: `Navigation.kt` define el `NavHost`; los módulos Catálogo, Juegos y Terapeuta usan grafos separados. Juegos comunica navegación a sus pantallas mediante callbacks.
 - `viewmodel`: ViewModels de autenticación, citas, catálogo, administración, terapeuta y juegos.
-- `viewmodel/AppViewModelProvider.kt`: fábrica modular con soporte para `CreationExtras` y `SavedStateHandle`; Navigation registra los módulos de Agenda, Terapeuta, Catálogo y Beneficiarios.
+- `viewmodel/AppViewModelProvider.kt`: fábrica modular con soporte para `CreationExtras` y `SavedStateHandle`; `Navigation.kt` registra Agenda, Terapeuta, Catálogo y Beneficiarios. El destino legado de la ficha utiliza una fábrica con el módulo de Beneficiarios para mantener compatible el grafo de autenticación.
 - `data/repository/CatalogoRepository.kt` y `CatalogoViewModel.kt`: observan especialidades y especialistas desde Room con StateFlow. El seed incluye 7 especialidades y 30 especialistas.
 - `data/repository/BeneficiarioRepository.kt` y `BeneficiarioViewModel.kt`: realizan operaciones de beneficiarios vinculadas a la sesión, con aislamiento de propietario en DAO/repositorio.
 - `ui/theme` y `ui/components`: tema y componentes compartidos.
@@ -88,8 +88,8 @@ Carpetas dentro de `app/src/main/java/com/example/sanaesenciaapp/`:
 
 Estado de los flujos según el código:
 
-- Catálogo: especialidades y especialistas se observan desde Room mediante `CatalogoRepository` y `CatalogoViewModel`. La selección que comparte con la agenda todavía usa estado de `AppState`.
-- Beneficiarios: la pantalla de ficha usa `BeneficiarioViewModel` y `BeneficiarioRepository`. El propietario se determina desde la sesión; las operaciones están restringidas por propietario. La agenda aún consume el estado compartido de beneficiarios de `AppState`.
+- Catálogo: especialidades y especialistas se observan desde Room mediante `CatalogoRepository` y `CatalogoViewModel`. La transición a agenda entrega la especialidad y el especialista seleccionados mediante `CitaViewModel`, con la modalidad derivada de la especialidad. `CatalogoGraph.kt` aún usa `AppState` para comprobar la sesión y manejar selecciones legadas. Cualquier cambio del contrato de reserva debe coordinarse entre Catálogo y Agenda.
+- Beneficiarios: la pantalla de ficha usa `BeneficiarioViewModel` y `BeneficiarioRepository`. El propietario se determina desde la sesión; las operaciones están restringidas por propietario. La agenda aún consume la lista de `AppState`. Para migrarla, Agenda debe observar al propietario autenticado mediante el mismo repositorio, limpiar lista y selección al cambiar de cuenta y volver a consultar el beneficiario por ID antes de usarlo. El cambio requiere coordinar `AgendaGraph.kt`, `AppState.kt` y el contrato de sesión.
 - Terapeuta: el módulo está registrado, pero permanece bloqueado y sin datos porque no existe asociación persistida cuenta-terapeuta a especialista. Las notas no se guardan y están deshabilitadas.
 - Juegos: los juegos usan ViewModels propios, estado en memoria, navegación mediante callbacks y pruebas unitarias.
 - Sesión: `SesionRepository` mantiene la sesión en memoria; no se restaura al cerrar y volver a abrir la aplicación.
@@ -129,7 +129,8 @@ La carga inicial incluye datos de demostración para el prototipo. No se publica
 ## Limitaciones conocidas
 
 - El portal terapeuta no tiene acceso a citas reales hasta que exista una asociación persistida y verificable entre la cuenta autenticada y `especialistaId`.
-- Las notas clínicas no se persisten y la edición está deshabilitada.
+- La asociación cuenta–especialista debe resolverse a partir de la sesión y el almacenamiento autorizado. El contrato debe acotar las lecturas de agenda, pacientes y continuidad y las actualizaciones de citas al especialista autenticado.
+- Las notas clínicas no se persisten y la edición está deshabilitada. Su habilitación requiere definir almacenamiento y reglas de acceso.
 - El pago es una simulación, sin conexión a una pasarela real.
 - La autenticación migra credenciales históricas al formato PBKDF2 implementado por `Seguridad`; la sesión permanece solo en memoria y no se restaura al reiniciar la aplicación.
 - Los recursos de texto se encuentran en `res/values`; no se declaran traducciones a otros idiomas.

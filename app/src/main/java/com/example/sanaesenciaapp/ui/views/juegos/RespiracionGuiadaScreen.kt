@@ -124,7 +124,11 @@ fun RespiracionGuiadaScreen(
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                         )
                         Text(
-                            text = "00:${String.format("%02d", uiState.tiempoRestanteTotal)}",
+                            text = stringResource(
+                                R.string.juegos_tiempo_formato,
+                                uiState.tiempoRestanteTotal / 60,
+                                uiState.tiempoRestanteTotal % 60
+                            ),
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary

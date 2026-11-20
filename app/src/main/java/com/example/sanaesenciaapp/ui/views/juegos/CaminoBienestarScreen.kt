@@ -108,7 +108,7 @@ fun CaminoBienestarScreen(
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(stringResource(R.string.juegos_camino_posicion), fontSize = 13.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f))
-                                Text("${uiState.posicionActual} / 25", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
+                                Text(stringResource(R.string.juegos_camino_posicion_formato, uiState.posicionActual, 25), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                             }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(stringResource(R.string.juegos_camino_lanzamientos), fontSize = 13.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f))
