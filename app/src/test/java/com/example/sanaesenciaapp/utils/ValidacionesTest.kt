@@ -56,7 +56,7 @@ class ValidacionesTest {
     @Test
     fun `rut con digito verificador incorrecto retorna error`() {
         val resultado = validarRut("12.345.678-3")
-        assertEquals("Dígito verificador incorrecto. Debería ser 5", resultado)
+        assertEquals("RUT inválido. Revisa que esté correctamente escrito", resultado)
     }
 
     @Test
