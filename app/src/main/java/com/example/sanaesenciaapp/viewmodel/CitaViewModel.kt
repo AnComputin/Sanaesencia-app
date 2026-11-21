@@ -3,6 +3,7 @@ package com.example.sanaesenciaapp.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.sanaesenciaapp.data.repository.ReglasAgenda
 import com.example.sanaesenciaapp.data.room.CitaDao
 import com.example.sanaesenciaapp.data.room.CitaEntity
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -65,10 +66,6 @@ data class CitaUiState(
     val beneficiarioId: Int? = null,
     val errorNombre: String? = null
 )
-
-private const val CANCELACION_HORAS = 24
-private const val DURACION_CITA_MINUTOS = 60
-private const val TOTAL_BOXES = 8
 
 /**
  * ViewModel de reservas.
@@ -219,7 +216,7 @@ class CitaViewModel(
         if (cita.estado != EstadoReserva.CONFIRMADA) return false
         val ahora = System.currentTimeMillis()
         val horasFaltantes = (cita.inicioMillis - ahora) / (1000 * 60 * 60)
-        return horasFaltantes >= CANCELACION_HORAS
+        return horasFaltantes >= ReglasAgenda.CANCELACION_HORAS
     }
 
     fun cancelarCita(id: Int): Boolean {
@@ -272,7 +269,7 @@ class CitaViewModel(
         }
 
         val inicio = construirInicio(fechaMillis, horaStr)
-        val fin = inicio + DURACION_CITA_MINUTOS * 60_000L
+        val fin = ReglasAgenda.calcularFin(inicio)
 
         val entidad = CitaEntity(
             usuarioEmail = usuarioEmail.trim(),
@@ -329,7 +326,7 @@ class CitaViewModel(
         val especialistaOcupado = existentes.any { cita ->
             cita.estado == EstadoReserva.CONFIRMADA &&
                 cita.especialistaId == entidad.especialistaId &&
-                seSolapan(cita.inicioMillis, cita.finMillis, entidad.inicioMillis, entidad.finMillis)
+                ReglasAgenda.haySolapamiento(cita.inicioMillis, cita.finMillis, entidad.inicioMillis, entidad.finMillis)
         }
         if (especialistaOcupado) return null
 
@@ -337,13 +334,13 @@ class CitaViewModel(
             val ocupadas = existentes.filter { cita ->
                 cita.estado == EstadoReserva.CONFIRMADA &&
                     cita.modalidad == Modalidad.PRESENCIAL &&
-                    seSolapan(cita.inicioMillis, cita.finMillis, entidad.inicioMillis, entidad.finMillis)
+                    ReglasAgenda.haySolapamiento(cita.inicioMillis, cita.finMillis, entidad.inicioMillis, entidad.finMillis)
             }
 
-            if (ocupadas.size >= TOTAL_BOXES) return null
+            if (ocupadas.size >= ReglasAgenda.TOTAL_BOXES) return null
 
             val boxesOcupados = ocupadas.mapNotNull { it.boxAsignado }.toSet()
-            (1..TOTAL_BOXES).firstOrNull { it !in boxesOcupados } ?: return null
+            ReglasAgenda.obtenerBoxLibre(boxesOcupados) ?: return null
         } else {
             null
         }
@@ -377,21 +374,21 @@ class CitaViewModel(
 
         return horasBase().map { hora ->
             val inicio = construirInicio(fechaMillis, hora)
-            val fin = inicio + DURACION_CITA_MINUTOS * 60_000L
+            val fin = ReglasAgenda.calcularFin(inicio)
 
             val especialistaOcupado = listaCitas.any { cita ->
                 cita.estado == EstadoReserva.CONFIRMADA &&
                     cita.especialistaId == estado.especialistaId &&
-                    seSolapan(cita.inicioMillis, cita.finMillis, inicio, fin)
+                    ReglasAgenda.haySolapamiento(cita.inicioMillis, cita.finMillis, inicio, fin)
             }
 
             val hayBoxDisponible = if (estado.modalidad == Modalidad.PRESENCIAL) {
                 val presencialesSolapadas = listaCitas.count { cita ->
                     cita.estado == EstadoReserva.CONFIRMADA &&
                         cita.modalidad == Modalidad.PRESENCIAL &&
-                        seSolapan(cita.inicioMillis, cita.finMillis, inicio, fin)
+                        ReglasAgenda.haySolapamiento(cita.inicioMillis, cita.finMillis, inicio, fin)
                 }
-                presencialesSolapadas < TOTAL_BOXES
+                presencialesSolapadas < ReglasAgenda.TOTAL_BOXES
             } else {
                 true
             }
@@ -434,15 +431,6 @@ class CitaViewModel(
 
     private fun horasBase(): List<String> =
         listOf("09:00", "10:30", "12:00", "14:00", "15:30", "17:00")
-
-    private fun seSolapan(
-        inicioExistente: Long,
-        finExistente: Long,
-        inicioNuevo: Long,
-        finNuevo: Long
-    ): Boolean {
-        return inicioExistente < finNuevo && finExistente > inicioNuevo
-    }
 }
 
 class CitaViewModelFactory(

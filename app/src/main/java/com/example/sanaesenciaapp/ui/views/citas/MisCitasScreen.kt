@@ -216,6 +216,9 @@ fun MisCitasScreen(
                                         inicioMillis =
                                             cita.inicioMillis,
 
+                                        duracionMinutos =
+                                            com.example.sanaesenciaapp.data.repository.ReglasAgenda.DURACION_CITA_MINUTOS,
+
                                         ubicacion =
                                             if (cita.modalidad == com.example.sanaesenciaapp.viewmodel.Modalidad.PRESENCIAL && cita.boxAsignado != null)
                                                 "Presencial · Box ${cita.boxAsignado}"

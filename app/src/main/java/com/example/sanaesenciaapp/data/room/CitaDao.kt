@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import com.example.sanaesenciaapp.data.repository.ReglasAgenda
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -89,12 +90,12 @@ abstract class CitaDao {
             return null
         }
 
-        val boxAsignado = if (cita.modalidad.equals("PRESENCIAL", ignoreCase = true)) {
+        val boxAsignado = if (ReglasAgenda.esPresencial(cita.modalidad)) {
             if (
                 contarPresencialesSolapadas(
                     inicioMillis = cita.inicioMillis,
                     finMillis = cita.finMillis
-                ) >= 8
+                ) >= ReglasAgenda.TOTAL_BOXES
             ) {
                 return null
             }
@@ -104,7 +105,7 @@ abstract class CitaDao {
                 finMillis = cita.finMillis
             ).toSet()
 
-            (1..8).firstOrNull { it !in ocupados } ?: return null
+            ReglasAgenda.obtenerBoxLibre(ocupados) ?: return null
         } else {
             null
         }

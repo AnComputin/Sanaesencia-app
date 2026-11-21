@@ -12,6 +12,8 @@ object ReglasAgenda {
     const val ESTADO_COMPLETADA = "COMPLETADA"
     const val ESTADO_CANCELADA = "CANCELADA"
 
+    const val CANCELACION_HORAS = 24
+
     fun calcularFin(inicioMillis: Long): Long{
         return inicioMillis + (DURACION_CITA_MINUTOS * 60 * 1000L)
     }

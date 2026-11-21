@@ -421,7 +421,7 @@ fun PagoScreen(
                                 if (tiempoRestante < 60)
                                     "El tiempo está por finalizar"
                                 else
-                                    "Reserva temporal de la hora",
+                                    "El horario se asigna al confirmar el pago",
 
                             fontSize = 13.sp,
                             color =
@@ -563,7 +563,7 @@ fun PagoScreen(
 
             text = {
                 Text(
-                    "El tiempo para realizar el pago ha expirado. La hora deberá seleccionarse nuevamente."
+                    "El tiempo para realizar el pago ha expirado. El horario solo se asigna al confirmar la reserva, por lo que deberás seleccionarlo nuevamente."
                 )
             },
 

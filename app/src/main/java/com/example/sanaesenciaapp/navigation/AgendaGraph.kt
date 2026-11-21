@@ -1,5 +1,6 @@
 package com.example.sanaesenciaapp.navigation
 
+import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
@@ -16,6 +17,14 @@ fun NavGraphBuilder.agendaGraph(
     citaViewModel: CitaViewModel
 ) {
     composable("agendar") {
+        LaunchedEffect(Unit) {
+            if (appState.usuarioActual == null) {
+                navController.navigate("login") {
+                    popUpTo("agendar") { inclusive = true }
+                }
+            }
+        }
+
         AgendarScreen(
             citaViewModel = citaViewModel,
             onContinuar = {
@@ -40,6 +49,14 @@ fun NavGraphBuilder.agendaGraph(
     }
 
     composable("pago") {
+        LaunchedEffect(Unit) {
+            if (appState.usuarioActual == null) {
+                navController.navigate("login") {
+                    popUpTo("pago") { inclusive = true }
+                }
+            }
+        }
+
         PagoScreen(
             citaViewModel = citaViewModel,
             usuarioEmail = appState.usuarioActual?.email ?: "",
@@ -66,6 +83,14 @@ fun NavGraphBuilder.agendaGraph(
     }
 
     composable("mis_citas") {
+        LaunchedEffect(Unit) {
+            if (appState.usuarioActual == null) {
+                navController.navigate("login") {
+                    popUpTo("mis_citas") { inclusive = true }
+                }
+            }
+        }
+
         MisCitasScreen(
             citaViewModel = citaViewModel,
             usuarioEmail = appState.usuarioActual?.email ?: "",
