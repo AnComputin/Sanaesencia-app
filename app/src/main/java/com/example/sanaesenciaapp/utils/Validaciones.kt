@@ -31,6 +31,9 @@ fun validarRut(rut: String): String? {
 
     // Un RUT puede tener 7 u 8 dígitos en el cuerpo,
     // más el dígito verificador.
+    if (limpio.length < 8) {
+        return "RUT inválido: debe tener al menos 8 caracteres"
+    }
     if (limpio.length !in 8..9) {
         return "RUT inválido. Revisa que esté correctamente escrito"
     }
@@ -39,7 +42,10 @@ fun validarRut(rut: String): String? {
     val dvEsperado = limpio.last()
 
     // El cuerpo debe contener solamente números.
-    if (cuerpo.length !in 7..8 || !cuerpo.all { it in '0'..'9' }) {
+    if (!cuerpo.all { it in '0'..'9' }) {
+        return "El RUT solo debe contener números"
+    }
+    if (cuerpo.length !in 7..8) {
         return "RUT inválido. Revisa que esté correctamente escrito"
     }
 
