@@ -1,5 +1,9 @@
 package com.example.sanaesenciaapp.ui.views.terapeuta
 
+import androidx.compose.ui.res.stringResource
+import com.example.sanaesenciaapp.R
+import androidx.compose.ui.tooling.preview.Preview
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,7 +23,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -54,7 +57,7 @@ fun DetalleContinuidadScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Seguimiento",
+                        text = stringResource(R.string.terapeuta_continuidad_topbar),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
                     )
@@ -67,7 +70,7 @@ fun DetalleContinuidadScreen(
                         Icon(
                             imageVector =
                                 Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver"
+                            contentDescription = stringResource(R.string.terapeuta_accessibility_volver)
                         )
                     }
                 }
@@ -95,9 +98,32 @@ fun DetalleContinuidadScreen(
 
                 // Encabezado
                 item {
+                    if (paciente == null) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(18.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer
+                            )
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text(
+                                    text = stringResource(R.string.terapeuta_detalle_bloqueado_titulo),
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = stringResource(R.string.terapeuta_detalle_bloqueado_mensaje),
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
 
                     Text(
-                        text = "Continuidad del paciente",
+                        text = stringResource(R.string.terapeuta_continuidad_titulo),
                         fontSize = 27.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
@@ -108,7 +134,7 @@ fun DetalleContinuidadScreen(
                     )
 
                     Text(
-                        text = "Consulta sus antecedentes de atención y registra notas de seguimiento.",
+                        text = stringResource(R.string.terapeuta_continuidad_desc),
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onBackground
                             .copy(alpha = 0.70f)
@@ -139,7 +165,7 @@ fun DetalleContinuidadScreen(
                             Text(
                                 text =
                                     paciente?.nombre
-                                        ?: "Paciente no seleccionado",
+                                        ?: stringResource(R.string.terapeuta_paciente_no_seleccionado),
 
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 22.sp,
@@ -152,7 +178,7 @@ fun DetalleContinuidadScreen(
                             )
 
                             Text(
-                                text = "RUT",
+                                text = stringResource(R.string.terapeuta_label_rut),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color =
@@ -169,7 +195,7 @@ fun DetalleContinuidadScreen(
                             )
 
                             Text(
-                                text = "Última atención",
+                                text = stringResource(R.string.terapeuta_label_ultima_atencion),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color =
@@ -187,7 +213,7 @@ fun DetalleContinuidadScreen(
                             )
 
                             Text(
-                                text = "Box asignado",
+                                text = stringResource(R.string.terapeuta_label_box_asignado),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color =
@@ -228,7 +254,7 @@ fun DetalleContinuidadScreen(
 
                                         Text(
                                             text =
-                                                "Seguimiento requerido",
+                                                stringResource(R.string.terapeuta_seguimiento_requerido),
                                             fontWeight =
                                                 FontWeight.Bold,
                                             color =
@@ -244,7 +270,7 @@ fun DetalleContinuidadScreen(
 
                                         Text(
                                             text =
-                                                "Este paciente presenta riesgo de discontinuidad en su tratamiento.",
+                                                stringResource(R.string.terapeuta_riesgo_discontinuidad),
                                             fontSize = 13.sp,
                                             color =
                                                 MaterialTheme
@@ -258,83 +284,20 @@ fun DetalleContinuidadScreen(
                     }
                 }
 
-                // Notas de evolución
+                // Las notas clínicas no se habilitan mientras no exista persistencia autorizada.
                 item {
-
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(22.dp),
-
-                        colors = CardDefaults.cardColors(
-                            containerColor =
-                                MaterialTheme.colorScheme.surface
-                        ),
-
-                        elevation = CardDefaults.cardElevation(
-                            defaultElevation = 2.dp
-                        )
-                    ) {
-
-                        Column(
-                            modifier = Modifier.padding(20.dp)
-                        ) {
-
-                            Text(
-                                text = "Notas de evolución",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 19.sp,
-                                color =
-                                    MaterialTheme.colorScheme.secondary
-                            )
-
-                            Spacer(
-                                modifier = Modifier.height(6.dp)
-                            )
-
-                            Text(
-                                text = "Registra observaciones relevantes sobre el seguimiento.",
-                                fontSize = 13.sp,
-                                color =
-                                    MaterialTheme.colorScheme.onSurface
-                                        .copy(alpha = 0.65f)
-                            )
-
-                            Spacer(
-                                modifier = Modifier.height(14.dp)
-                            )
-
-                            OutlinedTextField(
-                                value = state.notasEvolucion,
-
-                                onValueChange = {
-                                    terapeutaViewModel
-                                        .onNotasEvolucionChange(it)
-                                },
-
-                                label = {
-                                    Text(
-                                        "Notas clínicas / holísticas"
-                                    )
-                                },
-
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(140.dp),
-
-                                maxLines = 6,
-
-                                shape =
-                                    RoundedCornerShape(16.dp)
-                            )
-                        }
-                    }
+                    Text(
+                        text = stringResource(R.string.terapeuta_notas_bloqueadas),
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
 
                 // Historial
                 item {
 
                     Text(
-                        text = "Historial de citas",
+                        text = stringResource(R.string.terapeuta_historial_titulo),
                         fontWeight = FontWeight.Bold,
                         fontSize = 21.sp,
                         color = MaterialTheme.colorScheme.secondary
@@ -345,7 +308,7 @@ fun DetalleContinuidadScreen(
                     )
 
                     Text(
-                        text = "Atenciones registradas para este paciente.",
+                        text = stringResource(R.string.terapeuta_historial_desc),
                         fontSize = 13.sp,
                         color =
                             MaterialTheme.colorScheme.onBackground
@@ -374,7 +337,7 @@ fun DetalleContinuidadScreen(
 
                             Text(
                                 text =
-                                    "No hay citas registradas para este paciente.",
+                                    stringResource(R.string.terapeuta_historial_vacio),
 
                                 modifier =
                                     Modifier.padding(20.dp),
@@ -482,16 +445,16 @@ fun DetalleContinuidadScreen(
                                                 when (cita.estado) {
 
                                                     EstadoCita.ASISTIDA ->
-                                                        "Asistida"
+                                                        stringResource(R.string.terapeuta_estado_asistida)
 
                                                     EstadoCita.INASISTENTE ->
-                                                        "Inasistente"
+                                                        stringResource(R.string.terapeuta_estado_inasistente)
 
                                                     EstadoCita.CANCELADA_TERAPEUTA ->
-                                                        "Cancelada"
+                                                        stringResource(R.string.terapeuta_estado_cancelada)
 
                                                     EstadoCita.PENDIENTE ->
-                                                        "Pendiente"
+                                                        stringResource(R.string.terapeuta_estado_pendiente)
 
                                                     else ->
                                                         cita.estado.name
@@ -517,7 +480,7 @@ fun DetalleContinuidadScreen(
                                 )
 
                                 Text(
-                                    text = "Fecha",
+                                    text = stringResource(R.string.terapeuta_label_fecha),
                                     fontSize = 12.sp,
                                     fontWeight =
                                         FontWeight.SemiBold,
@@ -539,7 +502,7 @@ fun DetalleContinuidadScreen(
                                 )
 
                                 Text(
-                                    text = "Box",
+                                    text = stringResource(R.string.terapeuta_label_box),
                                     fontSize = 12.sp,
                                     fontWeight =
                                         FontWeight.SemiBold,
@@ -566,4 +529,12 @@ fun DetalleContinuidadScreen(
             }
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun DetalleContinuidadScreenPreview() {
+    DetalleContinuidadScreen(
+        onNavigateBack = {},
+    )
 }

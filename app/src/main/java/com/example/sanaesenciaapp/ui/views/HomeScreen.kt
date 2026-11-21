@@ -1,5 +1,8 @@
 package com.example.sanaesenciaapp.ui.views
 
+import androidx.compose.ui.res.stringResource
+import com.example.sanaesenciaapp.R
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -34,16 +37,25 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import com.example.sanaesenciaapp.data.AppState
+import com.example.sanaesenciaapp.data.room.EspecialidadEntity
 import com.example.sanaesenciaapp.ui.components.SanaBackground
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    navController: NavController,
     appState: AppState,
-    onLogout: () -> Unit = { appState.logout() }
+    onLoginClick: () -> Unit,
+    onReserveClick: () -> Unit,
+    onMyAppointmentsClick: () -> Unit,
+    onSpecialtyClick: (Int) -> Unit,
+    especialidades: List<EspecialidadEntity>,
+    cargandoCatalogo: Boolean,
+    errorCatalogo: Boolean,
+    onLocationClick: () -> Unit,
+    onGamesClick: () -> Unit,
+    onLogoutClick: () -> Unit,
+    onTiendaClick: () -> Unit = {}
 ) {
 
     val usuario = appState.usuarioActual
@@ -56,7 +68,7 @@ fun HomeScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "🌿 SanaEsencia",
+                        text = stringResource(R.string.inicio_brand_title),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
                     )
@@ -68,11 +80,11 @@ fun HomeScreen(
 
                         TextButton(
                             onClick = {
-                                navController.navigate("login")
+                                onLoginClick()
                             }
                         ) {
                             Text(
-                                text = "Ingresar",
+                                text = stringResource(R.string.inicio_topbar_ingresar),
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
@@ -80,7 +92,7 @@ fun HomeScreen(
                     } else {
 
                         Text(
-                            text = "Hola, ${usuario.nombre}",
+                            text = stringResource(R.string.inicio_saludo, usuario.nombre),
                             modifier = Modifier.padding(end = 16.dp),
                             color = MaterialTheme.colorScheme.secondary
                         )
@@ -191,7 +203,7 @@ fun HomeScreen(
 
                     // Presentación
                     Text(
-                        text = "Bienestar integral",
+                        text = stringResource(R.string.inicio_titulo_bienestar),
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
@@ -202,7 +214,7 @@ fun HomeScreen(
                     )
 
                     Text(
-                        text = "Acompañamos tu bienestar físico, emocional y mental.",
+                        text = stringResource(R.string.inicio_desc_bienestar),
                         fontSize = 17.sp,
                         color = MaterialTheme.colorScheme.onBackground
                     )
@@ -217,13 +229,11 @@ fun HomeScreen(
 
                             if (usuario == null) {
 
-                                navController.navigate("login")
+                                onLoginClick()
 
                             } else {
 
-                                navController.navigate(
-                                    "seleccionar_especialidad"
-                                )
+                                onReserveClick()
                             }
                         },
 
@@ -239,7 +249,7 @@ fun HomeScreen(
                     ) {
 
                         Text(
-                            text = "Reservar hora",
+                            text = stringResource(R.string.inicio_btn_reservar),
                             fontSize = 17.sp
                         )
                     }
@@ -248,7 +258,7 @@ fun HomeScreen(
 
                     // Acceso a la tienda virtual del centro.
                     OutlinedButton(
-                        onClick = { navController.navigate("tienda") },
+                        onClick = { onTiendaClick() },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(55.dp),
@@ -271,7 +281,7 @@ fun HomeScreen(
                         // Botón Mis citas (visible solo si el usuario tiene sesión iniciada)
                         OutlinedButton(
                             onClick = {
-                                navController.navigate("mis_citas")
+                                onMyAppointmentsClick()
                             },
 
                             modifier = Modifier
@@ -282,7 +292,7 @@ fun HomeScreen(
                         ) {
 
                             Text(
-                                text = "Mis citas",
+                                text = stringResource(R.string.inicio_btn_mis_citas),
                                 fontSize = 17.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.secondary
@@ -295,7 +305,7 @@ fun HomeScreen(
                     )
 
                     Text(
-                        text = "Especialidades",
+                        text = stringResource(R.string.inicio_titulo_especialidades),
                         fontSize = 25.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
@@ -305,94 +315,40 @@ fun HomeScreen(
                         modifier = Modifier.height(16.dp)
                     )
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement =
-                            Arrangement.spacedBy(12.dp)
-                    ) {
-
-                        EspecialidadCard(
-                            nombre = "Psicología\nInfanto-Juvenil",
-                            icono = "🌱",
-                            modifier = Modifier.weight(1f),
-
-                            onClick = {
-
-                                appState.especialidadSeleccionada =
-                                    appState.especialidades.find {
-                                        it.id == 1
-                                    }
-
-                                navController.navigate(
-                                    "detalle_servicio"
-                                )
-                            }
+                    when {
+                        errorCatalogo -> Text(
+                            text = stringResource(R.string.catalogo_error_carga),
+                            color = MaterialTheme.colorScheme.error
                         )
-
-                        EspecialidadCard(
-                            nombre = "Psicología\nAdulto",
-                            icono = "🧠",
-                            modifier = Modifier.weight(1f),
-
-                            onClick = {
-
-                                appState.especialidadSeleccionada =
-                                    appState.especialidades.find {
-                                        it.id == 2
-                                    }
-
-                                navController.navigate(
-                                    "detalle_servicio"
-                                )
-                            }
+                        cargandoCatalogo -> Text(
+                            text = stringResource(R.string.catalogo_cargando),
+                            color = MaterialTheme.colorScheme.onBackground
                         )
-                    }
-
-                    Spacer(
-                        modifier = Modifier.height(12.dp)
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement =
-                            Arrangement.spacedBy(12.dp)
-                    ) {
-
-                        EspecialidadCard(
-                            nombre = "Terapia\nOcupacional",
-                            icono = "🧩",
-                            modifier = Modifier.weight(1f),
-
-                            onClick = {
-
-                                appState.especialidadSeleccionada =
-                                    appState.especialidades.find {
-                                        it.id == 3
-                                    }
-
-                                navController.navigate(
-                                    "detalle_servicio"
-                                )
-                            }
+                        especialidades.isEmpty() -> Text(
+                            text = stringResource(R.string.catalogo_vacio),
+                            color = MaterialTheme.colorScheme.onBackground
                         )
-
-                        EspecialidadCard(
-                            nombre = "Nutrición\nIntegrativa",
-                            icono = "🥗",
-                            modifier = Modifier.weight(1f),
-
-                            onClick = {
-
-                                appState.especialidadSeleccionada =
-                                    appState.especialidades.find {
-                                        it.id == 4
-                                    }
-
-                                navController.navigate(
-                                    "detalle_servicio"
-                                )
+                        else -> especialidades.chunked(2).forEach { fila ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                fila.forEach { especialidad ->
+                                    EspecialidadCard(
+                                        nombre = especialidad.nombre,
+                                        icono = especialidad.icono,
+                                        modifier = Modifier.weight(1f),
+                                        onClick = { onSpecialtyClick(especialidad.id) }
+                                    )
+                                }
+                                if (fila.size == 1) {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
                             }
-                        )
+                            if (fila != especialidades.chunked(2).last()) {
+                                Spacer(modifier = Modifier.height(12.dp))
+                            }
+                        }
                     }
 
                     Spacer(
@@ -415,7 +371,7 @@ fun HomeScreen(
                         ) {
 
                             Text(
-                                text = "Atención presencial y online",
+                                text = stringResource(R.string.inicio_card_atencion_titulo),
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.secondary
@@ -426,7 +382,7 @@ fun HomeScreen(
                             )
 
                             Text(
-                                text = "Elige la modalidad que más se adapte a ti."
+                                text = stringResource(R.string.inicio_card_atencion_desc)
                             )
                         }
                     }
@@ -438,7 +394,7 @@ fun HomeScreen(
                     // GPS
                     OutlinedButton(
                         onClick = {
-                            navController.navigate("ubicacion")
+                            onLocationClick()
                         },
 
                         modifier = Modifier
@@ -449,7 +405,7 @@ fun HomeScreen(
                     ) {
 
                         Text(
-                            text = "📍 Ver Sede y Distancia (GPS)",
+                            text = stringResource(R.string.inicio_btn_ubicacion),
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.secondary
                         )
@@ -462,7 +418,7 @@ fun HomeScreen(
                     // Espacio de Bienestar
                     Button(
                         onClick = {
-                            navController.navigate("juegos_hub")
+                            onGamesClick()
                         },
 
                         modifier = Modifier
@@ -478,7 +434,7 @@ fun HomeScreen(
                     ) {
 
                         Text(
-                            text = "🌿 Espacio de Bienestar",
+                            text = stringResource(R.string.inicio_btn_juegos),
                             fontWeight = FontWeight.Bold,
                             fontSize = 17.sp
                         )
@@ -491,14 +447,16 @@ fun HomeScreen(
                     if (usuario != null) {
 
                         TextButton(
-                            onClick = onLogout,
+                            onClick = {
+                                onLogoutClick()
+                            },
 
                             modifier = Modifier.align(
                                 Alignment.CenterHorizontally
                             )
                         ) {
 
-                            Text("Cerrar sesión")
+                            Text(stringResource(R.string.inicio_btn_cerrar_sesion))
                         }
                     }
 
