@@ -22,7 +22,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -35,29 +35,29 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sanaesenciaapp.ui.components.SanaBackground
-import com.example.sanaesenciaapp.viewmodel.PagoViewModel
+import com.example.sanaesenciaapp.viewmodel.CitaViewModel
 import com.example.sanaesenciaapp.viewmodel.Modalidad
 import kotlinx.coroutines.delay
 import java.util.Locale
 
 @Composable
 fun PagoScreen(
-    pagoViewModel: PagoViewModel,
+    citaViewModel: CitaViewModel,
     usuarioEmail: String = "",
     onPagoExitoso: () -> Unit,
     onExpirado: () -> Unit
 ) {
 
-    val uiState by pagoViewModel.uiState.collectAsStateWithLifecycle()
-    val puedeConfirmar by pagoViewModel.puedeContinuar.collectAsStateWithLifecycle()
+    val uiState by citaViewModel.uiState.collectAsState()
+    val puedeConfirmar by citaViewModel.puedeContinuar.collectAsState()
 
     LaunchedEffect(Unit) {
-        pagoViewModel.iniciarPago()
+        citaViewModel.iniciarPago()
     }
 
     var tiempoRestante by remember {
         mutableIntStateOf(
-            pagoViewModel.segundosRestantesPago()
+            citaViewModel.segundosRestantesPago()
         )
     }
 
@@ -80,7 +80,7 @@ fun PagoScreen(
             delay(1000L)
 
             val nuevoTiempo =
-                pagoViewModel.segundosRestantesPago()
+                citaViewModel.segundosRestantesPago()
 
             tiempoRestante = nuevoTiempo
 
@@ -96,7 +96,7 @@ fun PagoScreen(
     val progreso =
         (
                 tiempoRestante.toFloat() /
-                        pagoViewModel.duracionPagoSegundos.toFloat()
+                        citaViewModel.duracionPagoSegundos.toFloat()
                 ).coerceIn(0f, 1f)
 
     val progresoAnimado by animateFloatAsState(
@@ -123,15 +123,20 @@ fun PagoScreen(
 
     val modalidadTexto =
         when (uiState.modalidad) {
-            "PRESENCIAL" -> "Presencial"
-            "ONLINE" -> "Online"
-            null -> "-"
-            else -> uiState.modalidad
+
+            Modalidad.PRESENCIAL ->
+                "Presencial"
+
+            Modalidad.ONLINE ->
+                "Online"
+
+            null ->
+                "-"
         }
 
     val fechaTexto =
         uiState.fechaMillis?.let {
-            pagoViewModel.formatearFecha(it)
+            citaViewModel.formatearFecha(it)
         } ?: "-"
 
     SanaBackground {
@@ -275,7 +280,8 @@ fun PagoScreen(
                         Text(
                             text =
                                 if (
-                                    uiState.modalidad == "PRESENCIAL"
+                                    uiState.modalidad ==
+                                    Modalidad.PRESENCIAL
                                 )
                                     "📍 $modalidadTexto"
                                 else
@@ -471,7 +477,7 @@ fun PagoScreen(
                     procesandoPago = true
                     errorReserva = null
 
-                    pagoViewModel.confirmarCita(usuarioEmail) { exito ->
+                    citaViewModel.confirmarCita(usuarioEmail) { exito ->
                         procesandoPago = false
 
                         if (exito) {
@@ -565,7 +571,10 @@ fun PagoScreen(
 
                 Button(
                     onClick = {
-                        pagoViewModel.limpiarError()
+
+                        citaViewModel
+                            .reiniciarPago()
+
                         onExpirado()
                     }
                 ) {
@@ -613,7 +622,7 @@ private fun DatoPago(
 private fun PagoScreenPreview() {
 
     PagoScreen(
-        pagoViewModel = TODO("Preview requiere dependencias"),
+        citaViewModel = CitaViewModel(),
         onPagoExitoso = {},
         onExpirado = {}
     )

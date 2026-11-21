@@ -35,7 +35,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,14 +45,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sanaesenciaapp.data.room.BeneficiarioEntity
 import com.example.sanaesenciaapp.ui.components.SanaBackground
-import com.example.sanaesenciaapp.viewmodel.AgendarViewModel
+import com.example.sanaesenciaapp.viewmodel.CitaViewModel
 import com.example.sanaesenciaapp.viewmodel.Horario
 import com.example.sanaesenciaapp.viewmodel.Modalidad
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AgendarScreen(
-    agendarViewModel: AgendarViewModel,
+    citaViewModel: CitaViewModel,
     onContinuar: () -> Unit,
     onVolver: () -> Unit,
     nombreTitular: String = "",
@@ -63,9 +63,9 @@ fun AgendarScreen(
     onRegistrarBeneficiario: () -> Unit = {}
 ) {
 
-    val uiState by agendarViewModel.uiState.collectAsStateWithLifecycle()
-    val horarios = uiState.horarios
-    val puedeContinuar = uiState.puedeContinuar
+    val uiState by citaViewModel.uiState.collectAsState()
+    val horarios by citaViewModel.horarios.collectAsState()
+    val puedeContinuar by citaViewModel.puedeContinuar.collectAsState()
 
     // Al entrar por primera vez se propone al titular. Si se vuelve desde la ficha de
     // beneficiario, se selecciona automáticamente el menor recién registrado.
@@ -82,14 +82,14 @@ fun AgendarScreen(
         when {
             beneficiarioSeleccionado != null &&
                 uiState.beneficiarioId != beneficiarioSeleccionado.id -> {
-                agendarViewModel.seleccionarPaciente(
+                citaViewModel.seleccionarPaciente(
                     beneficiarioSeleccionado.nombre,
                     beneficiarioSeleccionado.id
                 )
             }
 
             uiState.nombrePaciente.isBlank() && nombreTitular.isNotBlank() -> {
-                agendarViewModel.seleccionarPaciente(nombreTitular, null)
+                citaViewModel.seleccionarPaciente(nombreTitular, null)
             }
         }
     }
@@ -243,10 +243,11 @@ fun AgendarScreen(
                                 titulo = "Presencial",
 
                                 isSelected =
-                                    uiState.modalidad == "PRESENCIAL",
+                                    uiState.modalidad ==
+                                            Modalidad.PRESENCIAL,
 
                                 onClick = {
-                                    agendarViewModel
+                                    citaViewModel
                                         .seleccionarModalidad(
                                             Modalidad.PRESENCIAL
                                         )
@@ -271,10 +272,11 @@ fun AgendarScreen(
                                 titulo = "Online",
 
                                 isSelected =
-                                    uiState.modalidad == "ONLINE",
+                                    uiState.modalidad ==
+                                            Modalidad.ONLINE,
 
                                 onClick = {
-                                    agendarViewModel
+                                    citaViewModel
                                         .seleccionarModalidad(
                                             Modalidad.ONLINE
                                         )
@@ -301,25 +303,25 @@ fun AgendarScreen(
                     ) {
 
                         items(
-                            uiState.fechasDisponibles
+                            citaViewModel.fechasDisponibles
                         ) { fechaMillis ->
 
                             val esSeleccionado =
                                 uiState.fechaMillis ==
-                                        fechaMillis.toLong()
+                                        fechaMillis
 
                             FechaTarjeta(
                                 textoFecha =
-                                    agendarViewModel
+                                    citaViewModel
                                         .formatearFecha(
-                                            fechaMillis.toLong()
+                                            fechaMillis
                                         ),
 
                                 isSelected =
                                     esSeleccionado,
 
                                 onClick = {
-                                    agendarViewModel
+                                    citaViewModel
                                         .seleccionarFecha(
                                             fechaMillis
                                         )
@@ -363,7 +365,7 @@ fun AgendarScreen(
                                                     horario.hora,
 
                                         onClick = {
-                                            agendarViewModel
+                                            citaViewModel
                                                 .seleccionarHora(
                                                     horario.hora
                                                 )
@@ -400,7 +402,7 @@ fun AgendarScreen(
                                     ignoreCase = true
                                 ),
                             onClick = {
-                                agendarViewModel.seleccionarPaciente(nombreTitular, null)
+                                citaViewModel.seleccionarPaciente(nombreTitular, null)
                                 onPacienteTitularSeleccionado()
                             },
                             label = { Text("Para mí · $nombreTitular") }
@@ -427,7 +429,7 @@ fun AgendarScreen(
                                 FilterChip(
                                     selected = uiState.beneficiarioId == beneficiario.id,
                                     onClick = {
-                                        agendarViewModel.seleccionarPaciente(
+                                        citaViewModel.seleccionarPaciente(
                                             beneficiario.nombre,
                                             beneficiario.id
                                         )
@@ -453,7 +455,7 @@ fun AgendarScreen(
                     OutlinedTextField(
                         value = uiState.nombrePaciente,
                         onValueChange = {
-                            agendarViewModel.cambiarNombre(it)
+                            citaViewModel.cambiarNombre(it)
                             onPacienteTitularSeleccionado()
                         },
                         label = { Text("Nombre del paciente") },
@@ -850,7 +852,8 @@ private fun HoraTarjeta(
 private fun AgendarScreenPreview() {
 
     AgendarScreen(
-        agendarViewModel = TODO("Preview requiere dependencias"),
+        citaViewModel =
+            CitaViewModel(),
 
         onContinuar = {},
         onVolver = {}
