@@ -1,43 +1,72 @@
 package com.example.sanaesenciaapp.viewmodel
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.sanaesenciaapp.data.room.AppDatabase
-import com.example.sanaesenciaapp.data.room.ESPECIALIDADES_INICIALES
+import com.example.sanaesenciaapp.data.repository.CatalogoRepository
 import com.example.sanaesenciaapp.data.room.EspecialidadEntity
-import kotlinx.coroutines.launch
+import com.example.sanaesenciaapp.data.room.EspecialistaEntity
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.SharingStarted
 
-class CatalogoViewModel(private val db: AppDatabase) : ViewModel() {
+data class CatalogoUiState(
+    val cargandoEspecialidades: Boolean = true,
+    val errorEspecialidades: Boolean = false,
+    val errorEspecialistas: Boolean = false
+)
 
-    // Lista observable para la interfaz gráfica
-    var especialidades by mutableStateOf<List<EspecialidadEntity>>(emptyList())
-        private set
+@OptIn(ExperimentalCoroutinesApi::class)
+class CatalogoViewModel(
+    private val catalogoRepository: CatalogoRepository,
+    savedStateHandle: SavedStateHandle
+) : ViewModel() {
+    private val _uiState = MutableStateFlow(CatalogoUiState())
+    val uiState: StateFlow<CatalogoUiState> = _uiState.asStateFlow()
 
-    var especialidadSeleccionada by mutableStateOf<EspecialidadEntity?>(null)
-        private set
+    val especialidadId: StateFlow<Int?> =
+        savedStateHandle.getStateFlow(ARG_ESPECIALIDAD_ID, null)
 
-    init {
-        cargarEspecialidades()
-    }
-
-    fun cargarEspecialidades() {
-        viewModelScope.launch {
-            val dao = db.especialidadDao()
-            var lista = dao.obtenerTodas()
-
-            // Si la base de datos local está vacía, insertamos los datos por defecto (Seed data)
-            if (lista.isEmpty()) {
-                dao.insertarTodas(ESPECIALIDADES_INICIALES)
-                lista = dao.obtenerTodas()
+    val especialidades: StateFlow<List<EspecialidadEntity>> =
+        catalogoRepository.observarEspecialidades()
+            .onEach {
+                _uiState.value = _uiState.value.copy(
+                    cargandoEspecialidades = false,
+                    errorEspecialidades = false
+                )
             }
-            especialidades = lista
-        }
-    }
+            .catch {
+                _uiState.value = _uiState.value.copy(
+                    cargandoEspecialidades = false,
+                    errorEspecialidades = true
+                )
+                emit(emptyList())
+            }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    fun seleccionarEspecialidad(esp: EspecialidadEntity) {
-        especialidadSeleccionada = esp
+    val especialistas: StateFlow<List<EspecialistaEntity>> =
+        especialidadId
+            .flatMapLatest { id ->
+                id?.let(catalogoRepository::observarEspecialistas) ?: flowOf(emptyList())
+            }
+            .onEach { _uiState.value = _uiState.value.copy(errorEspecialistas = false) }
+            .catch {
+                _uiState.value = _uiState.value.copy(errorEspecialistas = true)
+                emit(emptyList())
+            }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun especialidadSeleccionada(): EspecialidadEntity? =
+        especialidades.value.firstOrNull { it.id == especialidadId.value }
+
+    private companion object {
+        const val ARG_ESPECIALIDAD_ID = "especialidadId"
     }
 }

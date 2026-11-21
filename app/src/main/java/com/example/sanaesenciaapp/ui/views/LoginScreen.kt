@@ -1,5 +1,8 @@
 package com.example.sanaesenciaapp.ui.views
 
+import androidx.compose.ui.res.stringResource
+import com.example.sanaesenciaapp.R
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -33,9 +36,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.sanaesenciaapp.data.AppState
 import com.example.sanaesenciaapp.ui.components.SanaBackground
+import com.example.sanaesenciaapp.ui.components.validationMessageText
 import com.example.sanaesenciaapp.utils.validarPassword
 import com.example.sanaesenciaapp.viewmodel.AuthViewModel
 
@@ -59,11 +60,7 @@ fun LoginScreen(
 ) {
 
     val state by authViewModel.uiState.collectAsState()
-
-    // Solo mostrar la validación de requisitos después de intentar iniciar sesión.
-    var intentoInicioSesion by remember { mutableStateOf(false) }
-    val errorPasswordLogin = state.errorPassword
-        ?: if (intentoInicioSesion) validarPassword(state.password) else null
+    val errorPassword = state.password.takeIf { it.isNotEmpty() }?.let(::validarPassword)
 
     val app = appState
 
@@ -81,7 +78,7 @@ fun LoginScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Iniciar sesión",
+                        text = stringResource(R.string.inicio_btn_iniciar_sesion),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
                     )
@@ -120,7 +117,7 @@ fun LoginScreen(
                 )
 
                 Text(
-                    text = "Bienvenido nuevamente",
+                    text = stringResource(R.string.inicio_login_bienvenida),
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.secondary
@@ -131,7 +128,7 @@ fun LoginScreen(
                 )
 
                 Text(
-                    text = "Ingresa a tu cuenta SanaEsencia",
+                    text = stringResource(R.string.inicio_login_subtitulo),
                     fontSize = 15.sp,
                     color = MaterialTheme.colorScheme.onBackground
                         .copy(alpha = 0.70f)
@@ -161,7 +158,7 @@ fun LoginScreen(
                     ) {
 
                         Text(
-                            text = "Accede a tu cuenta",
+                            text = stringResource(R.string.inicio_login_acceso),
                             fontSize = 19.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.secondary
@@ -180,14 +177,14 @@ fun LoginScreen(
                             },
 
                             label = {
-                                Text("Correo electrónico")
+                                Text(stringResource(R.string.inicio_label_correo))
                             },
 
                             leadingIcon = {
                                 Icon(
                                     imageVector =
                                         Icons.Default.Email,
-                                    contentDescription = "Email"
+                                    contentDescription = stringResource(R.string.inicio_accessibility_email)
                                 )
                             },
 
@@ -203,7 +200,7 @@ fun LoginScreen(
 
                                     Text(
                                         text =
-                                            state.errorEmail ?: "",
+                                            validationMessageText(state.errorEmail),
 
                                         color =
                                             MaterialTheme
@@ -236,7 +233,7 @@ fun LoginScreen(
                             },
 
                             label = {
-                                Text("Contraseña")
+                                Text(stringResource(R.string.inicio_label_contrasena))
                             },
 
                             leadingIcon = {
@@ -245,7 +242,7 @@ fun LoginScreen(
                                         Icons.Default.Lock,
 
                                     contentDescription =
-                                        "Contraseña"
+                                        stringResource(R.string.inicio_accessibility_contrasena)
                                 )
                             },
 
@@ -273,9 +270,9 @@ fun LoginScreen(
                                             if (
                                                 state.isPasswordVisible
                                             )
-                                                "Ocultar contraseña"
+                                                stringResource(R.string.inicio_accessibility_ocultar_contrasena)
                                             else
-                                                "Ver contraseña"
+                                                stringResource(R.string.inicio_accessibility_ver_contrasena)
                                     )
                                 }
                             },
@@ -286,15 +283,24 @@ fun LoginScreen(
                                 else
                                     PasswordVisualTransformation(),
 
-                            isError = errorPasswordLogin != null,
+                            isError =
+                                errorPassword != null || state.errorPassword != null,
 
                             supportingText = {
+
                                 AnimatedVisibility(
-                                    visible = errorPasswordLogin != null
+                                    visible =
+                                        errorPassword != null || state.errorPassword != null
                                 ) {
+
                                     Text(
-                                        text = errorPasswordLogin ?: "",
-                                        color = MaterialTheme.colorScheme.error
+                                        text =
+                                            validationMessageText(errorPassword ?: state.errorPassword),
+
+                                        color =
+                                            MaterialTheme
+                                                .colorScheme
+                                                .error
                                     )
                                 }
                             },
@@ -354,7 +360,6 @@ fun LoginScreen(
 
                         Button(
                             onClick = {
-                                intentoInicioSesion = true
                                 authViewModel.iniciarSesion(appState = app)
                             },
                             enabled = !state.isLoading,
@@ -373,7 +378,7 @@ fun LoginScreen(
                                 )
                             } else {
                                 Text(
-                                    text = "Iniciar sesión",
+                                    text = stringResource(R.string.inicio_btn_iniciar_sesion),
                                     fontSize = 16.sp,
                                     fontWeight =
                                         FontWeight.SemiBold
@@ -388,7 +393,7 @@ fun LoginScreen(
                 )
 
                 Text(
-                    text = "¿Aún no tienes una cuenta?",
+                    text = stringResource(R.string.inicio_login_sin_cuenta),
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onBackground
                         .copy(alpha = 0.70f)
@@ -410,7 +415,7 @@ fun LoginScreen(
                 ) {
 
                     Text(
-                        text = "Crear una cuenta",
+                        text = stringResource(R.string.inicio_login_crear_cuenta),
                         fontWeight = FontWeight.SemiBold
                     )
                 }

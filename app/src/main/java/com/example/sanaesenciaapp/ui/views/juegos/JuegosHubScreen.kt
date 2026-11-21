@@ -1,5 +1,8 @@
 package com.example.sanaesenciaapp.ui.views.juegos
 
+import androidx.compose.ui.res.stringResource
+import com.example.sanaesenciaapp.R
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -29,13 +32,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import com.example.sanaesenciaapp.ui.components.SanaBackground
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JuegosHubScreen(
-    navController: NavController
+    onBackClick: () -> Unit,
+    onRespiracionGuiadaClick: () -> Unit,
+    onPausaConscienteClick: () -> Unit,
+    onMemoriceClick: () -> Unit,
+    onGatoClick: () -> Unit,
+    onCaminoBienestarClick: () -> Unit
 ) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -43,16 +50,16 @@ fun JuegosHubScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "🌿 Espacio de Bienestar",
+                        text = stringResource(R.string.juegos_topbar),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver",
+                            contentDescription = stringResource(R.string.juegos_accessibility_volver),
                             tint = MaterialTheme.colorScheme.secondary
                         )
                     }
@@ -73,13 +80,13 @@ fun JuegosHubScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = "Tu momento de autocuidado",
+                    text = stringResource(R.string.juegos_titulo_principal),
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.secondary
                 )
                 Text(
-                    text = "Dedica unos minutos a tu bienestar. Explora actividades para ejercitar la mente, relajarte y conectar con el presente.",
+                    text = stringResource(R.string.juegos_subt_principal),
                     fontSize = 15.sp,
                     color = MaterialTheme.colorScheme.onBackground
                 )
@@ -88,60 +95,60 @@ fun JuegosHubScreen(
 
                 // SECCIÓN 1: PAUSAS DE BIENESTAR
                 Text(
-                    text = "🧘 Pausas de bienestar",
+                    text = stringResource(R.string.juegos_seccion_pausas),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.secondary
                 )
 
                 ActividadCard(
-                    titulo = "Respiración Guiada",
-                    subtitulo = "Sincroniza tu respiración en 1 minuto para reducir el estrés y calmar la mente.",
+                    titulo = stringResource(R.string.juegos_respiracion_titulo),
+                    subtitulo = stringResource(R.string.juegos_respiracion_subt),
                     icono = "🫁",
-                    duracion = "1 min",
-                    onClick = { navController.navigate("respiracion_guiada") }
+                    duracion = stringResource(R.string.juegos_respiracion_duracion),
+                    onClick = onRespiracionGuiadaClick
                 )
 
                 ActividadCard(
-                    titulo = "Pausa Consciente",
-                    subtitulo = "Actividad guiada paso a paso para hacer una pausa, conectar con tu cuerpo y entorno.",
+                    titulo = stringResource(R.string.juegos_pausa_titulo),
+                    subtitulo = stringResource(R.string.juegos_pausa_subt),
                     icono = "🌿",
-                    duracion = "2 min",
-                    onClick = { navController.navigate("pausa_consciente") }
+                    duracion = stringResource(R.string.juegos_pausa_duracion),
+                    onClick = onPausaConscienteClick
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // SECCIÓN 2: JUEGOS MENTALES
                 Text(
-                    text = "🧠 Juegos mentales",
+                    text = stringResource(R.string.juegos_seccion_mentales),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.secondary
                 )
 
                 ActividadCard(
-                    titulo = "Memorice Zen",
-                    subtitulo = "Entrena tu memoria encontrando parejas de cartas con temática de bienestar.",
+                    titulo = stringResource(R.string.juegos_memorice_titulo),
+                    subtitulo = stringResource(R.string.juegos_memorice_subt),
                     icono = "🎴",
-                    duracion = "Estimulación visual",
-                    onClick = { navController.navigate("memorice_zen") }
+                    duracion = stringResource(R.string.juegos_memorice_duracion),
+                    onClick = onMemoriceClick
                 )
 
                 ActividadCard(
-                    titulo = "Gato Armónico",
-                    subtitulo = "El clásico tres en raya para ejercitar la estrategia (Individual o contra IA).",
+                    titulo = stringResource(R.string.juegos_gato_titulo),
+                    subtitulo = stringResource(R.string.juegos_gato_subt),
                     icono = "⭕",
-                    duracion = "Estrategia cognitiva",
-                    onClick = { navController.navigate("gato_armonico") }
+                    duracion = stringResource(R.string.juegos_gato_duracion),
+                    onClick = onGatoClick
                 )
 
                 ActividadCard(
-                    titulo = "Camino del Bienestar",
-                    subtitulo = "Avanza por el tablero de 25 casillas descubriendo hábitos y mensajes positivos.",
+                    titulo = stringResource(R.string.juegos_camino_titulo),
+                    subtitulo = stringResource(R.string.juegos_camino_subt),
                     icono = "🎲",
-                    duracion = "Recorrido lúdico",
-                    onClick = { navController.navigate("camino_bienestar") }
+                    duracion = stringResource(R.string.juegos_camino_duracion),
+                    onClick = onCaminoBienestarClick
                 )
             }
         }

@@ -62,13 +62,13 @@ class ValidacionesTest {
     @Test
     fun `rut muy corto retorna error`() {
         val resultado = validarRut("123456")
-        assertEquals("RUT inválido. Revisa que esté correctamente escrito", resultado)
+        assertEquals("RUT inválido: debe tener al menos 8 caracteres", resultado)
     }
 
     @Test
     fun `rut con letras en el cuerpo retorna error`() {
         val resultado = validarRut("1234567A-5")
-        assertEquals("RUT inválido. Revisa que esté correctamente escrito", resultado)
+        assertEquals("El RUT solo debe contener números", resultado)
     }
 
     @Test
