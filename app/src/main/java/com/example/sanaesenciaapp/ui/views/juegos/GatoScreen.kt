@@ -38,6 +38,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -187,6 +192,8 @@ fun GatoScreen(
                     itemsIndexed(uiState.tablero) { index, valor ->
                         CeldaGato(
                             valor = valor,
+                            fila = index / 3 + 1,
+                            columna = index % 3 + 1,
                             habilitado = !deshabilitarTablero && valor == null
                         ) {
                             viewModel.seleccionarCelda(index)
@@ -245,14 +252,26 @@ fun GatoScreen(
 @Composable
 fun CeldaGato(
     valor: String?,
+    fila: Int,
+    columna: Int,
     habilitado: Boolean = true,
     onClick: () -> Unit
 ) {
+    val etiqueta = stringResource(R.string.juegos_gato_casilla_posicion, fila, columna)
+    val estado = if (valor == null) {
+        stringResource(R.string.juegos_gato_casilla_vacia)
+    } else {
+        stringResource(R.string.juegos_gato_casilla_ocupada, valor)
+    }
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .height(100.dp)
-            .clickable(enabled = habilitado) { onClick() },
+            .clickable(enabled = habilitado, role = Role.Button, onClick = onClick)
+            .semantics {
+                contentDescription = etiqueta
+                stateDescription = estado
+            },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (valor == null) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.primaryContainer
@@ -260,7 +279,7 @@ fun CeldaGato(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Box(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().clearAndSetSemantics {},
             contentAlignment = Alignment.Center
         ) {
             if (valor != null) {

@@ -1,5 +1,12 @@
 <resources>
     <!-- Módulo Juegos / Bienestar -->
+    <string name="juegos_memorice_carta_posicion">Carta, fila %1$d, columna %2$d</string>
+    <string name="juegos_memorice_carta_oculta">Oculta</string>
+    <string name="juegos_memorice_carta_descubierta">Descubierta: %1$s</string>
+    <string name="juegos_memorice_carta_emparejada">Emparejada: %1$s</string>
+    <string name="juegos_gato_casilla_posicion">Casilla, fila %1$d, columna %2$d</string>
+    <string name="juegos_gato_casilla_vacia">Vacía</string>
+    <string name="juegos_gato_casilla_ocupada">Ocupada por el jugador %1$s</string>
     <string name="juegos_camino_posicion_formato">%1$d / %2$d</string>
     <string name="juegos_progreso_formato">%1$d%%</string>
     <string name="juegos_tiempo_formato">%1$02d:%2$02d</string>

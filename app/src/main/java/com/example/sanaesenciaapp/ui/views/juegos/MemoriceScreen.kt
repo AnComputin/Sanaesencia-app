@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -38,6 +38,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -129,8 +134,8 @@ fun MemoriceScreen(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(uiState.cartas) { carta ->
-                        CartaItem(carta = carta) {
+                    itemsIndexed(uiState.cartas, key = { _, carta -> carta.id }) { index, carta ->
+                        CartaItem(carta = carta, fila = index / 4 + 1, columna = index % 4 + 1) {
                             viewModel.voltearCarta(carta.id)
                         }
                     }
@@ -189,8 +194,16 @@ fun MemoriceScreen(
 @Composable
 fun CartaItem(
     carta: CartaZen,
+    fila: Int,
+    columna: Int,
     onClick: () -> Unit
 ) {
+    val etiqueta = stringResource(R.string.juegos_memorice_carta_posicion, fila, columna)
+    val estado = when {
+        carta.encontrada -> stringResource(R.string.juegos_memorice_carta_emparejada, carta.simbolo)
+        carta.volteada -> stringResource(R.string.juegos_memorice_carta_descubierta, carta.simbolo)
+        else -> stringResource(R.string.juegos_memorice_carta_oculta)
+    }
     val cardColor = if (carta.volteada || carta.encontrada) {
         MaterialTheme.colorScheme.surface
     } else {
@@ -201,13 +214,17 @@ fun CartaItem(
         modifier = Modifier
             .fillMaxWidth()
             .height(85.dp)
-            .clickable(enabled = !carta.volteada && !carta.encontrada) { onClick() },
+            .clickable(enabled = !carta.volteada && !carta.encontrada, role = Role.Button, onClick = onClick)
+            .semantics {
+                contentDescription = etiqueta
+                stateDescription = estado
+            },
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = cardColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Box(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().clearAndSetSemantics {},
             contentAlignment = Alignment.Center
         ) {
             if (carta.volteada || carta.encontrada) {
