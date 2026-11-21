@@ -1,3 +1,4 @@
+
 package com.example.sanaesenciaapp.viewmodel
 
 import androidx.lifecycle.ViewModel
@@ -33,8 +34,15 @@ class AuthViewModel(
     private var loginJob: Job? = null
 
     // ── Actualizar campos ──────────────────────────
+
     fun onNombreChange(nuevoNombre: String) {
-        _uiState.update { it.copy(nombre = nuevoNombre, errorNombre = null, errorGeneral = null) }
+        _uiState.update {
+            it.copy(
+                nombre = nuevoNombre,
+                errorNombre = null,
+                errorGeneral = null
+            )
+        }
     }
 
     fun validarCampoNombre() {
@@ -53,12 +61,26 @@ class AuthViewModel(
         }
     }
 
+    // RUT: se almacena sin puntos ni guion.
+    // También permite pegar un RUT que venga formateado.
     fun onRutChange(nuevoRut: String) {
-        _uiState.update { it.copy(rut = nuevoRut, errorRut = null) }
+        val rutNormalizado = nuevoRut
+            .uppercase()
+            .filter { it in '0'..'9' || it == 'K' }
+            .take(9)
+
+        _uiState.update {
+            it.copy(
+                rut = rutNormalizado,
+                errorRut = null
+            )
+        }
     }
 
     fun onTelefonoChange(nuevoTelefono: String) {
-        _uiState.update { it.copy(telefono = nuevoTelefono, errorTelefono = null) }
+        _uiState.update {
+            it.copy(telefono = nuevoTelefono, errorTelefono = null)
+        }
     }
 
     fun onPasswordChange(nuevaPassword: String) {
@@ -73,15 +95,27 @@ class AuthViewModel(
     }
 
     fun onConfirmPasswordChange(nuevaConfirmacion: String) {
-        _uiState.update { it.copy(confirmPassword = nuevaConfirmacion, errorConfirmPassword = null) }
+        _uiState.update {
+            it.copy(
+                confirmPassword = nuevaConfirmacion,
+                errorConfirmPassword = null
+            )
+        }
     }
 
     fun onFechaNacimientoChange(nuevaFecha: String) {
-        _uiState.update { it.copy(fechaNacimiento = nuevaFecha, errorFechaNacimiento = null) }
+        _uiState.update {
+            it.copy(
+                fechaNacimiento = nuevaFecha,
+                errorFechaNacimiento = null
+            )
+        }
     }
 
     fun onComunaChange(nuevaComuna: String) {
-        _uiState.update { it.copy(comuna = nuevaComuna, errorComuna = null) }
+        _uiState.update {
+            it.copy(comuna = nuevaComuna, errorComuna = null)
+        }
     }
 
     fun onRolChange(nuevoRol: String) {
@@ -90,17 +124,23 @@ class AuthViewModel(
     }
 
     fun onAceptarTerminosChange(acepta: Boolean) {
-        _uiState.update { it.copy(aceptaTerminos = acepta, errorTerminos = null) }
+        _uiState.update {
+            it.copy(aceptaTerminos = acepta, errorTerminos = null)
+        }
     }
 
     // ── Visibilidad de contraseñas ──────────────────
 
     fun togglePasswordVisibility() {
-        _uiState.update { it.copy(isPasswordVisible = !it.isPasswordVisible) }
+        _uiState.update {
+            it.copy(isPasswordVisible = !it.isPasswordVisible)
+        }
     }
 
     fun toggleConfirmPasswordVisibility() {
-        _uiState.update { it.copy(isConfirmPasswordVisible = !it.isConfirmPasswordVisible) }
+        _uiState.update {
+            it.copy(isConfirmPasswordVisible = !it.isConfirmPasswordVisible)
+        }
     }
 
     // ── Validar campo individual ────────────────────
@@ -127,10 +167,14 @@ class AuthViewModel(
 
     fun validarCampoConfirmPassword() {
         val state = _uiState.value
+
         val error = if (state.password != state.confirmPassword) {
             "Las contraseñas no coinciden"
         } else null
-        _uiState.update { it.copy(errorConfirmPassword = error) }
+
+        _uiState.update {
+            it.copy(errorConfirmPassword = error)
+        }
     }
 
     fun validarCampoFechaNacimiento() {
@@ -147,16 +191,20 @@ class AuthViewModel(
 
     fun validarRegistro(): Boolean {
         val state = _uiState.value
+
         val errorNombre = validarNombre(state.nombre)
         val errorEmail = validarEmail(state.email)
         val errorRut = validarRut(state.rut)
         val errorTelefono = validarTelefono(state.telefono)
         val errorPassword = validarPassword(state.password)
+
         val errorConfirm = if (state.password != state.confirmPassword) {
             "Las contraseñas no coinciden"
         } else null
+
         val errorFecha = validarFechaNacimiento(state.fechaNacimiento)
         val errorComuna = validarComuna(state.comuna)
+
         val errorTerminos = if (!state.aceptaTerminos) {
             "Debe aceptar los términos y condiciones"
         } else null
@@ -176,9 +224,15 @@ class AuthViewModel(
         }
 
         return listOf(
-            errorNombre, errorRut, errorTelefono,
-            errorPassword, errorConfirm, errorFecha,
-            errorComuna, errorTerminos
+            errorNombre,
+            errorEmail,
+            errorRut,
+            errorTelefono,
+            errorPassword,
+            errorConfirm,
+            errorFecha,
+            errorComuna,
+            errorTerminos
         ).all { it == null }
     }
 
@@ -189,7 +243,9 @@ class AuthViewModel(
     }
 
     fun onLoginNavegado() {
-        _uiState.update { it.copy(loginExitoso = false) }
+        _uiState.update {
+            it.copy(loginExitoso = false)
+        }
     }
 
     fun iniciarSesion(
@@ -206,18 +262,25 @@ class AuthViewModel(
         }
 
         val repo = sesionRepo ?: appState?.sesionRepository ?: sesionRepository
+
         if (repo == null) {
             setErrorGeneral("No se pudo acceder a la sesión")
             return
         }
 
         loginJob?.cancel()
+
         loginJob = viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorGeneral = null) }
+            _uiState.update {
+                it.copy(isLoading = true, errorGeneral = null)
+            }
+
             try {
                 val sesion = repo.autenticar(email, password)
+
                 if (sesion != null) {
                     appState?.sincronizarSesion(sesion)
+
                     _uiState.update {
                         it.copy(
                             isLoading = false,
@@ -241,7 +304,8 @@ class AuthViewModel(
                     it.copy(
                         isLoading = false,
                         loginExitoso = false,
-                        errorGeneral = e.message ?: "Error al iniciar sesión"
+                        errorGeneral = e.message
+                            ?: "Error al iniciar sesión"
                     )
                 }
             }
@@ -251,7 +315,10 @@ class AuthViewModel(
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                val app = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as? MyApplication
+                val app = this[
+                    ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY
+                ] as? MyApplication
+
                 AuthViewModel(app?.appContainer?.sesionRepository)
             }
         }

@@ -14,26 +14,43 @@ fun NavGraphBuilder.juegosGraph(
     navController: NavHostController
 ) {
     composable("juegos_hub") {
-        JuegosHubScreen(navController = navController)
+        JuegosHubScreen(
+            onBackClick = { navController.popBackStack() },
+            onRespiracionGuiadaClick = { navController.navigate("respiracion_guiada") },
+            onPausaConscienteClick = { navController.navigate("pausa_consciente") },
+            onMemoriceClick = { navController.navigate("memorice_zen") },
+            onGatoClick = { navController.navigate("gato_armonico") },
+            onCaminoBienestarClick = { navController.navigate("camino_bienestar") }
+        )
     }
 
     composable("memorice_zen") {
-        MemoriceScreen(navController = navController)
+        MemoriceScreen(
+            onBackClick = { navController.popBackStack() }
+        )
     }
 
     composable("gato_armonico") {
-        GatoScreen(navController = navController)
+        GatoScreen(
+            onBackClick = { navController.popBackStack() }
+        )
     }
 
     composable("camino_bienestar") {
-        CaminoBienestarScreen(navController = navController)
+        CaminoBienestarScreen(
+            onBackClick = { navController.popBackStack() }
+        )
     }
 
     composable("respiracion_guiada") {
-        RespiracionGuiadaScreen(navController = navController)
+        RespiracionGuiadaScreen(
+            onBackClick = { navController.popBackStack() }
+        )
     }
 
     composable("pausa_consciente") {
-        PausaConscienteScreen(navController = navController)
+        PausaConscienteScreen(
+            onBackClick = { navController.popBackStack() }
+        )
     }
 }

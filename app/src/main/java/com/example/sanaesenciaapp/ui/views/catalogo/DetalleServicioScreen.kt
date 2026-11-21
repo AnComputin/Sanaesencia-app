@@ -1,5 +1,9 @@
 package com.example.sanaesenciaapp.ui.views.catalogo
 
+import androidx.compose.ui.res.stringResource
+import com.example.sanaesenciaapp.R
+import androidx.compose.ui.tooling.preview.Preview
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -68,7 +72,7 @@ fun DetalleServicioScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Detalle del servicio",
+                        text = stringResource(R.string.catalogo_detalle_topbar),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
                     )
@@ -81,7 +85,7 @@ fun DetalleServicioScreen(
                         Icon(
                             imageVector =
                                 Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver"
+                            contentDescription = stringResource(R.string.beneficiario_accessibility_volver)
                         )
                     }
                 }
@@ -157,9 +161,9 @@ fun DetalleServicioScreen(
                             Text(
                                 text =
                                     if (especialidad.agendaPausada)
-                                        "Agenda pausada"
+                                        stringResource(R.string.catalogo_detalle_estado_pausada)
                                     else
-                                        "Disponible",
+                                        stringResource(R.string.catalogo_detalle_estado_disponible),
 
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
@@ -236,7 +240,7 @@ fun DetalleServicioScreen(
                         ) {
 
                             Text(
-                                text = "Especialistas disponibles",
+                                text = stringResource(R.string.catalogo_label_especialistas),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.primary
@@ -266,7 +270,7 @@ fun DetalleServicioScreen(
 
                                 Text(
                                     text =
-                                        "Modalidad: ${especialidad.modalidad}",
+                                        stringResource(R.string.detalle_modalidad, especialidad.modalidad),
 
                                     fontSize = 12.sp,
 
@@ -306,7 +310,7 @@ fun DetalleServicioScreen(
                     ) {
 
                         Text(
-                            text = "Sobre esta atención",
+                            text = stringResource(R.string.catalogo_detalle_seccion_atencion),
                             fontSize = 19.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.secondary
@@ -347,7 +351,7 @@ fun DetalleServicioScreen(
                         ) {
 
                             Text(
-                                text = "Agenda pausada temporalmente",
+                                text = stringResource(R.string.catalogo_detalle_agenda_titulo),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp,
                                 color =
@@ -359,7 +363,7 @@ fun DetalleServicioScreen(
                             )
 
                             Text(
-                                text = "Esta especialidad no tiene horas disponibles por el momento. Puedes revisar nuevamente más adelante o esperar a que administración reactive la agenda.",
+                                text = stringResource(R.string.catalogo_detalle_agenda_mensaje),
                                 fontSize = 14.sp,
                                 color =
                                     MaterialTheme.colorScheme.onErrorContainer
@@ -385,7 +389,7 @@ fun DetalleServicioScreen(
                     ) {
 
                         Text(
-                            text = "Agendar cita",
+                            text = stringResource(R.string.detalle_btn_agendar),
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -396,7 +400,7 @@ fun DetalleServicioScreen(
                     )
 
                     Text(
-                        text = "Seleccionarás modalidad, fecha y horario en el siguiente paso.",
+                        text = stringResource(R.string.catalogo_detalle_agendar_desc),
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onBackground
                             .copy(alpha = 0.60f),
@@ -413,4 +417,21 @@ fun DetalleServicioScreen(
             }
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun DetalleServicioScreenPreview() {
+    DetalleServicioScreen(
+        especialidad = EspecialidadEntity(
+            id = 1,
+            nombre = "Psicología Infanto-Juvenil",
+            descripcion = "Acompañamiento psicológico integral para niños y jóvenes.",
+            icono = "🌱",
+            profesional = "5 Especialistas",
+            modalidad = "Ambas"
+        ),
+        onBackClick = {},
+        onReservarClick = {}
+    )
 }

@@ -64,7 +64,7 @@ El panel permite cambiar modalidad y pausar/reactivar la agenda de una especiali
 
 ## Nota de migración
 
-La base de datos está en versión 6. Las migraciones son no destructivas para usuarios y citas, normalizan el catálogo final de 7 especialidades y agregan beneficiarios persistentes.
+La base de datos llegó a la versión 7 con `MIGRATION_6_7`, que aplica unicidad de correo sin borrar usuarios ni citas. La tienda se agrega en la versión 8 mediante `MIGRATION_7_8`.
 
 ## Panel ADMIN: pestaña Boxes
 
@@ -112,3 +112,46 @@ También se reforzó `MIGRATION_4_5` para reconocer la estructura de Room que te
 6. Completar la reserva y verificar que Confirmación/Mis citas muestre el nombre del beneficiario.
 7. Cerrar sesión y entrar con otra cuenta: no debe ver los beneficiarios del primer usuario.
 8. Volver a iniciar sesión con la primera cuenta: el beneficiario debe seguir disponible.
+
+
+## Tienda virtual y compras simuladas
+
+Se incorporó la tienda virtual sin reemplazar los flujos existentes de reservas, citas, beneficiarios, terapeuta ni administración.
+
+- La pantalla principal incluye el acceso **Tienda de bienestar**.
+- El catálogo inicial contiene aceites de aromaterapia y masaje, spray ambiental, vela aromática, sales de baño e infusión herbal.
+- Cada producto muestra descripción, categoría, precio y stock disponible.
+- El carrito permite agregar unidades, reducirlas, quitar productos y revisar el subtotal.
+- El checkout permite elegir entre tarjeta de prueba y transferencia de prueba. No se solicitan ni almacenan datos bancarios reales y no se realiza ningún cobro.
+- Al confirmar el pago simulado, se registra la venta y el detalle de los productos. El stock se descuenta dentro de una transacción de Room; si el inventario no alcanza, la compra no se confirma.
+- Los detalles de las ventas guardan el nombre y precio del producto como registro histórico, por lo que quitar posteriormente un producto no modifica las ventas anteriores.
+
+### Panel ADMIN: pestaña Productos
+
+Se agregó la pestaña **Productos** junto a las pestañas existentes **Especialidades** y **Boxes**.
+
+- Permite agregar productos con nombre, descripción, categoría, precio, stock inicial e ícono.
+- Muestra el stock actual de cada producto.
+- Permite aumentar o disminuir existencias desde el mismo panel.
+- Permite quitar un producto de la tienda con confirmación.
+- Los cambios se observan desde la tienda mediante flujos de Room.
+
+### Persistencia y migración
+
+La base de datos se elevó de la versión 7 a la 8. `MIGRATION_7_8` agrega las tablas `productos`, `ventas` y `detalle_ventas` sin modificar las tablas existentes. Para instalaciones nuevas, los mismos productos de ejemplo se insertan desde el callback de creación de Room. No se usa una migración destructiva.
+
+### Contraseña con validación visual
+
+En el registro, el borde del campo **Contraseña** se muestra rojo mientras la contraseña escrita no cumple las reglas existentes del proyecto: mínimo 8 caracteres, una mayúscula, un número y un carácter especial. El texto de ayuda refleja en tiempo real la condición que falta. No se modificaron los criterios de seguridad ya existentes.
+
+### Prueba recomendada de la tienda
+
+1. Iniciar sesión como paciente y entrar a **Tienda de bienestar**.
+2. Agregar dos o más productos al carrito.
+3. En el carrito, aumentar y reducir cantidades y quitar uno de los productos.
+4. Continuar al pago y elegir un método de demostración.
+5. Confirmar el pago simulado y revisar el número de pedido.
+6. Entrar como administrador (`admin@sanaesencia.cl`, contraseña `admin123`) y abrir **Productos**.
+7. Verificar que el stock se haya descontado; aumentar una unidad, quitar un producto o agregar uno nuevo.
+8. Volver a la tienda y comprobar que los cambios aparecen sin reiniciar la aplicación.
+9. Cerrar y volver a abrir la aplicación: los productos, inventario y ventas permanecen guardados en Room.

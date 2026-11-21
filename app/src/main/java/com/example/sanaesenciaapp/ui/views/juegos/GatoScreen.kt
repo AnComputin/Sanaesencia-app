@@ -1,5 +1,8 @@
 package com.example.sanaesenciaapp.ui.views.juegos
 
+import androidx.compose.ui.res.stringResource
+import com.example.sanaesenciaapp.R
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,12 +38,16 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import com.example.sanaesenciaapp.ui.components.SanaBackground
 import com.example.sanaesenciaapp.viewmodel.GatoViewModel
 import com.example.sanaesenciaapp.viewmodel.TipoOponenteGato
@@ -48,7 +55,7 @@ import com.example.sanaesenciaapp.viewmodel.TipoOponenteGato
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GatoScreen(
-    navController: NavController,
+    onBackClick: () -> Unit,
     viewModel: GatoViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -59,16 +66,16 @@ fun GatoScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "⭕ Gato Armónico",
+                        text = stringResource(R.string.juegos_gato_titulo),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver",
+                            contentDescription = stringResource(R.string.juegos_accessibility_volver),
                             tint = MaterialTheme.colorScheme.secondary
                         )
                     }
@@ -95,25 +102,25 @@ fun GatoScreen(
                     FilterChip(
                         selected = uiState.oponente == TipoOponenteGato.DOS_JUGADORES,
                         onClick = { viewModel.setOponente(TipoOponenteGato.DOS_JUGADORES) },
-                        label = { Text("2 Jugadores") }
+                        label = { Text(stringResource(R.string.juegos_gato_dos_jugadores)) }
                     )
                     FilterChip(
                         selected = uiState.oponente == TipoOponenteGato.CPU_FACIL,
                         onClick = { viewModel.setOponente(TipoOponenteGato.CPU_FACIL) },
-                        label = { Text("CPU Fácil") }
+                        label = { Text(stringResource(R.string.juegos_gato_cpu_facil)) }
                     )
                     FilterChip(
                         selected = uiState.oponente == TipoOponenteGato.CPU_DIFICIL,
                         onClick = { viewModel.setOponente(TipoOponenteGato.CPU_DIFICIL) },
-                        label = { Text("CPU Experto") }
+                        label = { Text(stringResource(R.string.juegos_gato_cpu_experto)) }
                     )
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // Marcador
-                val etiquetaX = if (uiState.oponente == TipoOponenteGato.DOS_JUGADORES) "Jugador X" else "Tú (X)"
-                val etiquetaO = if (uiState.oponente == TipoOponenteGato.DOS_JUGADORES) "Jugador O" else "Sistema (O)"
+                val etiquetaX = stringResource(if (uiState.oponente == TipoOponenteGato.DOS_JUGADORES) R.string.juegos_gato_jugador_x else R.string.juegos_gato_tu_x)
+                val etiquetaO = stringResource(if (uiState.oponente == TipoOponenteGato.DOS_JUGADORES) R.string.juegos_gato_jugador_o else R.string.juegos_gato_sistema_o)
 
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -131,7 +138,7 @@ fun GatoScreen(
                             Text("${uiState.puntajeX}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                         }
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Empates", fontSize = 13.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f))
+                            Text(stringResource(R.string.juegos_gato_empates), fontSize = 13.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f))
                             Text("${uiState.empates}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                         }
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -145,20 +152,20 @@ fun GatoScreen(
 
                 // Estado del turno
                 val textoEstado = when {
-                    uiState.ganador == "Empate" -> "¡Empate armónico!"
+                    uiState.ganador == "Empate" -> stringResource(R.string.juegos_gato_empate_armonico)
                     uiState.ganador != null -> {
                         if (uiState.oponente == TipoOponenteGato.DOS_JUGADORES) {
-                            "¡Ganador: Jugador ${uiState.ganador}!"
+                            stringResource(R.string.juegos_gato_ganador_jugador, uiState.ganador ?: "")
                         } else {
-                            if (uiState.ganador == "X") "¡Has ganado la partida!" else "¡El Sistema (CPU) ha ganado!"
+                            if (uiState.ganador == "X") stringResource(R.string.juegos_gato_ganaste) else stringResource(R.string.juegos_gato_gano_sistema)
                         }
                     }
-                    uiState.pensandoCpu -> "Sistema (CPU) pensando..."
+                    uiState.pensandoCpu -> stringResource(R.string.juegos_gato_cpu_pensando)
                     else -> {
                         if (uiState.oponente == TipoOponenteGato.DOS_JUGADORES) {
-                            "Turno del Jugador ${uiState.turno}"
+                            stringResource(R.string.juegos_gato_turno_jugador, uiState.turno)
                         } else {
-                            if (uiState.turno == "X") "Tu turno (X)" else "Turno del Sistema (O)"
+                            if (uiState.turno == "X") stringResource(R.string.juegos_gato_tu_turno) else stringResource(R.string.juegos_gato_turno_sistema)
                         }
                     }
                 }
@@ -185,6 +192,8 @@ fun GatoScreen(
                     itemsIndexed(uiState.tablero) { index, valor ->
                         CeldaGato(
                             valor = valor,
+                            fila = index / 3 + 1,
+                            columna = index % 3 + 1,
                             habilitado = !deshabilitarTablero && valor == null
                         ) {
                             viewModel.seleccionarCelda(index)
@@ -202,7 +211,7 @@ fun GatoScreen(
                         .fillMaxWidth()
                         .height(50.dp)
                 ) {
-                    Text(text = "Reiniciar Partida", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(text = stringResource(R.string.juegos_gato_reiniciar_partida), fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -212,17 +221,17 @@ fun GatoScreen(
                 onDismissRequest = { viewModel.reiniciarJuego() },
                 title = {
                     Text(
-                        text = if (uiState.ganador == "Empate") "🤝 ¡Empate!" else if (uiState.ganador == "X" || uiState.oponente == TipoOponenteGato.DOS_JUGADORES) "🏆 ¡Victoria!" else "🤖 Fin del Juego",
+                        text = if (uiState.ganador == "Empate") stringResource(R.string.juegos_gato_empate) else if (uiState.ganador == "X" || uiState.oponente == TipoOponenteGato.DOS_JUGADORES) stringResource(R.string.juegos_gato_victoria) else stringResource(R.string.juegos_gato_fin_juego),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
                     )
                 },
                 text = {
                     val msg = when {
-                        uiState.ganador == "Empate" -> "El juego terminó en empate. Excelente equilibrio mental."
-                        uiState.oponente == TipoOponenteGato.DOS_JUGADORES -> "El Jugador ${uiState.ganador} ha ganado la partida."
-                        uiState.ganador == "X" -> "¡Felicitaciones! Has derrotado al Sistema en esta partida."
-                        else -> "El Sistema (CPU) ha ganado esta vez. ¡Sigue practicando tu estrategia!"
+                        uiState.ganador == "Empate" -> stringResource(R.string.juegos_gato_fin_empate)
+                        uiState.oponente == TipoOponenteGato.DOS_JUGADORES -> stringResource(R.string.juegos_gato_fin_jugador, uiState.ganador ?: "")
+                        uiState.ganador == "X" -> stringResource(R.string.juegos_gato_derrotaste_sistema)
+                        else -> stringResource(R.string.juegos_gato_sistema_gano)
                     }
                     Text(text = msg, fontSize = 16.sp)
                 },
@@ -232,7 +241,7 @@ fun GatoScreen(
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("Continuar jugando")
+                        Text(stringResource(R.string.juegos_gato_continuar))
                     }
                 }
             )
@@ -243,14 +252,26 @@ fun GatoScreen(
 @Composable
 fun CeldaGato(
     valor: String?,
+    fila: Int,
+    columna: Int,
     habilitado: Boolean = true,
     onClick: () -> Unit
 ) {
+    val etiqueta = stringResource(R.string.juegos_gato_casilla_posicion, fila, columna)
+    val estado = if (valor == null) {
+        stringResource(R.string.juegos_gato_casilla_vacia)
+    } else {
+        stringResource(R.string.juegos_gato_casilla_ocupada, valor)
+    }
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .height(100.dp)
-            .clickable(enabled = habilitado) { onClick() },
+            .clickable(enabled = habilitado, role = Role.Button, onClick = onClick)
+            .semantics {
+                contentDescription = etiqueta
+                stateDescription = estado
+            },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (valor == null) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.primaryContainer
@@ -258,7 +279,7 @@ fun CeldaGato(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Box(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().clearAndSetSemantics {},
             contentAlignment = Alignment.Center
         ) {
             if (valor != null) {

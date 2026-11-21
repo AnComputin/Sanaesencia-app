@@ -1,5 +1,8 @@
 package com.example.sanaesenciaapp.ui.views.juegos
 
+import androidx.compose.ui.res.stringResource
+import com.example.sanaesenciaapp.R
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -13,7 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -35,12 +38,16 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import com.example.sanaesenciaapp.ui.components.SanaBackground
 import com.example.sanaesenciaapp.viewmodel.CartaZen
 import com.example.sanaesenciaapp.viewmodel.MemoriceViewModel
@@ -48,7 +55,7 @@ import com.example.sanaesenciaapp.viewmodel.MemoriceViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MemoriceScreen(
-    navController: NavController,
+    onBackClick: () -> Unit,
     viewModel: MemoriceViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -63,16 +70,16 @@ fun MemoriceScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "🎴 Memorice Zen",
+                        text = stringResource(R.string.juegos_memorice_titulo),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver",
+                            contentDescription = stringResource(R.string.juegos_accessibility_volver),
                             tint = MaterialTheme.colorScheme.secondary
                         )
                     }
@@ -106,11 +113,11 @@ fun MemoriceScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(text = "Intentos", fontSize = 13.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f))
+                            Text(text = stringResource(R.string.juegos_memorice_intentos), fontSize = 13.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f))
                             Text(text = "${uiState.intentos}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                         }
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(text = "Tiempo", fontSize = 13.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f))
+                            Text(text = stringResource(R.string.juegos_memorice_tiempo), fontSize = 13.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f))
                             Text(text = tiempoFormateado, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                         }
                     }
@@ -127,8 +134,8 @@ fun MemoriceScreen(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(uiState.cartas) { carta ->
-                        CartaItem(carta = carta) {
+                    itemsIndexed(uiState.cartas, key = { _, carta -> carta.id }) { index, carta ->
+                        CartaItem(carta = carta, fila = index / 4 + 1, columna = index % 4 + 1) {
                             viewModel.voltearCarta(carta.id)
                         }
                     }
@@ -146,7 +153,7 @@ fun MemoriceScreen(
                         .fillMaxWidth()
                         .height(50.dp)
                 ) {
-                    Text(text = "Reiniciar Juego", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(text = stringResource(R.string.juegos_memorice_reiniciar), fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -157,14 +164,14 @@ fun MemoriceScreen(
                 onDismissRequest = { viewModel.reiniciarJuego() },
                 title = {
                     Text(
-                        text = "🌿 ¡Felicitaciones!",
+                        text = stringResource(R.string.juegos_memorice_felicitaciones),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
                     )
                 },
                 text = {
                     Text(
-                        text = "Completaste el Memorice Zen en ${uiState.intentos} intentos y un tiempo de $tiempoFormateado. Tu mente está en plena armonía.",
+                        text = stringResource(R.string.juegos_memorice_completado, uiState.intentos, tiempoFormateado),
                         fontSize = 16.sp
                     )
                 },
@@ -176,7 +183,7 @@ fun MemoriceScreen(
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("Jugar de nuevo")
+                        Text(stringResource(R.string.juegos_memorice_jugar_nuevo))
                     }
                 }
             )
@@ -187,8 +194,16 @@ fun MemoriceScreen(
 @Composable
 fun CartaItem(
     carta: CartaZen,
+    fila: Int,
+    columna: Int,
     onClick: () -> Unit
 ) {
+    val etiqueta = stringResource(R.string.juegos_memorice_carta_posicion, fila, columna)
+    val estado = when {
+        carta.encontrada -> stringResource(R.string.juegos_memorice_carta_emparejada, carta.simbolo)
+        carta.volteada -> stringResource(R.string.juegos_memorice_carta_descubierta, carta.simbolo)
+        else -> stringResource(R.string.juegos_memorice_carta_oculta)
+    }
     val cardColor = if (carta.volteada || carta.encontrada) {
         MaterialTheme.colorScheme.surface
     } else {
@@ -199,13 +214,17 @@ fun CartaItem(
         modifier = Modifier
             .fillMaxWidth()
             .height(85.dp)
-            .clickable(enabled = !carta.volteada && !carta.encontrada) { onClick() },
+            .clickable(enabled = !carta.volteada && !carta.encontrada, role = Role.Button, onClick = onClick)
+            .semantics {
+                contentDescription = etiqueta
+                stateDescription = estado
+            },
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = cardColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Box(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().clearAndSetSemantics {},
             contentAlignment = Alignment.Center
         ) {
             if (carta.volteada || carta.encontrada) {

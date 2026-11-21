@@ -573,7 +573,7 @@ class UsuarioDatabaseMigrationTest {
             targetContext,
             AppDatabase::class.java,
             databaseName
-        ).addMigrations(AppDatabase.MIGRATION_6_7).build()
+        ).addMigrations(AppDatabase.MIGRATION_6_7, AppDatabase.MIGRATION_7_8).build()
 
         var failure: Throwable? = null
         try {

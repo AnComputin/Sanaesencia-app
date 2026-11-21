@@ -13,9 +13,12 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         EspecialidadEntity::class,
         EspecialistaEntity::class,
         CitaEntity::class,
-        BeneficiarioEntity::class
+        BeneficiarioEntity::class,
+        ProductoEntity::class,
+        VentaEntity::class,
+        DetalleVentaEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -25,6 +28,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun especialistaDao(): EspecialistaDao
     abstract fun citaDao(): CitaDao
     abstract fun beneficiarioDao(): BeneficiarioDao
+    abstract fun productoDao(): ProductoDao
+    abstract fun ventaDao(): VentaDao
 
     companion object {
 
@@ -440,6 +445,88 @@ abstract class AppDatabase : RoomDatabase() {
                 }
             }
 
+        /**
+         * Agrega la tienda y el registro de ventas sin modificar ninguna tabla existente.
+         * Los detalles de venta guardan el nombre y precio como fotografía histórica del producto.
+         */
+        internal val MIGRATION_7_8 =
+            object : Migration(7, 8) {
+                override fun migrate(database: SupportSQLiteDatabase) {
+                    database.execSQL(
+                        """
+                        CREATE TABLE IF NOT EXISTS `productos` (
+                            `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                            `nombre` TEXT NOT NULL,
+                            `descripcion` TEXT NOT NULL,
+                            `categoria` TEXT NOT NULL,
+                            `precio` INTEGER NOT NULL,
+                            `stock` INTEGER NOT NULL,
+                            `icono` TEXT NOT NULL,
+                            `activo` INTEGER NOT NULL
+                        )
+                        """.trimIndent()
+                    )
+                    database.execSQL(
+                        """
+                        CREATE TABLE IF NOT EXISTS `ventas` (
+                            `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                            `compradorEmail` TEXT NOT NULL,
+                            `compradorNombre` TEXT NOT NULL,
+                            `fechaMillis` INTEGER NOT NULL,
+                            `total` INTEGER NOT NULL,
+                            `estado` TEXT NOT NULL,
+                            `metodoPago` TEXT NOT NULL
+                        )
+                        """.trimIndent()
+                    )
+                    database.execSQL(
+                        """
+                        CREATE TABLE IF NOT EXISTS `detalle_ventas` (
+                            `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                            `ventaId` INTEGER NOT NULL,
+                            `productoId` INTEGER NOT NULL,
+                            `nombreProducto` TEXT NOT NULL,
+                            `precioUnitario` INTEGER NOT NULL,
+                            `cantidad` INTEGER NOT NULL,
+                            `subtotal` INTEGER NOT NULL,
+                            FOREIGN KEY(`ventaId`) REFERENCES `ventas`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                        )
+                        """.trimIndent()
+                    )
+                    database.execSQL(
+                        "CREATE INDEX IF NOT EXISTS `index_detalle_ventas_ventaId` ON `detalle_ventas` (`ventaId`)"
+                    )
+                    insertarProductosIniciales(database)
+                }
+            }
+
+        /** Productos de ejemplo para instalaciones nuevas y actualizaciones desde la v7. */
+        private fun insertarProductosIniciales(database: SupportSQLiteDatabase) {
+            val productos = listOf(
+                arrayOf<Any?>(1, "Aceite esencial de lavanda", "Aroma suave para acompañar momentos de calma y descanso.", "Aromaterapia", 8990, 12, "💜", 1),
+                arrayOf<Any?>(2, "Aceite de masaje relajante", "Aceite para masajes corporales y rutinas de relajación.", "Masajes", 10990, 10, "🌼", 1),
+                arrayOf<Any?>(3, "Spray ambiental de eucalipto", "Bruma aromática para refrescar tus espacios.", "Aromaterapia", 7990, 15, "🌿", 1),
+                arrayOf<Any?>(4, "Vela aromática natural", "Vela para crear un ambiente acogedor durante tus pausas.", "Bienestar", 6490, 8, "🕯️", 1),
+                arrayOf<Any?>(5, "Sales de baño relajantes", "Sales para complementar un baño reparador.", "Cuidado personal", 5490, 14, "🛁", 1),
+                arrayOf<Any?>(6, "Infusión herbal bienestar", "Mezcla de hierbas para disfrutar una pausa reconfortante.", "Infusiones", 4490, 20, "🍵", 1)
+            )
+            productos.forEach { producto ->
+                database.execSQL(
+                    """INSERT OR IGNORE INTO `productos`
+                       (`id`, `nombre`, `descripcion`, `categoria`, `precio`, `stock`, `icono`, `activo`)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?)""".trimIndent(),
+                    producto
+                )
+            }
+        }
+
+        private val DATABASE_CALLBACK = object : RoomDatabase.Callback() {
+            override fun onCreate(database: SupportSQLiteDatabase) {
+                super.onCreate(database)
+                insertarProductosIniciales(database)
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 Room.databaseBuilder(
@@ -447,7 +534,15 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "sanaesencia_db"
                 )
-                    .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+                    .addMigrations(
+                        MIGRATION_2_3,
+                        MIGRATION_3_4,
+                        MIGRATION_4_5,
+                        MIGRATION_5_6,
+                        MIGRATION_6_7,
+                        MIGRATION_7_8
+                    )
+                    .addCallback(DATABASE_CALLBACK)
                     .fallbackToDestructiveMigration(false)
                     .build()
                     .also {

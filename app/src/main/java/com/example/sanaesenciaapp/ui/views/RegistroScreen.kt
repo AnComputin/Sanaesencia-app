@@ -1,5 +1,9 @@
 package com.example.sanaesenciaapp.ui.views
 
+import androidx.compose.ui.res.stringArrayResource
+import androidx.compose.ui.res.stringResource
+import com.example.sanaesenciaapp.R
+
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
@@ -14,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
@@ -54,14 +59,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.sanaesenciaapp.data.AppState
+import com.example.sanaesenciaapp.ui.components.RutVisualTransformation
 import com.example.sanaesenciaapp.ui.components.SanaBackground
+import com.example.sanaesenciaapp.ui.components.validationMessageText
 import com.example.sanaesenciaapp.viewmodel.AuthViewModel
+import com.example.sanaesenciaapp.utils.validarPassword
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -76,6 +85,12 @@ fun RegistroScreen(
 ) {
 
     val state by authViewModel.uiState.collectAsState()
+    val errorPasswordActual = state.errorPassword
+        ?: if (state.password.isNotEmpty()) validarPassword(state.password) else null
+    val errorBaseDatos = stringResource(R.string.inicio_registro_error_bd)
+    val mensajeRegistroExitoso = stringResource(R.string.inicio_registro_exito)
+    val mensajeCorreoExistente = stringResource(R.string.inicio_registro_correo_existente)
+    val mensajeSeleccionarFecha = stringResource(R.string.inicio_registro_seleccionar_fecha_error)
 
     val context = LocalContext.current
 
@@ -89,29 +104,7 @@ fun RegistroScreen(
 
     val datePickerState = rememberDatePickerState()
 
-    val comunas = listOf(
-        "Los Vilos",
-        "Canela",
-        "Illapel",
-        "Salamanca",
-        "La Ligua",
-        "Papudo",
-        "Zapallar",
-        "Concón",
-        "Viña del Mar",
-        "Valparaíso",
-        "Quilpué",
-        "Villa Alemana",
-        "Quillota",
-        "Limache",
-        "Olmué",
-        "La Serena",
-        "Coquimbo",
-        "Ovalle",
-        "Santiago",
-        "Providencia",
-        "Las Condes"
-    )
+    val comunas = stringArrayResource(R.array.inicio_registro_comunas).toList()
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -122,7 +115,7 @@ fun RegistroScreen(
                 title = {
 
                     Text(
-                        text = "Crear cuenta",
+                        text = stringResource(R.string.inicio_btn_crear_cuenta),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
                     )
@@ -155,7 +148,7 @@ fun RegistroScreen(
                 Column {
 
                     Text(
-                        text = "Únete a SanaEsencia",
+                        text = stringResource(R.string.inicio_registro_titulo),
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
@@ -166,7 +159,7 @@ fun RegistroScreen(
                     )
 
                     Text(
-                        text = "Completa tus datos para crear tu cuenta.",
+                        text = stringResource(R.string.inicio_registro_subtitulo),
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onBackground
                             .copy(alpha = 0.70f)
@@ -197,7 +190,7 @@ fun RegistroScreen(
                     ) {
 
                         Text(
-                            text = "Tipo de cuenta",
+                            text = stringResource(R.string.inicio_registro_tipo_cuenta),
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color =
@@ -211,7 +204,7 @@ fun RegistroScreen(
 
                         Text(
                             text =
-                                "Selecciona cómo utilizarás SanaEsencia.",
+                                stringResource(R.string.inicio_registro_tipo_cuenta_desc),
 
                             fontSize = 13.sp,
 
@@ -247,7 +240,7 @@ fun RegistroScreen(
                                 },
 
                                 label = {
-                                    Text("Paciente")
+                                    Text(stringResource(R.string.inicio_registro_paciente))
                                 },
 
                                 modifier =
@@ -267,7 +260,7 @@ fun RegistroScreen(
                                 },
 
                                 label = {
-                                    Text("Terapeuta")
+                                    Text(stringResource(R.string.inicio_registro_terapeuta))
                                 },
 
                                 modifier =
@@ -305,7 +298,7 @@ fun RegistroScreen(
                     ) {
 
                         Text(
-                            text = "Datos personales",
+                            text = stringResource(R.string.inicio_registro_datos_personales),
                             fontSize = 19.sp,
                             fontWeight = FontWeight.Bold,
                             color =
@@ -330,7 +323,7 @@ fun RegistroScreen(
                             },
 
                             label = {
-                                Text("Nombre completo")
+                                Text(stringResource(R.string.inicio_registro_nombre))
                             },
 
                             leadingIcon = {
@@ -340,7 +333,7 @@ fun RegistroScreen(
                                         Icons.Default.Person,
 
                                     contentDescription =
-                                        "Nombre"
+                                        stringResource(R.string.inicio_registro_accessibility_nombre)
                                 )
                             },
 
@@ -356,8 +349,7 @@ fun RegistroScreen(
 
                                     Text(
                                         text =
-                                            state.errorNombre
-                                                ?: "",
+                                            validationMessageText(state.errorNombre),
 
                                         color =
                                             MaterialTheme
@@ -385,43 +377,34 @@ fun RegistroScreen(
                         // RUT
                         // -------------------------
 
+
                         OutlinedTextField(
                             value = state.rut,
-
                             onValueChange = {
-                                authViewModel
-                                    .onRutChange(it)
+                                authViewModel.onRutChange(it)
                             },
-
                             label = {
-                                Text("RUT")
+                                Text(stringResource(R.string.inicio_registro_rut))
                             },
-
                             leadingIcon = {
-
                                 Icon(
                                     imageVector =
                                         Icons.Default.Person,
 
                                     contentDescription =
-                                        "RUT"
+                                        stringResource(R.string.inicio_registro_rut)
                                 )
                             },
-
-                            isError =
-                                state.errorRut != null,
-
+                            visualTransformation = RutVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Ascii
+                            ),
+                            isError = state.errorRut != null,
                             supportingText = {
-
-                                AnimatedVisibility(
-                                    visible =
-                                        state.errorRut != null
-                                ) {
-
+                                AnimatedVisibility(visible = state.errorRut != null) {
                                     Text(
                                         text =
-                                            state.errorRut
-                                                ?: "",
+                                            validationMessageText(state.errorRut),
 
                                         color =
                                             MaterialTheme
@@ -430,15 +413,11 @@ fun RegistroScreen(
                                     )
                                 }
                             },
-
                             singleLine = true,
-
-                            shape =
-                                RoundedCornerShape(16.dp),
-
-                            modifier =
-                                Modifier.fillMaxWidth()
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth()
                         )
+
 
                         Spacer(
                             modifier =
@@ -451,7 +430,7 @@ fun RegistroScreen(
 
                         Text(
                             text =
-                                "Fecha de nacimiento",
+                                stringResource(R.string.inicio_registro_fecha_nacimiento),
 
                             fontSize = 13.sp,
 
@@ -487,7 +466,7 @@ fun RegistroScreen(
                                     Icons.Default.DateRange,
 
                                 contentDescription =
-                                    "Seleccionar fecha"
+                                    stringResource(R.string.inicio_registro_seleccionar_fecha)
                             )
 
                             Spacer(
@@ -501,7 +480,7 @@ fun RegistroScreen(
                                         state.fechaNacimiento
                                             .isBlank()
                                     )
-                                        "Seleccionar fecha"
+                                        stringResource(R.string.inicio_registro_seleccionar_fecha)
                                     else
                                         state.fechaNacimiento
                             )
@@ -515,8 +494,7 @@ fun RegistroScreen(
 
                             Text(
                                 text =
-                                    state.errorFechaNacimiento
-                                        ?: "",
+                                    validationMessageText(state.errorFechaNacimiento),
 
                                 color =
                                     MaterialTheme
@@ -553,7 +531,7 @@ fun RegistroScreen(
                             },
 
                             label = {
-                                Text("Teléfono")
+                                Text(stringResource(R.string.inicio_registro_telefono))
                             },
 
                             leadingIcon = {
@@ -563,7 +541,7 @@ fun RegistroScreen(
                                         Icons.Default.Phone,
 
                                     contentDescription =
-                                        "Teléfono"
+                                        stringResource(R.string.inicio_registro_telefono)
                                 )
                             },
 
@@ -579,8 +557,7 @@ fun RegistroScreen(
 
                                     Text(
                                         text =
-                                            state.errorTelefono
-                                                ?: "",
+                                            validationMessageText(state.errorTelefono),
 
                                         color =
                                             MaterialTheme
@@ -609,7 +586,7 @@ fun RegistroScreen(
                         // --------------------------------
 
                         Text(
-                            text = "Comuna",
+                            text = stringResource(R.string.inicio_registro_comuna),
 
                             fontSize = 13.sp,
 
@@ -650,7 +627,7 @@ fun RegistroScreen(
                                         Icons.Default.LocationOn,
 
                                     contentDescription =
-                                        "Seleccionar comuna"
+                                        stringResource(R.string.inicio_registro_seleccionar_comuna)
                                 )
 
                                 Spacer(
@@ -664,7 +641,7 @@ fun RegistroScreen(
                                             state.comuna
                                                 .isBlank()
                                         )
-                                            "Seleccionar comuna"
+                                            stringResource(R.string.inicio_registro_seleccionar_comuna)
                                         else
                                             state.comuna
                                 )
@@ -716,7 +693,7 @@ fun RegistroScreen(
 
                             Text(
                                 text =
-                                    state.errorComuna ?: "",
+                                    validationMessageText(state.errorComuna),
 
                                 color =
                                     MaterialTheme
@@ -763,7 +740,7 @@ fun RegistroScreen(
                     ) {
 
                         Text(
-                            text = "Datos de acceso",
+                            text = stringResource(R.string.inicio_registro_datos_acceso),
 
                             fontSize = 19.sp,
 
@@ -795,7 +772,7 @@ fun RegistroScreen(
 
                             label = {
                                 Text(
-                                    "Correo electrónico"
+                                    stringResource(R.string.inicio_label_correo)
                                 )
                             },
 
@@ -806,7 +783,7 @@ fun RegistroScreen(
                                         Icons.Default.Email,
 
                                     contentDescription =
-                                        "Email"
+                                        stringResource(R.string.inicio_accessibility_email)
                                 )
                             },
 
@@ -822,8 +799,7 @@ fun RegistroScreen(
 
                                     Text(
                                         text =
-                                            state.errorEmail
-                                                ?: "",
+                                            validationMessageText(state.errorEmail),
 
                                         color =
                                             MaterialTheme
@@ -862,7 +838,7 @@ fun RegistroScreen(
                             },
 
                             label = {
-                                Text("Contraseña")
+                                Text(stringResource(R.string.inicio_label_contrasena))
                             },
 
                             leadingIcon = {
@@ -872,7 +848,7 @@ fun RegistroScreen(
                                         Icons.Default.Lock,
 
                                     contentDescription =
-                                        "Contraseña"
+                                        stringResource(R.string.inicio_accessibility_contrasena)
                                 )
                             },
 
@@ -903,9 +879,9 @@ fun RegistroScreen(
                                                 state
                                                     .isPasswordVisible
                                             )
-                                                "Ocultar contraseña"
+                                                stringResource(R.string.inicio_accessibility_ocultar_contrasena)
                                             else
-                                                "Ver contraseña"
+                                                stringResource(R.string.inicio_accessibility_ver_contrasena)
                                     )
                                 }
                             },
@@ -919,19 +895,17 @@ fun RegistroScreen(
                                     PasswordVisualTransformation(),
 
                             isError =
-                                state.errorPassword != null,
+                                errorPasswordActual != null,
 
                             supportingText = {
 
                                 AnimatedVisibility(
-                                    visible =
-                                        state.errorPassword != null
+                                    visible = errorPasswordActual != null
                                 ) {
 
                                     Text(
                                         text =
-                                            state.errorPassword
-                                                ?: "",
+                                            validationMessageText(errorPasswordActual),
 
                                         color =
                                             MaterialTheme
@@ -973,7 +947,7 @@ fun RegistroScreen(
 
                             label = {
                                 Text(
-                                    "Confirmar contraseña"
+                                    stringResource(R.string.inicio_registro_confirmar_contrasena)
                                 )
                             },
 
@@ -984,7 +958,7 @@ fun RegistroScreen(
                                         Icons.Default.Lock,
 
                                     contentDescription =
-                                        "Confirmar contraseña"
+                                        stringResource(R.string.inicio_registro_confirmar_contrasena)
                                 )
                             },
 
@@ -1015,9 +989,9 @@ fun RegistroScreen(
                                                 state
                                                     .isConfirmPasswordVisible
                                             )
-                                                "Ocultar contraseña"
+                                                stringResource(R.string.inicio_accessibility_ocultar_contrasena)
                                             else
-                                                "Ver contraseña"
+                                                stringResource(R.string.inicio_accessibility_ver_contrasena)
                                     )
                                 }
                             },
@@ -1112,7 +1086,7 @@ fun RegistroScreen(
 
                             Text(
                                 text =
-                                    "Acepto los Términos y Condiciones y la Política de Privacidad",
+                                    stringResource(R.string.inicio_registro_terminos),
 
                                 fontSize = 12.sp,
 
@@ -1208,7 +1182,7 @@ fun RegistroScreen(
 
                                 authViewModel
                                     .setErrorGeneral(
-                                        "No se pudo acceder a la base de datos"
+                                        errorBaseDatos
                                     )
 
                             } else {
@@ -1251,7 +1225,7 @@ fun RegistroScreen(
                                     Toast
                                         .makeText(
                                             context,
-                                            "Cuenta creada con éxito",
+                                            mensajeRegistroExitoso,
                                             Toast.LENGTH_SHORT
                                         )
                                         .show()
@@ -1262,7 +1236,7 @@ fun RegistroScreen(
 
                                     authViewModel
                                         .setErrorGeneral(
-                                            "Ya existe una cuenta con este correo"
+                                            mensajeCorreoExistente
                                         )
                                 }
                             }
@@ -1278,15 +1252,14 @@ fun RegistroScreen(
                 ) {
 
                     Text(
-                        text = "Crear cuenta",
+                        text = stringResource(R.string.inicio_btn_crear_cuenta),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
 
                 Text(
-                    text =
-                        "Tus datos serán utilizados únicamente dentro de este prototipo.",
+                    text = stringResource(R.string.inicio_registro_aviso_privacidad),
 
                     fontSize = 12.sp,
 
@@ -1357,14 +1330,14 @@ fun RegistroScreen(
 
                             Toast.makeText(
                                 context,
-                                "Selecciona una fecha",
+                                mensajeSeleccionarFecha,
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
                     }
                 ) {
 
-                    Text("Aceptar")
+                    Text(stringResource(R.string.inicio_dialogo_aceptar))
                 }
             },
 
@@ -1377,7 +1350,7 @@ fun RegistroScreen(
                     }
                 ) {
 
-                    Text("Cancelar")
+                    Text(stringResource(R.string.inicio_dialogo_cancelar))
                 }
             }
         ) {
