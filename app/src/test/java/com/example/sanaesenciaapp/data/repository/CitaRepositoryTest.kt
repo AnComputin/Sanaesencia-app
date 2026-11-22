@@ -2,6 +2,7 @@ package com.example.sanaesenciaapp.data.repository
 
 import com.example.sanaesenciaapp.data.room.CitaDao
 import com.example.sanaesenciaapp.data.room.CitaEntity
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -170,5 +171,59 @@ class CitaRepositoryTest {
 
         val segunda = repository.reservarCita(crearCita(especialistaId = 1, inicio = 3600000, fin = 7200000))
         assertNotNull(segunda)
+    }
+
+    // BOXES Y CONCURRENCIA
+
+    @Test
+    fun `8 reservas presenciales simultaneas reciben boxes distintos del 1 al 8`() = runTest {
+        val boxes = mutableListOf<Int>()
+
+        for (especialista in 1..8) {
+            val cita = repository.reservarCita(crearCita(especialistaId = especialista))
+            assertNotNull(cita)
+            boxes.add(cita!!.boxAsignado!!)
+        }
+
+        assertEquals(8, boxes.distinct().size)
+        assertEquals((1..8).toSet(), boxes.toSet())
+    }
+
+    @Test
+    fun `box se libera al cancelar y puede ser reasignado`() = runTest {
+        val primera = repository.reservarCita(crearCita(especialistaId = 1))!!
+        assertEquals(1, primera.boxAsignado)
+
+        repository.cancelarCita(primera.id)
+
+        val segunda = repository.reservarCita(crearCita(especialistaId = 2))
+        assertNotNull(segunda)
+        assertEquals(1, segunda?.boxAsignado)
+    }
+
+    @Test
+    fun `mismo box se reutiliza en horario distinto`() = runTest {
+        val primera = repository.reservarCita(crearCita(especialistaId = 1, inicio = 0, fin = 3600000))!!
+        assertEquals(1, primera.boxAsignado)
+
+        val segunda = repository.reservarCita(crearCita(especialistaId = 2, inicio = 3600000, fin = 7200000))
+        assertNotNull(segunda)
+        assertEquals(1, segunda?.boxAsignado)
+    }
+
+    @Test
+    fun `reservas concurrentes no comparten box`() = runTest {
+        val resultados = mutableListOf<CitaEntity?>()
+        val jobs = (1..8).map { especialista ->
+            async {
+                repository.reservarCita(crearCita(especialistaId = especialista))
+            }
+        }
+        jobs.forEach { resultados.add(it.await()) }
+
+        val boxes = resultados.mapNotNull { it?.boxAsignado }
+        assertEquals(8, boxes.size)
+        assertEquals(8, boxes.distinct().size)
+        assertEquals((1..8).toSet(), boxes.toSet())
     }
 }
