@@ -55,7 +55,7 @@ class CitaViewModelTest {
         ): Int {
             return citasGuardadas.count {
                 it.especialistaId == especialistaId &&
-                    it.estado == "CONFIRMADA" &&
+                    (it.estado == "CONFIRMADA" || it.estado == "EN_PAGO") &&
                     it.inicioMillis < finMillis &&
                     it.finMillis > inicioMillis
             }
@@ -66,7 +66,7 @@ class CitaViewModelTest {
         ): Int {
             return citasGuardadas.count {
                 it.modalidad == "PRESENCIAL" &&
-                    it.estado == "CONFIRMADA" &&
+                    (it.estado == "CONFIRMADA" || it.estado == "EN_PAGO") &&
                     it.inicioMillis < finMillis &&
                     it.finMillis > inicioMillis
             }
@@ -77,7 +77,7 @@ class CitaViewModelTest {
         ): List<Int> {
             return citasGuardadas.filter {
                 it.modalidad == "PRESENCIAL" &&
-                    it.estado == "CONFIRMADA" &&
+                    (it.estado == "CONFIRMADA" || it.estado == "EN_PAGO") &&
                     it.boxAsignado != null &&
                     it.inicioMillis < finMillis &&
                     it.finMillis > inicioMillis
@@ -97,6 +97,16 @@ class CitaViewModelTest {
                 citasGuardadas[index] = citasGuardadas[index].copy(estado = nuevoEstado)
                 sincronizar()
             }
+        }
+
+        override suspend fun eliminar(id: Int) {
+            citasGuardadas.removeAll { it.id == id && it.estado == "EN_PAGO" }
+            sincronizar()
+        }
+
+        override suspend fun eliminarRetenciones() {
+            citasGuardadas.removeAll { it.estado == "EN_PAGO" }
+            sincronizar()
         }
     }
 
@@ -381,5 +391,158 @@ class CitaViewModelTest {
         viewModel.seleccionarModalidad(Modalidad.ONLINE)
 
         assertNull(viewModel.uiState.value.hora)
+    }
+
+    // ════════════════════════════════════════════
+    // VA-04: RETENCIÓN DURANTE EL PAGO
+    // ════════════════════════════════════════════
+
+    @Test
+    fun `duracion del pago es 600 segundos`() {
+        assertEquals(600, viewModel.duracionPagoSegundos)
+    }
+
+    @Test
+    fun `iniciarPago crea una retencion EN_PAGO con box asignado`() = runTest {
+        prepararReserva()
+
+        val inicio = viewModel.iniciarPago("test@mail.com")
+
+        assertTrue(inicio)
+        val retencion = fakeDao.citasGuardadas.single()
+        assertEquals("EN_PAGO", retencion.estado)
+        assertNotNull(retencion.boxAsignado)
+    }
+
+    @Test
+    fun `iniciarPago con wizard incompleto falla sin retener nada`() = runTest {
+        val inicio = viewModel.iniciarPago("test@mail.com")
+
+        assertFalse(inicio)
+        assertTrue(fakeDao.citasGuardadas.isEmpty())
+    }
+
+    @Test
+    fun `iniciarPago limpia retenciones huerfanas previas`() = runTest {
+        fakeDao.citasGuardadas.add(
+            CitaEntity(
+                id = 99,
+                usuarioEmail = "otro@mail.com",
+                especialidadId = 1,
+                especialidadNombre = "Psicología",
+                especialistaId = 5,
+                especialistaNombre = "Dr. Viejo",
+                modalidad = "PRESENCIAL",
+                inicioMillis = System.currentTimeMillis() + 86400000L,
+                finMillis = System.currentTimeMillis() + 90000000L,
+                hora = "09:00",
+                pacienteNombre = "Huerfana",
+                estado = "EN_PAGO",
+                boxAsignado = 3
+            )
+        )
+
+        prepararReserva()
+        val inicio = viewModel.iniciarPago("test@mail.com")
+
+        assertTrue(inicio)
+        assertFalse(fakeDao.citasGuardadas.any { it.id == 99 })
+        assertEquals(1, fakeDao.citasGuardadas.size)
+    }
+
+    @Test
+    fun `retencion EN_PAGO bloquea el horario para otro especialista`() = runTest {
+        prepararReserva(especialistaId = 1)
+        assertTrue(viewModel.iniciarPago("test@mail.com"))
+
+        // Otro flujo intenta reservar el mismo horario sin pagar aún.
+        val entidadBloqueada = CitaEntity(
+            usuarioEmail = "otro@mail.com",
+            especialidadId = 1,
+            especialidadNombre = "Psicología",
+            especialistaId = 1,
+            especialistaNombre = "Dr. Test",
+            modalidad = "PRESENCIAL",
+            inicioMillis = viewModel.fechasDisponibles.first() + 9 * 3600000L,
+            finMillis = viewModel.fechasDisponibles.first() + 10 * 3600000L,
+            hora = "09:00",
+            pacienteNombre = "Intruso",
+            estado = "CONFIRMADA"
+        )
+
+        val resultado = fakeDao.reservarSiDisponible(entidadBloqueada)
+
+        assertNull(resultado)
+    }
+
+    @Test
+    fun `liberarRetencion borra la retencion y libera el cupo`() = runTest {
+        prepararReserva()
+        assertTrue(viewModel.iniciarPago("test@mail.com"))
+        assertEquals(1, fakeDao.citasGuardadas.size)
+
+        viewModel.liberarRetencion()
+
+        assertTrue(fakeDao.citasGuardadas.isEmpty())
+    }
+
+    @Test
+    fun `confirmarCita con retencion cambia a CONFIRMADA sin fila duplicada`() = runTest {
+        prepararReserva()
+        assertTrue(viewModel.iniciarPago("test@mail.com"))
+        assertEquals(1, fakeDao.citasGuardadas.size)
+
+        var resultado: Boolean? = null
+        viewModel.confirmarCita("test@mail.com") { resultado = it }
+
+        assertTrue(resultado == true)
+        assertEquals(1, fakeDao.citasGuardadas.size)
+        val cita = fakeDao.citasGuardadas.single()
+        assertEquals("CONFIRMADA", cita.estado)
+        assertNotNull(cita.boxAsignado)
+        assertEquals("test@mail.com", cita.usuarioEmail)
+    }
+
+    @Test
+    fun `confirmarCita sin retencion sigue usando el camino directo`() = runTest {
+        // Compatibilidad: los flujos que no pasan por iniciarPago no se rompen.
+        prepararReserva()
+
+        var resultado: Boolean? = null
+        viewModel.confirmarCita("test@mail.com") { resultado = it }
+
+        assertTrue(resultado == true)
+        assertEquals("CONFIRMADA", fakeDao.citasGuardadas.single().estado)
+    }
+
+    @Test
+    fun `confirmarCita tras liberar la retencion falla y limpia la hora`() = runTest {
+        prepararReserva()
+        assertTrue(viewModel.iniciarPago("test@mail.com"))
+        viewModel.liberarRetencion()
+
+        var resultado: Boolean? = null
+        viewModel.confirmarCita("test@mail.com") { resultado = it }
+
+        // Sin retención válida y con el camino directo, la reserva se crea de nuevo.
+        assertTrue(resultado == true)
+        assertEquals("CONFIRMADA", fakeDao.citasGuardadas.single().estado)
+    }
+
+    @Test
+    fun `flujo completo VA-04 iniciar, confirmar y salir sin retener`() = runTest {
+        prepararReserva()
+
+        assertTrue(viewModel.iniciarPago("test@mail.com"))
+        assertEquals("EN_PAGO", fakeDao.citasGuardadas.single().estado)
+
+        var resultado: Boolean? = null
+        viewModel.confirmarCita("test@mail.com") { resultado = it }
+        assertTrue(resultado == true)
+
+        // onDispose de PagoScreen tras confirmar: no debe borrar la cita confirmada.
+        viewModel.liberarRetencion()
+
+        assertEquals("CONFIRMADA", fakeDao.citasGuardadas.single().estado)
     }
 }

@@ -24,7 +24,7 @@ abstract class CitaDao {
         """
         SELECT COUNT(*) FROM citas
         WHERE especialistaId = :especialistaId
-          AND estado = 'CONFIRMADA'
+          AND estado IN ('CONFIRMADA', 'EN_PAGO')
           AND inicioMillis < :finMillis
           AND finMillis > :inicioMillis
         """
@@ -39,7 +39,7 @@ abstract class CitaDao {
         """
         SELECT COUNT(*) FROM citas
         WHERE modalidad = 'PRESENCIAL'
-          AND estado = 'CONFIRMADA'
+          AND estado IN ('CONFIRMADA', 'EN_PAGO')
           AND inicioMillis < :finMillis
           AND finMillis > :inicioMillis
         """
@@ -53,7 +53,7 @@ abstract class CitaDao {
         """
         SELECT boxAsignado FROM citas
         WHERE modalidad = 'PRESENCIAL'
-          AND estado = 'CONFIRMADA'
+          AND estado IN ('CONFIRMADA', 'EN_PAGO')
           AND boxAsignado IS NOT NULL
           AND inicioMillis < :finMillis
           AND finMillis > :inicioMillis
@@ -69,6 +69,14 @@ abstract class CitaDao {
 
     @Query("UPDATE citas SET estado = :nuevoEstado WHERE id = :id")
     abstract suspend fun actualizarEstado(id: Int, nuevoEstado: String)
+
+    /*elimina una retencion en pago solo si sigue en estado EN_PAGO*/
+    @Query("DELETE FROM citas WHERE id = :id AND estado = 'EN_PAGO'")
+    abstract suspend fun eliminar(id: Int)
+
+    /*limpia retenciones huerfanas (pago abandonado o app cerrada)*/
+    @Query("DELETE FROM citas WHERE estado = 'EN_PAGO'")
+    abstract suspend fun eliminarRetenciones()
 
     /**
      * Confirma una cita de forma atómica.

@@ -28,7 +28,8 @@ enum class Modalidad {
 enum class EstadoReserva {
     CONFIRMADA,
     COMPLETADA,
-    CANCELADA
+    CANCELADA,
+    EN_PAGO
 }
 
 data class Horario(
@@ -106,8 +107,12 @@ class CitaViewModel(
         initialValue = horasBase().map { Horario(it, true) }
     )
 
-    val duracionPagoSegundos: Int = 600
+    val duracionPagoSegundos: Int = ReglasAgenda.DURACION_PAGO_SEGUNDOS
     private var pagoInicioMillis: Long? = null
+
+    /*retencion activa del pago simulado (VA-04): cupo y box conservados como EN_PAGO*/
+    private var retencionId: Int? = null
+    private var retencion: CitaEntity? = null
 
     val puedeContinuar: StateFlow<Boolean> = _uiState.map { estado ->
         estado.especialidadId > 0 &&
@@ -123,10 +128,46 @@ class CitaViewModel(
         initialValue = false
     )
 
-    fun iniciarPago() {
+    /**
+     * Inicia el pago simulado reteniendo el cupo (VA-04, opción a).
+     *
+     * 1. Limpia retenciones huérfanas de pagos abandonados.
+     * 2. Valida el wizard y crea una cita EN_PAGO (con box asignado si es presencial)
+     *    para que nadie más tome el horario durante los [ReglasAgenda.DURACION_PAGO_SEGUNDOS].
+     *
+     * Retorna false si el wizard está incompleto u el horario ya no está disponible;
+     * en ese caso no se retiene nada.
+     */
+    suspend fun iniciarPago(usuarioEmail: String): Boolean {
+        val dao = citaDao
+
+        // Sin DAO (solo previews): el temporizador funciona pero no hay cupo que retener.
+        if (dao == null) {
+            if (pagoInicioMillis == null) {
+                pagoInicioMillis = System.currentTimeMillis()
+            }
+            return true
+        }
+
+        // Huérfanas de pagos abandonados o cerrados con la app en medio del pago.
+        runCatching { dao.eliminarRetenciones() }
+
+        val entidad = construirEntidad(usuarioEmail, ReglasAgenda.ESTADO_EN_PAGO)
+            ?: return false
+
+        val retenida = runCatching { dao.reservarSiDisponible(entidad) }.getOrNull()
+        if (retenida == null) {
+            // El horario se ocupó mientras el usuario navegaba hasta el pago.
+            _uiState.update { it.copy(hora = null) }
+            return false
+        }
+
+        retencionId = retenida.id
+        retencion = retenida
         if (pagoInicioMillis == null) {
             pagoInicioMillis = System.currentTimeMillis()
         }
+        return true
     }
 
     fun segundosRestantesPago(): Int {
@@ -137,6 +178,24 @@ class CitaViewModel(
 
     fun reiniciarPago() {
         pagoInicioMillis = null
+    }
+
+    /**
+     * Libera la retención EN_PAGO si existe (salida del pago, expiración o back).
+     * Es no-op si la cita ya fue confirmada: solo borra mientras siga EN_PAGO.
+     */
+    fun liberarRetencion() {
+        val id = retencionId
+        retencionId = null
+        retencion = null
+
+        val dao = citaDao
+        if (id != null && dao != null) {
+            viewModelScope.launch {
+                runCatching { dao.eliminar(id) }
+            }
+        }
+        reiniciarPago()
     }
 
     fun seleccionarServicio(
@@ -241,53 +300,62 @@ class CitaViewModel(
 
     /**
      * Confirma la reserva solo si el especialista y, cuando corresponde, un box siguen libres.
+     * Si hay una retención EN_PAGO activa (VA-04), la confirma en su lugar de insertar
+     * una fila nueva: el cupo y el box ya están conservados.
      * El callback se ejecuta en Main y permite que PagoScreen navegue únicamente si Room confirmó.
      */
     fun confirmarCita(
         usuarioEmail: String,
         onResultado: (Boolean) -> Unit = {}
     ) {
-        val estado = _uiState.value
-        val modalidad = estado.modalidad
-        val fechaMillis = estado.fechaMillis
-        val horaStr = estado.hora
-        val paciente = estado.nombrePaciente.trim()
+        val dao = citaDao
+        val idRetencion = retencionId
 
-        if (
-            usuarioEmail.isBlank() ||
-            estado.especialidadId <= 0 ||
-            estado.especialistaId <= 0 ||
-            estado.especialidad.isBlank() ||
-            estado.profesional.isBlank() ||
-            modalidad == null ||
-            fechaMillis == null ||
-            horaStr.isNullOrBlank() ||
-            paciente.length < 3
-        ) {
+        // Ruta VA-04: la retención existe; solo cambia de EN_PAGO a CONFIRMADA.
+        if (dao != null && idRetencion != null) {
+            val retenida = retencion
+            viewModelScope.launch {
+                val existe = runCatching {
+                    dao.obtenerTodas().find { it.id == idRetencion && it.estado == ReglasAgenda.ESTADO_EN_PAGO }
+                }.getOrNull()
+
+                if (retenida == null || existe == null) {
+                    // La retención se perdió (limpieza concurrente): no se puede confirmar.
+                    retencionId = null
+                    retencion = null
+                    _uiState.update { it.copy(hora = null) }
+                    onResultado(false)
+                    return@launch
+                }
+
+                val confirmada = existe.copy(estado = ReglasAgenda.ESTADO_CONFIRMADA)
+                val actualizada = runCatching {
+                    dao.actualizarEstado(idRetencion, ReglasAgenda.ESTADO_CONFIRMADA)
+                }.isSuccess
+
+                if (!actualizada) {
+                    retencionId = null
+                    retencion = null
+                    _uiState.update { it.copy(hora = null) }
+                    onResultado(false)
+                    return@launch
+                }
+
+                retencionId = null
+                retencion = null
+                _ultimaCita.value = confirmada.toItem()
+                limpiarFormularioTrasReserva()
+                onResultado(true)
+            }
+            return
+        }
+
+        val entidad = construirEntidad(usuarioEmail, EstadoReserva.CONFIRMADA.name)
+        if (entidad == null) {
             onResultado(false)
             return
         }
 
-        val inicio = construirInicio(fechaMillis, horaStr)
-        val fin = ReglasAgenda.calcularFin(inicio)
-
-        val entidad = CitaEntity(
-            usuarioEmail = usuarioEmail.trim(),
-            especialidadId = estado.especialidadId,
-            especialidadNombre = estado.especialidad,
-            especialistaId = estado.especialistaId,
-            especialistaNombre = estado.profesional,
-            modalidad = modalidad.name,
-            inicioMillis = inicio,
-            finMillis = fin,
-            hora = horaStr,
-            pacienteNombre = paciente,
-            beneficiarioId = estado.beneficiarioId,
-            estado = EstadoReserva.CONFIRMADA.name,
-            boxAsignado = null
-        )
-
-        val dao = citaDao
         if (dao != null) {
             viewModelScope.launch {
                 val reservada = runCatching {
@@ -318,6 +386,51 @@ class CitaViewModel(
             limpiarFormularioTrasReserva()
             onResultado(true)
         }
+    }
+
+    /**
+     * Construye la entidad desde el wizard actual. Retorna null si falta cualquier dato
+     * obligatorio (incluye un usuario logueado).
+     */
+    private fun construirEntidad(usuarioEmail: String, estado: String): CitaEntity? {
+        val estadoUi = _uiState.value
+        val modalidad = estadoUi.modalidad
+        val fechaMillis = estadoUi.fechaMillis
+        val horaStr = estadoUi.hora
+        val paciente = estadoUi.nombrePaciente.trim()
+
+        if (
+            usuarioEmail.isBlank() ||
+            estadoUi.especialidadId <= 0 ||
+            estadoUi.especialistaId <= 0 ||
+            estadoUi.especialidad.isBlank() ||
+            estadoUi.profesional.isBlank() ||
+            modalidad == null ||
+            fechaMillis == null ||
+            horaStr.isNullOrBlank() ||
+            paciente.length < 3
+        ) {
+            return null
+        }
+
+        val inicio = construirInicio(fechaMillis, horaStr)
+        val fin = ReglasAgenda.calcularFin(inicio)
+
+        return CitaEntity(
+            usuarioEmail = usuarioEmail.trim(),
+            especialidadId = estadoUi.especialidadId,
+            especialidadNombre = estadoUi.especialidad,
+            especialistaId = estadoUi.especialistaId,
+            especialistaNombre = estadoUi.profesional,
+            modalidad = modalidad.name,
+            inicioMillis = inicio,
+            finMillis = fin,
+            hora = horaStr,
+            pacienteNombre = paciente,
+            beneficiarioId = estadoUi.beneficiarioId,
+            estado = estado,
+            boxAsignado = null
+        )
     }
 
     private fun reservarEnMemoria(entidad: CitaEntity): CitaItem? {
@@ -377,14 +490,14 @@ class CitaViewModel(
             val fin = ReglasAgenda.calcularFin(inicio)
 
             val especialistaOcupado = listaCitas.any { cita ->
-                cita.estado == EstadoReserva.CONFIRMADA &&
+                (cita.estado == EstadoReserva.CONFIRMADA || cita.estado == EstadoReserva.EN_PAGO) &&
                     cita.especialistaId == estado.especialistaId &&
                     ReglasAgenda.haySolapamiento(cita.inicioMillis, cita.finMillis, inicio, fin)
             }
 
             val hayBoxDisponible = if (estado.modalidad == Modalidad.PRESENCIAL) {
                 val presencialesSolapadas = listaCitas.count { cita ->
-                    cita.estado == EstadoReserva.CONFIRMADA &&
+                    (cita.estado == EstadoReserva.CONFIRMADA || cita.estado == EstadoReserva.EN_PAGO) &&
                         cita.modalidad == Modalidad.PRESENCIAL &&
                         ReglasAgenda.haySolapamiento(cita.inicioMillis, cita.finMillis, inicio, fin)
                 }

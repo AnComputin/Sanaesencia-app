@@ -215,4 +215,15 @@ class ReglasAgendaTest {
         assertFalse(solapan)
     }
 
+    //VA-04: pago simulado
+    @Test
+    fun `duracion del pago simulado es de 600 segundos`(){
+        assertEquals(600, ReglasAgenda.DURACION_PAGO_SEGUNDOS)
+    }
+
+    @Test
+    fun `estado de retencion en pago existe`(){
+        assertEquals("EN_PAGO", ReglasAgenda.ESTADO_EN_PAGO)
+    }
+
 }
