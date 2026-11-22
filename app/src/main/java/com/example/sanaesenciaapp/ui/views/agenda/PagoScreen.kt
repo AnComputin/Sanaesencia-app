@@ -21,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -51,8 +52,21 @@ fun PagoScreen(
     val uiState by citaViewModel.uiState.collectAsState()
     val puedeConfirmar by citaViewModel.puedeContinuar.collectAsState()
 
+    var errorInicioPago by remember { mutableStateOf(false) }
+
     LaunchedEffect(Unit) {
-        citaViewModel.iniciarPago()
+        val inicioOk = citaViewModel.iniciarPago(usuarioEmail)
+        if (!inicioOk) {
+            errorInicioPago = true
+        }
+    }
+
+    // VA-04: al salir del pago (back, expiración o confirmación) se libera
+    // la retención EN_PAGO. Tras confirmar es no-op porque ya es CONFIRMADA.
+    DisposableEffect(Unit) {
+        onDispose {
+            citaViewModel.liberarRetencion()
+        }
     }
 
     var tiempoRestante by remember {
@@ -421,7 +435,7 @@ fun PagoScreen(
                                 if (tiempoRestante < 60)
                                     "El tiempo está por finalizar"
                                 else
-                                    "El horario se asigna al confirmar el pago",
+                                    "Tu horario queda reservado durante los 10 minutos de pago",
 
                             fontSize = 13.sp,
                             color =
@@ -563,7 +577,7 @@ fun PagoScreen(
 
             text = {
                 Text(
-                    "El tiempo para realizar el pago ha expirado. El horario solo se asigna al confirmar la reserva, por lo que deberás seleccionarlo nuevamente."
+                    "El tiempo para realizar el pago ha expirado y tu horario fue liberado. Deberás seleccionarlo nuevamente."
                 )
             },
 
@@ -573,8 +587,42 @@ fun PagoScreen(
                     onClick = {
 
                         citaViewModel
-                            .reiniciarPago()
+                            .liberarRetencion()
 
+                        onExpirado()
+                    }
+                ) {
+
+                    Text("Aceptar")
+                }
+            }
+        )
+    }
+
+    // No se pudo retener el horario al entrar al pago
+    if (errorInicioPago) {
+
+        AlertDialog(
+            onDismissRequest = {},
+
+            title = {
+                Text(
+                    text = "Horario no disponible",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+
+            text = {
+                Text(
+                    "No pudimos reservar tu horario para pagar. Puede que ya esté ocupado; vuelve a seleccionar uno."
+                )
+            },
+
+            confirmButton = {
+
+                Button(
+                    onClick = {
+                        errorInicioPago = false
                         onExpirado()
                     }
                 ) {

@@ -36,7 +36,7 @@ class CitaRepositoryTest {
         ): Int {
             return citasGuardadas.count {
                 it.especialistaId == especialistaId &&
-                        it.estado == "CONFIRMADA" &&
+                        (it.estado == "CONFIRMADA" || it.estado == "EN_PAGO") &&
                         it.inicioMillis < finMillis &&
                         it.finMillis > inicioMillis
             }
@@ -47,7 +47,7 @@ class CitaRepositoryTest {
         ): Int {
             return citasGuardadas.count {
                 it.modalidad == "PRESENCIAL" &&
-                        it.estado == "CONFIRMADA" &&
+                        (it.estado == "CONFIRMADA" || it.estado == "EN_PAGO") &&
                         it.inicioMillis < finMillis &&
                         it.finMillis > inicioMillis
             }
@@ -58,7 +58,7 @@ class CitaRepositoryTest {
         ): List<Int> {
             return citasGuardadas.filter {
                 it.modalidad == "PRESENCIAL" &&
-                        it.estado == "CONFIRMADA" &&
+                        (it.estado == "CONFIRMADA" || it.estado == "EN_PAGO") &&
                         it.boxAsignado != null &&
                         it.inicioMillis < finMillis &&
                         it.finMillis > inicioMillis
@@ -76,6 +76,14 @@ class CitaRepositoryTest {
             if (index != -1) {
                 citasGuardadas[index] = citasGuardadas[index].copy(estado = nuevoEstado)
             }
+        }
+
+        override suspend fun eliminar(id: Int) {
+            citasGuardadas.removeAll { it.id == id && it.estado == "EN_PAGO" }
+        }
+
+        override suspend fun eliminarRetenciones() {
+            citasGuardadas.removeAll { it.estado == "EN_PAGO" }
         }
     }
 

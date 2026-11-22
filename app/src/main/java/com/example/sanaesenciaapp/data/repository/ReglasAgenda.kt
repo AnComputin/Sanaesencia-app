@@ -11,8 +11,12 @@ object ReglasAgenda {
     const val ESTADO_CONFIRMADA = "CONFIRMADA"
     const val ESTADO_COMPLETADA = "COMPLETADA"
     const val ESTADO_CANCELADA = "CANCELADA"
+    const val ESTADO_EN_PAGO = "EN_PAGO"
 
     const val CANCELACION_HORAS = 24
+
+    /*duracion del pago simulado en segundos (10 minutos)*/
+    const val DURACION_PAGO_SEGUNDOS = 600
 
     fun calcularFin(inicioMillis: Long): Long{
         return inicioMillis + (DURACION_CITA_MINUTOS * 60 * 1000L)
