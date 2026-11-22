@@ -334,4 +334,52 @@ class CitaViewModelTest {
         assertTrue(cancelada)
         assertEquals("CANCELADA", fakeDao.citasGuardadas.first { it.id == id }.estado)
     }
+
+    @Test
+    fun `mismo especialista con horarios distintos acepta ambas reservas`() = runTest {
+        prepararReserva(especialistaId = 1, hora = "09:00")
+        var primera: Boolean? = null
+        viewModel.confirmarCita("test@mail.com"){primera = it}
+        assertTrue(primera == true)
+
+        prepararReserva(especialistaId = 1, hora = "10:30")
+        var segunda: Boolean? = null
+        viewModel.confirmarCita("test@mail.com"){segunda = it}
+
+        assertTrue(segunda == true)
+    }
+
+    @Test
+    fun `distintos especialistas al mismo horario aceptan ambas reservas`() = runTest {
+        prepararReserva(especialistaId = 1, hora = "09:00")
+        var primera: Boolean? = null
+        viewModel.confirmarCita("test@mail.com") { primera = it }
+        assertTrue(primera == true)
+
+        prepararReserva(especialistaId = 2, hora = "09:00")
+        var segunda: Boolean? = null
+        viewModel.confirmarCita("test@mail.com") { segunda = it }
+
+        assertTrue(segunda == true)
+    }
+
+    @Test
+    fun `cambiar fecha despues de elegir hora limpia la hora`() {
+        prepararReserva()
+        assertNotNull(viewModel.uiState.value.hora)
+
+        viewModel.seleccionarFecha(viewModel.fechasDisponibles[2])
+
+        assertNull(viewModel.uiState.value.hora)   // la hora vieja no debe quedar "pegada"
+    }
+
+    @Test
+    fun `cambiar modalidad despues de elegir hora limpia la hora`() {
+        prepararReserva(modalidad = Modalidad.PRESENCIAL)
+        assertNotNull(viewModel.uiState.value.hora)
+
+        viewModel.seleccionarModalidad(Modalidad.ONLINE)
+
+        assertNull(viewModel.uiState.value.hora)
+    }
 }

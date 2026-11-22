@@ -29,11 +29,8 @@ object ReglasAgenda {
         return modalidad.equals(MODALIDAD_PRESENCIAL, ignoreCase = true)
     }
 
-    fun haySolapamiento(
-        inicio1: Long,fin1: Long,
-        inicio2: Long,fin2: Long
-    ): Boolean{
-        return inicio1 < fin2 && inicio2 <fin1
+    fun haySolapamiento(inicio1: Long, fin1: Long, inicio2: Long, fin2: Long): Boolean{
+        return inicio1 < fin2 && inicio2 < fin1
     }
 
     /*ve si la cita esta en un horario valido*/

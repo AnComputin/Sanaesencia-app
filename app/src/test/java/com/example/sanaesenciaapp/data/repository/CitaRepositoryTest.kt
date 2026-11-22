@@ -162,4 +162,13 @@ class CitaRepositoryTest {
         repository.completarCita(cita.id)
         assertEquals("COMPLETADA", fakeDao.citasGuardadas[0].estado)
     }
+
+    @Test
+    fun `mismo especialista con intervalos contiguos acepta ambas reservas`() = runTest {
+        val primera = repository.reservarCita(crearCita(especialistaId = 1, inicio = 0, fin = 3600000))
+        assertNotNull(primera)
+
+        val segunda = repository.reservarCita(crearCita(especialistaId = 1, inicio = 3600000, fin = 7200000))
+        assertNotNull(segunda)
+    }
 }
