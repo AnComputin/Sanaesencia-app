@@ -178,3 +178,30 @@ En el registro, el borde del campo **Contraseña** se muestra rojo mientras la c
 - **Limitaciones conocidas:**
   - El portal terapeuta permanece sin persistencia clínica real vinculada a la cuenta autenticada según la definición del proyecto.
   - La sesión permanece en memoria a través de `SesionRepository` y `AppState`, reseteándose al cerrar la aplicación.
+
+---
+
+## Tarea AL-02 – Catálogo de Especialidades y Especialistas
+
+- **ID y Nombre:** AL-02 – Catálogo de especialidades y especialistas
+- **Responsable:** Alejandra Núñez
+- **Fecha:** 22-11-2026
+- **Versión:** 1.0.0
+- **Estado real:** Completado y validado
+- **Archivos modificados:**
+  - `app/src/main/java/com/example/sanaesenciaapp/viewmodel/CatalogoViewModel.kt`: adición de estado reactivo `cargandoEspecialistas`, flujos de reintento (`reintentarEspecialidades()`, `reintentarEspecialistas()`) y manejo robusto de excepciones sin alterar `SavedStateHandle`.
+  - `app/src/main/java/com/example/sanaesenciaapp/ui/views/SeleccionEspecialidadScreen.kt`: implementación de tarjetas de error con botón de reintento, indicador visual central de progreso para carga, tarjeta de estado vacío (`catalogo_vacio`) y `@Preview` oficial.
+  - `app/src/main/java/com/example/sanaesenciaapp/ui/views/catalogo/SeleccionEspecialistaScreen.kt`: distinción clara entre carga, lista vacía (`especialista_vacio`), sin compatibilidad de modalidad (`especialista_error_incompatibles`), agenda pausada y error con botón de reintento. Adición de `@Preview`.
+  - `app/src/main/java/com/example/sanaesenciaapp/navigation/CatalogoGraph.kt`: conexión del callback `onReintentarClick` en `seleccionar_especialidad` y presentación visual amigable con botón de reintento en la ruta `detalle_servicio/{especialidadId}` ante errores de carga o ID inexistente.
+  - `app/src/main/res/values/strings_catalogo.xml`: adición de cadenas localizadas `especialista_vacio`, `especialista_error_carga` y `catalogo_btn_reintentar`.
+  - `app/src/test/java/com/example/sanaesenciaapp/viewmodel/CatalogoViewModelModuleTest.kt`: adición de pruebas unitarias para error/reintento de especialidades, error/reintento de especialistas, ID ausente y especialidad sin especialistas registrados.
+- **Dependencias:**
+  - `CatalogoRepository`: interfaz limpia de consulta Room observada mediante StateFlow.
+  - `CitaViewModel`: continuidad funcional intacta hacia la agenda tras seleccionar el especialista (`seleccionarServicio`).
+  - `SavedStateHandle`: recuperación de `especialidadId` como argumento de navegación.
+- **Pruebas ejecutadas y resultados:**
+  - `./gradlew.bat :app:compileDebugKotlin` -> EXITOSO
+  - `./gradlew.bat :app:testDebugUnitTest` -> 195 aprobadas, 0 fallidas, 0 omitidas
+  - `./gradlew.bat :app:assembleDebug` -> EXITOSO
+- **Limitaciones conocidas:**
+  - El catálogo de especialidades y especialistas es de lectura en la capa pública; las modificaciones de modalidad y pausa de agenda se realizan desde el panel de administración (`HomeAdminScreen`).
