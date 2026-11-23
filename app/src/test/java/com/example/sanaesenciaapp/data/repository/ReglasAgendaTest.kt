@@ -188,4 +188,42 @@ class ReglasAgendaTest {
         assertNull(boxLibre)
     }
 
+    @Test
+    fun `intervalos identicos se solapan`(){
+        val solapan = ReglasAgenda.haySolapamiento(
+            inicio1 = 0, fin1 = 60,
+            inicio2 = 0, fin2 = 60
+        )
+        assertTrue(solapan)
+    }
+
+    @Test
+    fun `mismo inicio con fin distinto se solapa`(){
+        val solapan = ReglasAgenda.haySolapamiento(
+            inicio1 = 0, fin1 = 60,
+            inicio2 = 0, fin2 = 90
+        )
+        assertTrue(solapan)
+    }
+
+    @Test
+    fun `cita contigua al inicio no se solapa`(){
+        val solapan = ReglasAgenda.haySolapamiento(
+            inicio1 = 60, fin1 = 120,
+            inicio2 = 0, fin2 = 60
+        )
+        assertFalse(solapan)
+    }
+
+    //VA-04: pago simulado
+    @Test
+    fun `duracion del pago simulado es de 600 segundos`(){
+        assertEquals(600, ReglasAgenda.DURACION_PAGO_SEGUNDOS)
+    }
+
+    @Test
+    fun `estado de retencion en pago existe`(){
+        assertEquals("EN_PAGO", ReglasAgenda.ESTADO_EN_PAGO)
+    }
+
 }

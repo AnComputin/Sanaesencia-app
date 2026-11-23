@@ -16,7 +16,9 @@
     <string name="especialista_error_cargar">No se pudo cargar la especialidad seleccionada.</string>
     <string name="especialista_error_pausada">La agenda de esta especialidad está pausada temporalmente.</string>
     <string name="especialista_cargando">Cargando especialistas...</string>
+    <string name="especialista_vacio">No hay especialistas registrados para esta especialidad.</string>
     <string name="especialista_error_incompatibles">No hay especialistas activos compatibles con la modalidad actual.</string>
+    <string name="especialista_error_carga">No se pudo cargar la lista de especialistas.</string>
 
     <!-- Detalle de Servicio -->
     <string name="detalle_profesional_cargo">Profesional a cargo: **%s**</string>
@@ -35,4 +37,5 @@
     <string name="catalogo_vacio">No hay especialidades disponibles.</string>
     <string name="catalogo_cargando">Cargando especialidades...</string>
     <string name="catalogo_detalle_error_carga">No se pudo cargar el servicio.</string>
+    <string name="catalogo_btn_reintentar">Reintentar</string>
 </resources>

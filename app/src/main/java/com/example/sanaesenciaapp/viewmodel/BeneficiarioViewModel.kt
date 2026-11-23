@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class BeneficiarioUiState(
@@ -32,50 +34,59 @@ class BeneficiarioViewModel(
     val uiState: StateFlow<BeneficiarioUiState> = _uiState.asStateFlow()
 
     private var sesionVisible: SesionUsuario? = null
+    private val reintentosCarga = MutableStateFlow(0)
 
     init {
         viewModelScope.launch {
-            sesionActual.collectLatest { sesion ->
-                sesionVisible = sesion
-                val version = _uiState.value.versionSesion + 1
-                val propietario = sesion?.email?.trim()?.lowercase(Locale.ROOT)
-                    ?.takeIf { it.isNotEmpty() }
-                _uiState.value = BeneficiarioUiState(
-                    versionSesion = version,
-                    cargando = propietario != null,
-                    sinSesion = propietario == null
-                )
-                if (propietario == null) return@collectLatest
+            combine(sesionActual, reintentosCarga) { sesion, _ -> sesion }
+                .collectLatest { sesion ->
+                    sesionVisible = sesion
+                    val version = _uiState.value.versionSesion + 1
+                    val propietario = sesion?.email?.trim()?.lowercase(Locale.ROOT)
+                        ?.takeIf { it.isNotEmpty() }
+                    _uiState.value = BeneficiarioUiState(
+                        versionSesion = version,
+                        cargando = propietario != null,
+                        sinSesion = propietario == null
+                    )
+                    if (propietario == null) return@collectLatest
 
-                beneficiarioRepository.observarBeneficiarios()
-                    .catch { error ->
-                        if (error is CancellationException) throw error
-                        emit(ResultadoBeneficiario.ErrorOperacion)
-                    }
-                    .collect { resultado ->
-                        if (sesionActual.value !== sesion || _uiState.value.versionSesion != version) {
-                            return@collect
+                    beneficiarioRepository.observarBeneficiarios()
+                        .catch { error ->
+                            if (error is CancellationException) throw error
+                            emit(ResultadoBeneficiario.ErrorOperacion)
                         }
-                        when (resultado) {
-                            is ResultadoBeneficiario.Exito -> _uiState.value = _uiState.value.copy(
-                                beneficiarios = resultado.valor.filter {
-                                    it.propietarioEmail.trim().lowercase(Locale.ROOT) == propietario
-                                },
-                                cargando = false,
-                                errorPersistencia = false
-                            )
-                            ResultadoBeneficiario.SesionNoAutenticada -> _uiState.value =
-                                BeneficiarioUiState(versionSesion = version, cargando = false, sinSesion = true)
-                            is ResultadoBeneficiario.ErrorPersistencia, ResultadoBeneficiario.ErrorOperacion ->
-                                _uiState.value = _uiState.value.copy(
-                                    beneficiarios = emptyList(),
+                        .collect { resultado ->
+                            if (sesionActual.value !== sesion || _uiState.value.versionSesion != version) {
+                                return@collect
+                            }
+                            when (resultado) {
+                                is ResultadoBeneficiario.Exito -> _uiState.value = _uiState.value.copy(
+                                    beneficiarios = resultado.valor.filter {
+                                        it.propietarioEmail.trim().lowercase(Locale.ROOT) == propietario
+                                    },
                                     cargando = false,
-                                    errorPersistencia = true
+                                    errorPersistencia = false
                                 )
-                            else -> Unit
+                                ResultadoBeneficiario.SesionNoAutenticada -> _uiState.value =
+                                    BeneficiarioUiState(versionSesion = version, cargando = false, sinSesion = true)
+                                is ResultadoBeneficiario.ErrorPersistencia, ResultadoBeneficiario.ErrorOperacion ->
+                                    _uiState.value = _uiState.value.copy(
+                                        beneficiarios = emptyList(),
+                                        cargando = false,
+                                        errorPersistencia = true
+                                    )
+                                else -> Unit
+                            }
                         }
-                    }
-            }
+                }
+        }
+    }
+
+    fun reintentarCarga() {
+        if (_uiState.value.errorPersistencia && !_uiState.value.sinSesion) {
+            _uiState.update { it.copy(cargando = true, errorPersistencia = false) }
+            reintentosCarga.update { it + 1 }
         }
     }
 

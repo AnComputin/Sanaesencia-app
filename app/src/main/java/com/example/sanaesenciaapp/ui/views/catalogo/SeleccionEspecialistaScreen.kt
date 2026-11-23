@@ -21,8 +21,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -38,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sanaesenciaapp.data.room.EspecialistaEntity
@@ -129,22 +132,49 @@ fun SeleccionEspecialistaScreen(
 
                 if (especialidad == null) {
                     item {
-                        MensajeEspecialistas(stringResource(R.string.especialista_error_cargar))
+                        MensajeEspecialistas(
+                            texto = stringResource(R.string.especialista_error_cargar),
+                            esError = true,
+                            onReintentar = { catalogoViewModel.reintentarEspecialidades() }
+                        )
                     }
                 } else if (especialidad.agendaPausada) {
                     item {
                         MensajeEspecialistas(
-                            stringResource(R.string.especialista_error_pausada)
+                            texto = stringResource(R.string.especialista_error_pausada)
                         )
                     }
                 } else if (catalogoState.errorEspecialistas) {
-                    item { MensajeEspecialistas(stringResource(R.string.catalogo_error_carga)) }
-                } else if (catalogoState.cargandoEspecialidades || especialistas.isEmpty()) {
-                    item { MensajeEspecialistas(stringResource(R.string.especialista_cargando)) }
+                    item {
+                        MensajeEspecialistas(
+                            texto = stringResource(R.string.especialista_error_carga),
+                            esError = true,
+                            onReintentar = { catalogoViewModel.reintentarEspecialistas() }
+                        )
+                    }
+                } else if (catalogoState.cargandoEspecialidades || catalogoState.cargandoEspecialistas) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                } else if (especialistas.isEmpty()) {
+                    item {
+                        MensajeEspecialistas(
+                            texto = stringResource(R.string.especialista_vacio)
+                        )
+                    }
                 } else if (especialistasCompatibles.isEmpty()) {
                     item {
                         MensajeEspecialistas(
-                            stringResource(R.string.especialista_error_incompatibles)
+                            texto = stringResource(R.string.especialista_error_incompatibles)
                         )
                     }
                 } else {
@@ -183,19 +213,38 @@ fun SeleccionEspecialistaScreen(
 }
 
 @Composable
-private fun MensajeEspecialistas(texto: String) {
+private fun MensajeEspecialistas(
+    texto: String,
+    esError: Boolean = false,
+    onReintentar: (() -> Unit)? = null
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = if (esError) MaterialTheme.colorScheme.errorContainer
+            else MaterialTheme.colorScheme.surface
         )
     ) {
-        Text(
-            text = texto,
+        Column(
             modifier = Modifier.padding(20.dp),
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                text = texto,
+                color = if (esError) MaterialTheme.colorScheme.onErrorContainer
+                else MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = if (esError) FontWeight.SemiBold else FontWeight.Normal
+            )
+            if (onReintentar != null) {
+                Button(
+                    onClick = onReintentar,
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(stringResource(R.string.catalogo_btn_reintentar))
+                }
+            }
+        }
     }
 }
 
@@ -301,4 +350,18 @@ private fun modalidadCompatible(
         "Online" in disponibles -> "Online"
         else -> null
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun EspecialistaCardPreview() {
+    EspecialistaCard(
+        especialista = EspecialistaEntity(
+            id = 1,
+            nombre = "Dra. Marcela Paz",
+            especialidadId = 1,
+            modalidad = "Presencial"
+        ),
+        onClick = {}
+    )
 }

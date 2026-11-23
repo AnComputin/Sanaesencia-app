@@ -11,6 +11,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -91,5 +92,28 @@ class GatoViewModelTest {
         assertEquals(2, casillasOcupadas)
         assertEquals("X", state.turno)
         assertFalse(state.pensandoCpu)
+    }
+
+    @Test
+    fun `victoria en dos jugadores bloquea movimientos y reiniciar conserva puntajes`() {
+        val viewModel = GatoViewModel()
+        viewModel.setOponente(TipoOponenteGato.DOS_JUGADORES)
+
+        viewModel.seleccionarCelda(0) // X
+        viewModel.seleccionarCelda(3) // O
+        viewModel.seleccionarCelda(1) // X
+        viewModel.seleccionarCelda(4) // O
+        viewModel.seleccionarCelda(2) // X gana
+
+        assertEquals("X", viewModel.uiState.value.ganador)
+        assertEquals(1, viewModel.uiState.value.puntajeX)
+        val tableroGanador = viewModel.uiState.value.tablero
+        viewModel.seleccionarCelda(5)
+        assertEquals(tableroGanador, viewModel.uiState.value.tablero)
+
+        viewModel.reiniciarJuego()
+        assertNull(viewModel.uiState.value.ganador)
+        assertTrue(viewModel.uiState.value.tablero.all { it == null })
+        assertEquals(1, viewModel.uiState.value.puntajeX)
     }
 }

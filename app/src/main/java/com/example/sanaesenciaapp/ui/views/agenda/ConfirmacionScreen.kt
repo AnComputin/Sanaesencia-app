@@ -450,6 +450,9 @@ fun ConfirmacionScreen(
                                         inicioMillis =
                                             cita.inicioMillis,
 
+                                        duracionMinutos =
+                                            com.example.sanaesenciaapp.data.repository.ReglasAgenda.DURACION_CITA_MINUTOS,
+
                                         ubicacion =
                                             if (cita.modalidad == Modalidad.PRESENCIAL && cita.boxAsignado != null)
                                                 "Presencial · Box ${cita.boxAsignado}"

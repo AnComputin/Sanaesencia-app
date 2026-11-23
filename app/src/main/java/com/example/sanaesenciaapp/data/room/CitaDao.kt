@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import com.example.sanaesenciaapp.data.repository.ReglasAgenda
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -23,7 +24,7 @@ abstract class CitaDao {
         """
         SELECT COUNT(*) FROM citas
         WHERE especialistaId = :especialistaId
-          AND estado = 'CONFIRMADA'
+          AND estado IN ('CONFIRMADA', 'EN_PAGO')
           AND inicioMillis < :finMillis
           AND finMillis > :inicioMillis
         """
@@ -38,7 +39,7 @@ abstract class CitaDao {
         """
         SELECT COUNT(*) FROM citas
         WHERE modalidad = 'PRESENCIAL'
-          AND estado = 'CONFIRMADA'
+          AND estado IN ('CONFIRMADA', 'EN_PAGO')
           AND inicioMillis < :finMillis
           AND finMillis > :inicioMillis
         """
@@ -52,7 +53,7 @@ abstract class CitaDao {
         """
         SELECT boxAsignado FROM citas
         WHERE modalidad = 'PRESENCIAL'
-          AND estado = 'CONFIRMADA'
+          AND estado IN ('CONFIRMADA', 'EN_PAGO')
           AND boxAsignado IS NOT NULL
           AND inicioMillis < :finMillis
           AND finMillis > :inicioMillis
@@ -68,6 +69,14 @@ abstract class CitaDao {
 
     @Query("UPDATE citas SET estado = :nuevoEstado WHERE id = :id")
     abstract suspend fun actualizarEstado(id: Int, nuevoEstado: String)
+
+    /*elimina una retencion en pago solo si sigue en estado EN_PAGO*/
+    @Query("DELETE FROM citas WHERE id = :id AND estado = 'EN_PAGO'")
+    abstract suspend fun eliminar(id: Int)
+
+    /*limpia retenciones huerfanas (pago abandonado o app cerrada)*/
+    @Query("DELETE FROM citas WHERE estado = 'EN_PAGO'")
+    abstract suspend fun eliminarRetenciones()
 
     /**
      * Confirma una cita de forma atómica.
@@ -89,12 +98,12 @@ abstract class CitaDao {
             return null
         }
 
-        val boxAsignado = if (cita.modalidad.equals("PRESENCIAL", ignoreCase = true)) {
+        val boxAsignado = if (ReglasAgenda.esPresencial(cita.modalidad)) {
             if (
                 contarPresencialesSolapadas(
                     inicioMillis = cita.inicioMillis,
                     finMillis = cita.finMillis
-                ) >= 8
+                ) >= ReglasAgenda.TOTAL_BOXES
             ) {
                 return null
             }
@@ -104,7 +113,7 @@ abstract class CitaDao {
                 finMillis = cita.finMillis
             ).toSet()
 
-            (1..8).firstOrNull { it !in ocupados } ?: return null
+            ReglasAgenda.obtenerBoxLibre(ocupados) ?: return null
         } else {
             null
         }

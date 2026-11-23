@@ -11,6 +11,12 @@ object ReglasAgenda {
     const val ESTADO_CONFIRMADA = "CONFIRMADA"
     const val ESTADO_COMPLETADA = "COMPLETADA"
     const val ESTADO_CANCELADA = "CANCELADA"
+    const val ESTADO_EN_PAGO = "EN_PAGO"
+
+    const val CANCELACION_HORAS = 24
+
+    /*duracion del pago simulado en segundos (10 minutos)*/
+    const val DURACION_PAGO_SEGUNDOS = 600
 
     fun calcularFin(inicioMillis: Long): Long{
         return inicioMillis + (DURACION_CITA_MINUTOS * 60 * 1000L)
@@ -27,11 +33,8 @@ object ReglasAgenda {
         return modalidad.equals(MODALIDAD_PRESENCIAL, ignoreCase = true)
     }
 
-    fun haySolapamiento(
-        inicio1: Long,fin1: Long,
-        inicio2: Long,fin2: Long
-    ): Boolean{
-        return inicio1 < fin2 && inicio2 <fin1
+    fun haySolapamiento(inicio1: Long, fin1: Long, inicio2: Long, fin2: Long): Boolean{
+        return inicio1 < fin2 && inicio2 < fin1
     }
 
     /*ve si la cita esta en un horario valido*/

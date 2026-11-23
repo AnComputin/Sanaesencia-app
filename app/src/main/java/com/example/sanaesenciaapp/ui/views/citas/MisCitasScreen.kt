@@ -82,7 +82,10 @@ fun MisCitasScreen(
     }
 
     val proximasCitas = remember(citas) {
-        citas.filter { it.estado == EstadoReserva.CONFIRMADA }
+        citas.filter {
+            it.estado == EstadoReserva.CONFIRMADA ||
+                it.estado == EstadoReserva.EN_PAGO
+        }
     }
     val historialCitas = remember(citas) {
         citas.filter { it.estado == EstadoReserva.COMPLETADA || it.estado == EstadoReserva.CANCELADA }
@@ -215,6 +218,9 @@ fun MisCitasScreen(
 
                                         inicioMillis =
                                             cita.inicioMillis,
+
+                                        duracionMinutos =
+                                            com.example.sanaesenciaapp.data.repository.ReglasAgenda.DURACION_CITA_MINUTOS,
 
                                         ubicacion =
                                             if (cita.modalidad == com.example.sanaesenciaapp.viewmodel.Modalidad.PRESENCIAL && cita.boxAsignado != null)
@@ -404,6 +410,10 @@ private fun CitaTarjeta(
                         EstadoReserva.CANCELADA ->
                             MaterialTheme.colorScheme
                                 .errorContainer
+
+                        EstadoReserva.EN_PAGO ->
+                            MaterialTheme.colorScheme
+                                .tertiaryContainer
                     }
                 ) {
 
@@ -418,6 +428,9 @@ private fun CitaTarjeta(
 
                             EstadoReserva.CANCELADA ->
                                 "Cancelada"
+
+                            EstadoReserva.EN_PAGO ->
+                                "En pago"
                         },
 
                         fontSize = 12.sp,
@@ -436,6 +449,10 @@ private fun CitaTarjeta(
                             EstadoReserva.CANCELADA ->
                                 MaterialTheme.colorScheme
                                     .onErrorContainer
+
+                            EstadoReserva.EN_PAGO ->
+                                MaterialTheme.colorScheme
+                                    .onTertiaryContainer
                         },
 
                         modifier = Modifier.padding(

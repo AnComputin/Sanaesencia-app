@@ -11,6 +11,8 @@ class TerapeutaViewModelTest {
 
         assertEquals(emptyList<Paciente>(), viewModel.uiState.value.pacientes)
         assertEquals(emptyList<Cita>(), viewModel.uiState.value.citas)
+        assertEquals(emptySet<Int>(), viewModel.uiState.value.pacientesEnRiesgo)
+        assertEquals(emptyList<Cita>(), viewModel.uiState.value.historialCitas)
 
         viewModel.actualizarEstadoCita(10, EstadoCita.ASISTIDA)
         viewModel.seleccionarPaciente(

@@ -113,10 +113,17 @@ fun FichaBeneficiarioScreen(
                 when {
                     state.cargando -> Text(stringResource(R.string.beneficiario_cargando))
                     state.sinSesion -> Text(stringResource(R.string.beneficiario_sesion_requerida))
-                    state.errorPersistencia -> Text(
-                        stringResource(R.string.beneficiario_error_generico),
-                        color = MaterialTheme.colorScheme.error
-                    )
+                    state.errorPersistencia -> {
+                        Text(
+                            stringResource(R.string.beneficiario_error_generico),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        OutlinedButton(
+                            onClick = beneficiarioViewModel::reintentarCarga
+                        ) {
+                            Text(stringResource(R.string.beneficiario_reintentar))
+                        }
+                    }
                     state.beneficiarios.isEmpty() -> Text(stringResource(R.string.beneficiario_lista_vacia))
                     else -> state.beneficiarios.forEach { beneficiario ->
                         Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {

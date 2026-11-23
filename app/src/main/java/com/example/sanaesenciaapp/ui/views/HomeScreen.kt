@@ -35,6 +35,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sanaesenciaapp.data.AppState
@@ -265,7 +266,7 @@ fun HomeScreen(
                         shape = RoundedCornerShape(16.dp)
                     ) {
                         Text(
-                            text = "🌿 Tienda de bienestar",
+                            text = stringResource(R.string.inicio_btn_tienda),
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.secondary
@@ -511,4 +512,13 @@ fun EspecialidadCard(
             )
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun EspecialidadCardPreview() {
+    EspecialidadCard(
+        nombre = "Psicología",
+        icono = "🧠"
+    )
 }

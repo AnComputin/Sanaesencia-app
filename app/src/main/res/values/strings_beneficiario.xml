@@ -11,7 +11,8 @@
     <string name="beneficiario_btn_guardar">Guardar beneficiario</string>
     <string name="beneficiario_btn_guardando">Guardando...</string>
     <string name="beneficiario_aviso_asociado">Este beneficiario quedará asociado únicamente a tu cuenta.</string>
-    <string name="beneficiario_error_generico">No fue posible guardar el beneficiario</string>
+    <string name="beneficiario_error_generico">No fue posible cargar o guardar la información. Inténtalo nuevamente.</string>
+    <string name="beneficiario_reintentar">Reintentar</string>
     <string name="beneficiario_accessibility_volver">Volver</string>
     <string name="beneficiario_cargando">Cargando beneficiarios...</string>
     <string name="beneficiario_sesion_requerida">Inicia sesión para administrar tus beneficiarios.</string>
