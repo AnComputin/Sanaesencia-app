@@ -98,9 +98,7 @@ Se reactivó y completó la función de `FichaBeneficiarioScreen` proveniente de
 También se reforzó `MIGRATION_4_5` para reconocer la estructura de Room que tenía la rama `develop` (v4):
 
 - crea la tabla de especialistas si esa versión no la tenía;
-- transforma las citas antiguas al esquema nuevo sin borrar el historial;
-- conserva usuarios;
-- normaliza el catálogo final de 7 especialidades.
+- si la tabla `citas` ya existía, conserva los datos y solo agrega `especialistaId` cuando no está presente.
 
 ### Prueba recomendada de beneficiarios
 
@@ -112,7 +110,6 @@ También se reforzó `MIGRATION_4_5` para reconocer la estructura de Room que te
 6. Completar la reserva y verificar que Confirmación/Mis citas muestre el nombre del beneficiario.
 7. Cerrar sesión y entrar con otra cuenta: no debe ver los beneficiarios del primer usuario.
 8. Volver a iniciar sesión con la primera cuenta: el beneficiario debe seguir disponible.
-
 
 ## Tienda virtual y compras simuladas
 
@@ -155,3 +152,29 @@ En el registro, el borde del campo **Contraseña** se muestra rojo mientras la c
 7. Verificar que el stock se haya descontado; aumentar una unidad, quitar un producto o agregar uno nuevo.
 8. Volver a la tienda y comprobar que los cambios aparecen sin reiniciar la aplicación.
 9. Cerrar y volver a abrir la aplicación: los productos, inventario y ventas permanecen guardados en Room.
+
+---
+
+## Tarea AL-01 – Auditoría y optimización de Inicio y accesos a módulos
+
+- **ID y Nombre:** AL-01 – Completar Inicio y accesos a módulos
+- **Responsable:** Alejandra Núñez
+- **Fecha:** 22-11-2026
+- **Versión:** 1.0.0
+- **Estado real:** Completado y validado
+- **Archivos modificados:**
+  - `app/src/main/java/com/example/sanaesenciaapp/ui/views/InicioScreen.kt`: incorporación de `@Preview` oficial sin alterar la navegación por callbacks.
+  - `app/src/main/java/com/example/sanaesenciaapp/ui/views/HomeScreen.kt`: localización del botón de tienda mediante `stringResource(R.string.inicio_btn_tienda)` e incorporación de `@Preview` para `EspecialidadCard`.
+  - `app/src/main/res/values/strings_inicio.xml`: adición del recurso `inicio_btn_tienda` para consistencia y localización de textos en Inicio/Home.
+  - `app/src/test/java/com/example/sanaesenciaapp/viewmodel/InicioNavigationTest.kt`: suite de pruebas unitarias cubriendo redirección según rol post-login (ADMIN, TERAPEUTA, PACIENTE, anónimo), visibilidad de botones condicionales (Mis citas, Cerrar sesión, Reservar) y resolución de rutas de especialidad (activa vs pausada).
+- **Dependencias:**
+  - `Navigation.kt` raíz (intacto, respetado según reglas obligatorias).
+  - `AppState.kt` (intacto, lectura de `usuarioActual`).
+  - Módulos de navegación: `AuthGraph`, `CatalogoGraph`, `AgendaGraph`, `TerapeutaGraph`, `JuegosGraph`, `TiendaGraph`.
+- **Pruebas ejecutadas y resultados:**
+  - `./gradlew.bat :app:compileDebugKotlin` -> EXITOSO
+  - `./gradlew.bat :app:testDebugUnitTest` -> 191 aprobadas, 0 fallidas, 0 omitidas
+  - `./gradlew.bat :app:assembleDebug` -> EXITOSO
+- **Limitaciones conocidas:**
+  - El portal terapeuta permanece sin persistencia clínica real vinculada a la cuenta autenticada según la definición del proyecto.
+  - La sesión permanece en memoria a través de `SesionRepository` y `AppState`, reseteándose al cerrar la aplicación.
