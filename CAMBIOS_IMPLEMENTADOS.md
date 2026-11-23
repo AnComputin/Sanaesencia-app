@@ -205,3 +205,28 @@ En el registro, el borde del campo **Contraseña** se muestra rojo mientras la c
   - `./gradlew.bat :app:assembleDebug` -> EXITOSO
 - **Limitaciones conocidas:**
   - El catálogo de especialidades y especialistas es de lectura en la capa pública; las modificaciones de modalidad y pausa de agenda se realizan desde el panel de administración (`HomeAdminScreen`).
+
+---
+
+## Tarea AL-03 – Validar módulo Beneficiarios
+
+- **ID y Nombre:** AL-03 – Validar módulo Beneficiarios
+- **Responsable:** Alejandra Núñez
+- **Fecha:** 22-11-2026
+- **Versión:** 1.0.0
+- **Estado real:** Completado y validado
+- **Archivos modificados:**
+  - `app/src/main/java/com/example/sanaesenciaapp/viewmodel/BeneficiarioViewModel.kt`: reintento de la observación cuando falla la lectura, conservando la limpieza de datos al cambiar/cerrar sesión.
+  - `app/src/main/java/com/example/sanaesenciaapp/ui/views/auth/FichaBeneficiarioScreen.kt`: acción accesible para reintentar una consulta fallida.
+  - `app/src/main/res/values/strings_beneficiario.xml`: mensaje comprensible de error de carga/guardado y texto de reintento.
+  - `app/src/test/java/com/example/sanaesenciaapp/viewmodel/BeneficiarioViewModelModuleTest.kt`: prueba de error de lectura seguido de reintento exitoso.
+- **Datos y validaciones:** nombre completo, RUT, fecha de nacimiento y parentesco. La pantalla valida reactivamente mediante `validarNombre`, `validarRut`, `validarFechaNacimiento` y `validarParentesco`; el repositorio vuelve a validar datos obligatorios y normaliza RUT y correo.
+- **Propietario y acceso:** el propietario se obtiene de `SesionRepository.sesionActual`, nunca de argumentos de interfaz. Listado, detalle por ID, edición, desactivación y reactivación están limitados por ID y correo propietario en `BeneficiarioDao`. Cambiar de cuenta vacía el estado mientras carga la nueva cuenta; cerrar sesión elimina el listado del estado visible. Las acciones en curso de una sesión anterior no actualizan la UI nueva.
+- **Operaciones disponibles:** alta, consulta reactiva, edición de campos personales, desactivación lógica y reactivación al volver a registrar un RUT inactivo. El RUT activo duplicado se rechaza por propietario.
+- **Relación con Agenda:** Agenda consume la lista de beneficiarios de la cuenta vigente desde `AppState`; la selección conserva `beneficiarioId` y el nombre del paciente en la cita. La asociación de cita no se modificó en esta tarea.
+- **Dependencias:** `BeneficiarioRepository`, `BeneficiarioViewModel`, `SesionRepository`, consultas existentes de `BeneficiarioDao`, `AppState` y flujo de Agenda. No se modificaron sesión, entidades, DAO ni Room común.
+- **Pruebas ejecutadas y resultados:**
+  - `:app:compileDebugKotlin` -> EXITOSO
+  - `:app:testDebugUnitTest` -> 196 aprobadas, 0 fallidas, 0 omitidas
+  - `:app:assembleDebug` -> EXITOSO
+- **Limitaciones conocidas:** la ficha muestra un resumen del beneficiario en el listado y carga ese registro en el formulario para editar; no hay una pantalla de detalle separada. La desactivación es lógica para conservar referencias históricas.

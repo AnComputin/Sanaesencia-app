@@ -136,6 +136,61 @@ class BeneficiarioViewModelModuleTest {
             Dispatchers.resetMain()
         }
     }
+    @Test
+    fun reintentarCargaRecuperaElListadoTrasError() {
+        val dispatcher = StandardTestDispatcher()
+        Dispatchers.setMain(dispatcher)
+        try {
+            runTest(dispatcher) {
+                val password = "PruebaTemporal1!"
+                val hash = Seguridad.hashear(password)
+                val cuenta = "titular@example.com"
+                val usuarios = object : EmptyUsuarioDao() {
+                    override suspend fun obtenerPorEmail(email: String): UsuarioEntity =
+                        UsuarioEntity(email, "Titular", hash, "", "", "", "", "PACIENTE")
+                }
+                val sesion = SesionRepository(UsuarioRepository(usuarios), dispatcher)
+                var lecturas = 0
+                val beneficiario = BeneficiarioEntity(
+                    id = 1,
+                    propietarioEmail = cuenta,
+                    nombre = "Beneficiario",
+                    rut = "12345678-5",
+                    fechaNacimiento = "01/01/2015",
+                    parentesco = "Hijo"
+                )
+                val dao = object : EmptyBeneficiarioDao() {
+                    override fun obtenerPorPropietarioFlow(email: String): Flow<List<BeneficiarioEntity>> = flow {
+                        lecturas++
+                        if (lecturas == 1) error("fallo de lectura")
+                        emit(listOf(beneficiario))
+                    }
+                }
+                val store = ViewModelStore()
+                try {
+                    val viewModel = BeneficiarioViewModel(BeneficiarioRepository(dao, sesion), sesion.sesionActual)
+                    store.put("beneficiario", viewModel)
+                    sesion.autenticar(cuenta, password)
+                    runCurrent()
+
+                    assertTrue(viewModel.uiState.value.errorPersistencia)
+                    assertTrue(viewModel.uiState.value.beneficiarios.isEmpty())
+
+                    viewModel.reintentarCarga()
+                    runCurrent()
+
+                    assertFalse(viewModel.uiState.value.errorPersistencia)
+                    assertFalse(viewModel.uiState.value.cargando)
+                    assertEquals(listOf(beneficiario), viewModel.uiState.value.beneficiarios)
+                    assertEquals(2, lecturas)
+                } finally {
+                    store.clear()
+                }
+            }
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
 }
 
 private class TestAppContainer(
