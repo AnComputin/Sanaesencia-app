@@ -253,3 +253,36 @@ En el registro, el borde del campo **Contraseña** se muestra rojo mientras la c
   - `:app:testDebugUnitTest` -> 196 aprobadas, 0 fallidas, 0 omitidas
   - `:app:assembleDebug` -> EXITOSO
 - **Limitaciones conocidas:** el criterio de pacientes vinculados y seguimiento persistente no puede alcanzarse de manera segura hasta recibir una de las dependencias técnicas anteriores.
+
+---
+
+## Tarea AL-05 – Validar módulo Juegos
+
+- **ID y Nombre:** AL-05 – Validar módulo Juegos
+- **Responsable:** Alejandra Núñez
+- **Fecha:** 22-11-2026
+- **Versión:** 1.0.0
+- **Estado real:** Completado y validado
+- **Juegos y objetivo:**
+  - **Respiración Guiada:** ciclo de inhalar, mantener y exhalar durante 60 segundos, con pausa y reanudación.
+  - **Pausa Consciente:** recorrido guiado de cuatro pasos para detenerse, observar respiración/entorno y reconectar.
+  - **Memorice Zen:** encontrar ocho parejas de símbolos de bienestar, contando intentos y tiempo.
+  - **Gato Armónico:** tres en raya para dos jugadores o contra CPU fácil/experta, con puntajes y empates.
+  - **Camino del Bienestar:** tablero de 25 casillas con avance, retroceso y meditación; objetivo llegar a la meta.
+- **Pantallas y navegación:** Inicio abre `juegos_hub` mediante callback. El hub enlaza una vez a cada ruta: `respiracion_guiada`, `pausa_consciente`, `memorice_zen`, `gato_armonico` y `camino_bienestar`. Cada pantalla tiene callback de regreso que ejecuta `popBackStack()`; el botón atrás del sistema usa la pila normal de Navigation Compose. No se encontraron rutas duplicadas ni juegos declarados sin destino.
+- **ViewModels y estado:** `RespiracionViewModel`, `PausaConscienteViewModel`, `MemoriceViewModel`, `GatoViewModel` y `CaminoViewModel` mantienen el estado en StateFlow. Los temporizadores y el turno de CPU son tareas coroutine con cancelación. El estado vive en el ViewModel de cada destino: sobrevive recomposición/configuración mientras la entrada permanece en la pila; al volver al hub, el destino se elimina y al entrar de nuevo inicia una sesión nueva. Los juegos son locales y no tienen repositorios ni persistencia.
+- **Mecánicas revisadas:** turnos y victoria por línea/empate en Gato; parejas, bloqueo durante ocultado y finalización en Memorice; efectos de casillas y meta en Camino; transiciones de fase, pausa y final de Respiración; pasos, avance y finalización de Pausa Consciente. Camino recibe un generador de dado con valor aleatorio 1–6 por defecto para permitir pruebas reproducibles sin cambiar la mecánica.
+- **Errores y estados:** los juegos no dependen de lecturas remotas ni almacenamiento, por lo que no tienen estados de carga/error de datos; muestran estado inicial, ejecución y finalización dentro de cada UI. No se agregaron datos ficticios o resultados persistidos.
+- **Archivos modificados:**
+  - `app/src/main/java/com/example/sanaesenciaapp/viewmodel/CaminoViewModel.kt`: inyección del generador de dado para reproducibilidad en tests; el valor de producción sigue siendo aleatorio entre 1 y 6.
+  - `app/src/test/java/com/example/sanaesenciaapp/viewmodel/CaminoViewModelTest.kt`: finalización en meta, bloqueo de tiradas posteriores y reinicio.
+  - `app/src/test/java/com/example/sanaesenciaapp/viewmodel/GatoViewModelTest.kt`: victoria de X, bloqueo tras finalizar y reinicio conservando puntaje.
+  - `app/src/test/java/com/example/sanaesenciaapp/viewmodel/MemoriceViewModelTest.kt`: completar ocho parejas y comenzar una nueva ronda.
+  - `app/src/test/java/com/example/sanaesenciaapp/viewmodel/PausasViewModelTest.kt`: fin y reinicio de Pausa Consciente; cambios de fase, pausa/reanudación, final y reinicio de Respiración Guiada.
+  - Este documento.
+- **Dependencias:** Navigation Compose, callbacks de `JuegosGraph`, ViewModels de juegos y recursos `strings_juegos.xml). No se modificó `Navigation.kt` raíz ni archivos comunes.
+- **Pruebas ejecutadas y resultados:**
+  - `:app:compileDebugKotlin` -> EXITOSO
+  - `:app:testDebugUnitTest` -> 200 aprobadas, 0 fallidas, 0 omitidas
+  - `:app:assembleDebug` -> EXITOSO
+- **Limitaciones conocidas:** la partida no se conserva después de volver al hub o cerrar la app; los ViewModels no guardan estado en Room ni en SavedStateHandle. No hay un flujo asíncrono de errores que requiera estado de error.

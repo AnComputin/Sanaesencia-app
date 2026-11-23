@@ -83,4 +83,25 @@ class MemoriceViewModelTest {
         assertEquals(0, state.intentos)
         assertFalse(state.juegoTerminado)
     }
+
+    @Test
+    fun `encontrar todas las parejas completa y reiniciar inicia nueva ronda`() = runTest(testDispatcher) {
+        val store = ViewModelStore()
+        val viewModel = MemoriceViewModel().also { store.put("memorice", it) }
+        try {
+            viewModel.uiState.value.cartas.groupBy { it.parejaId }.values.forEach { pareja ->
+                viewModel.voltearCarta(pareja[0].id)
+                viewModel.voltearCarta(pareja[1].id)
+            }
+            assertTrue(viewModel.uiState.value.juegoTerminado)
+            assertTrue(viewModel.uiState.value.cartas.all { it.encontrada })
+
+            viewModel.reiniciarJuego()
+            assertFalse(viewModel.uiState.value.juegoTerminado)
+            assertEquals(0, viewModel.uiState.value.intentos)
+            assertTrue(viewModel.uiState.value.cartas.none { it.encontrada || it.volteada })
+        } finally {
+            store.clear()
+        }
+    }
 }

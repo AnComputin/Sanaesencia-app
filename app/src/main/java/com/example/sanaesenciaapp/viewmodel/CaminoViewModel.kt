@@ -42,7 +42,9 @@ data class CaminoUiState(
     val tablero: List<CasillaCamino> = emptyList()
 )
 
-class CaminoViewModel : ViewModel() {
+class CaminoViewModel(
+    private val generarDado: () -> Int = { Random.nextInt(1, 7) }
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CaminoUiState())
     val uiState: StateFlow<CaminoUiState> = _uiState.asStateFlow()
@@ -69,7 +71,7 @@ class CaminoViewModel : ViewModel() {
         val state = _uiState.value
         if (state.juegoTerminado) return
 
-        val dado = Random.nextInt(1, 7)
+        val dado = generarDado().coerceIn(1, 6)
         var nuevaPosicion = state.posicionActual + dado
 
         if (nuevaPosicion >= 25) {
