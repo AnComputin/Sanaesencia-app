@@ -543,7 +543,7 @@ abstract class AppDatabase : RoomDatabase() {
                         MIGRATION_7_8
                     )
                     .addCallback(DATABASE_CALLBACK)
-                    .fallbackToDestructiveMigration(false)
+                    // Sin fallback destructivo: una migración ausente debe fallar sin reemplazar la base.
                     .build()
                     .also {
                         INSTANCE = it
