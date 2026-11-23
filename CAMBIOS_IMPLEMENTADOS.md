@@ -230,3 +230,26 @@ En el registro, el borde del campo **Contraseña** se muestra rojo mientras la c
   - `:app:testDebugUnitTest` -> 196 aprobadas, 0 fallidas, 0 omitidas
   - `:app:assembleDebug` -> EXITOSO
 - **Limitaciones conocidas:** la ficha muestra un resumen del beneficiario en el listado y carga ese registro en el formulario para editar; no hay una pantalla de detalle separada. La desactivación es lógica para conservar referencias históricas.
+
+---
+
+## Tarea AL-04 – Completar módulo Terapeuta
+
+- **ID y Nombre:** AL-04 – Completar módulo Terapeuta
+- **Responsable:** Alejandra Núñez
+- **Fecha:** 22-11-2026
+- **Versión:** 1.0.0
+- **Estado real:** Módulo clínico bloqueado de forma segura; no se habilita hasta recibir una asociación verificable y autorización persistida.
+- **Auditoría de pantallas y flujos:** `HomeTerapeutaScreen`, `AgendaDiaScreen`, `PacientesAsignadosScreen` y `DetalleContinuidadScreen` conservan su interfaz. Agenda y pacientes presentan mensajes de indisponibilidad; el detalle no muestra PII cuando no hay paciente seleccionado. Las notas clínicas permanecen deshabilitadas porque no se guardan en almacenamiento autorizado.
+- **Relaciones verificadas:** `SesionUsuario` contiene email y rol, pero no `especialistaId`. `UsuarioEntity` tampoco tiene un identificador profesional. `CitaEntity` relaciona citas con `especialistaId`, pero no vincula ese especialista con la cuenta terapeuta. No existe un modelo persistido de asignación terapeuta-paciente ni autorización de seguimiento. El acceso a una cita como paciente/propietario no acredita autorización para una cuenta terapeuta.
+- **Datos reales, temporales y demostrativos:** las citas de agenda están persistidas en Room, pero no se pueden asociar a un terapeuta autenticado con la información disponible. Los modelos `Paciente` y `Cita` del módulo son modelos de UI y no tienen una fuente autorizada conectada; los StateFlows permiten mutaciones temporales, no persistencia. No se presentan registros de ejemplo como pacientes reales.
+- **Permisos y estados:** el módulo permanece vacío y bloqueado mientras no haya asociación autorizada. No se habilita lectura de citas, consulta de pacientes, historial ni escritura de estados clínicos. Las notas no se conservan al reiniciar porque no hay almacenamiento definido. La prueba verifica que el estado comienza vacío y rechaza selecciones/actualizaciones sobre elementos no autorizados.
+- **Solicitud técnica para Anaís (persistencia):** definir y aprobar un modelo persistido que vincule inequívocamente cuenta terapeuta con `especialistaId`, además de la asignación autorizada de pacientes/atenciones. La propuesta deberá incluir entidades, restricciones, consultas con aislamiento por propietario, migración no destructiva, política de desasignación y pruebas Room. No se modificaron entidades, DAO ni migraciones en AL-04.
+- **Solicitud técnica para Mark (contrato y autorización):** confirmar si la relación y autorización serán provistas por un backend. Si es así, entregar endpoints/contratos autenticados para resolver especialista desde la sesión, listar pacientes/citas asignados y registrar seguimiento; incluir campos permitidos, reglas de acceso, errores y política de persistencia. No se inventaron endpoints ni permisos locales.
+- **Archivos modificados:** `app/src/test/java/com/example/sanaesenciaapp/viewmodel/TerapeutaViewModelTest.kt` (cobertura explícita del estado sin pacientes, citas, historial ni indicadores de riesgo); este documento.
+- **Dependencias:** contrato persistido y migración aprobada por Anaís, o contrato autenticado de Mark; después, implementación y pruebas integradas del módulo.
+- **Pruebas ejecutadas y resultados:**
+  - `:app:compileDebugKotlin` -> EXITOSO
+  - `:app:testDebugUnitTest` -> 196 aprobadas, 0 fallidas, 0 omitidas
+  - `:app:assembleDebug` -> EXITOSO
+- **Limitaciones conocidas:** el criterio de pacientes vinculados y seguimiento persistente no puede alcanzarse de manera segura hasta recibir una de las dependencias técnicas anteriores.
