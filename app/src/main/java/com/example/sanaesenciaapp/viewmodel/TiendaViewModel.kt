@@ -6,10 +6,17 @@ import androidx.lifecycle.viewModelScope
 import com.example.sanaesenciaapp.data.repository.LineaCompra
 import com.example.sanaesenciaapp.data.repository.ResultadoCompra
 import com.example.sanaesenciaapp.data.repository.TiendaRepository
+import com.example.sanaesenciaapp.data.repository.TiendaRepositoryContract
 import com.example.sanaesenciaapp.data.room.AppDatabase
 import com.example.sanaesenciaapp.data.room.ProductoEntity
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
@@ -27,9 +34,38 @@ data class EstadoPagoTienda(
     val resultado: ResultadoCompra? = null
 )
 
-class TiendaViewModel(database: AppDatabase) : ViewModel() {
+sealed interface EstadoCatalogoTienda {
+    data object Cargando : EstadoCatalogoTienda
+    data object Vacio : EstadoCatalogoTienda
+    data object Error : EstadoCatalogoTienda
+    data class Contenido(val productos: List<ProductoEntity>) : EstadoCatalogoTienda {
+        fun producto(id: Int): ProductoEntity? = productos.firstOrNull { it.id == id }
+    }
+}
 
-    private val repository = TiendaRepository(database)
+@OptIn(ExperimentalCoroutinesApi::class)
+class TiendaViewModel(
+    private val repository: TiendaRepositoryContract
+) : ViewModel() {
+    constructor(database: AppDatabase) : this(TiendaRepository(database))
+
+    private val reintentosCatalogo = MutableStateFlow(0)
+
+    val estadoCatalogo: StateFlow<EstadoCatalogoTienda> =
+        reintentosCatalogo
+            .flatMapLatest {
+                repository.productos
+                    .map<List<ProductoEntity>, EstadoCatalogoTienda> { productos ->
+                        if (productos.isEmpty()) EstadoCatalogoTienda.Vacio
+                        else EstadoCatalogoTienda.Contenido(productos)
+                    }
+                    .onStart { emit(EstadoCatalogoTienda.Cargando) }
+                    .catch { error ->
+                        if (error is CancellationException) throw error
+                        emit(EstadoCatalogoTienda.Error)
+                    }
+            }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), EstadoCatalogoTienda.Cargando)
 
     val todosProductos: StateFlow<List<ProductoEntity>> =
         repository.todosLosProductos.stateIn(
@@ -116,6 +152,10 @@ class TiendaViewModel(database: AppDatabase) : ViewModel() {
 
     fun quitarDelCarrito(productoId: Int) {
         _carrito.update { it.filterNot { linea -> linea.producto.id == productoId } }
+    }
+
+    fun reintentarCatalogo() {
+        reintentosCatalogo.update { it + 1 }
     }
 
     fun limpiarCarrito() {

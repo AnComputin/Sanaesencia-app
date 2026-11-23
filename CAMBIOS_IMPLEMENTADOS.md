@@ -286,3 +286,35 @@ En el registro, el borde del campo **Contraseña** se muestra rojo mientras la c
   - `:app:testDebugUnitTest` -> 200 aprobadas, 0 fallidas, 0 omitidas
   - `:app:assembleDebug` -> EXITOSO
 - **Limitaciones conocidas:** la partida no se conserva después de volver al hub o cerrar la app; los ViewModels no guardan estado en Room ni en SavedStateHandle. No hay un flujo asíncrono de errores que requiera estado de error.
+
+---
+
+## Tarea AL-06 – Implementar y validar sección de Productos
+
+- **ID y Nombre:** AL-06 – Implementar y validar sección de Productos
+- **Responsable:** Alejandra Núñez
+- **Fecha:** 22-11-2026
+- **Versión:** 1.0.0
+- **Estado real:** Completado y validado
+- **Objetivo y separación:** Tienda de bienestar es una sección independiente del catálogo de especialidades terapéuticas. Tiene listado, carrito, pago simulado y confirmación propios.
+- **Catálogo y campos:** cada `ProductoEntity` contiene nombre, descripción, categoría, precio, stock, icono emoji y estado activo. El icono es una representación visual; no hay imágenes fotográficas. El catálogo muestra disponibilidad y bloquea agregar unidades cuando el stock es cero.
+- **Detalle:** seleccionar una tarjeta abre `producto_detalle/{productoId}`, que recupera el producto del catálogo vigente y presenta descripción, categoría, precio, stock y acción para agregar al carrito. IDs inexistentes o productos desactivados muestran un mensaje y permiten volver. Error de lectura muestra opción de reintento.
+- **Fuente y persistencia:** el listado público observa `ProductoDao.obtenerActivosFlow()` mediante `TiendaRepository`; administración observa todos los productos. Room es la única fuente, sin backend. La migración 7→8 y el callback de creación insertan seis productos de ejemplo. Son datos de demostración, no inventario/oferta de un comercio real; administración puede mantener productos y stock en Room.
+- **Categorías de ejemplo:** Aromaterapia, Masajes, Bienestar, Cuidado personal e Infusiones.
+- **Ventas:** carrito y pago son locales; confirmar crea venta y detalle en Room y descuenta existencias de forma transaccional. El pago es explícitamente simulado, sin cobro ni datos bancarios reales.
+- **Estados y selección:** el ViewModel distingue Cargando, Vacio, Error y Contenido. El retry vuelve a suscribirse a Room. El identificador seleccionado viaja en la ruta de detalle y se resuelve contra el estado actual del catálogo.
+- **Navegación:** desde Home se abre `tienda`; desde listado se abre detalle, carrito o regreso a Home; detalle vuelve al listado; el carrito continúa a pago y confirmación. El botón atrás usa la pila de Navigation Compose. El detalle es una ruta nueva y única en `TiendaGraph`.
+- **Archivos modificados:**
+  - `app/src/main/java/com/example/sanaesenciaapp/data/repository/TiendaRepository.kt`: contrato de repositorio para aislar el ViewModel y habilitar pruebas con fuente controlada.
+  - `app/src/main/java/com/example/sanaesenciaapp/viewmodel/TiendaViewModel.kt`: estado explícito del catálogo y reintento.
+  - `app/src/main/java/com/example/sanaesenciaapp/ui/views/tienda/TiendaScreen.kt`: distingue carga/vacío/error/contenido y permite abrir detalle.
+  - `app/src/main/java/com/example/sanaesenciaapp/ui/views/tienda/DetalleProductoTiendaScreen.kt`: detalle con carga/error/reintento y gestión de ID inexistente o producto inactivo.
+  - `app/src/main/java/com/example/sanaesenciaapp/navigation/TiendaGraph.kt`: ruta del detalle con argumento entero.
+  - `app/src/test/java/com/example/sanaesenciaapp/viewmodel/TiendaViewModelTest.kt`: estados, selección/detalle por ID, ID inexistente, catálogo vacío, error/reintento, carrito y ruta de navegación.
+  - Este documento.
+- **Dependencias:** `ProductoEntity`, `ProductoDao`, `AppDatabase` y migración 7→8 (consultados; sin modificaciones); repositorio, ViewModel, `TiendaGraph`, acceso desde Home, carrito y checkout existentes.
+- **Pruebas ejecutadas y resultados:**
+  - `:app:compileDebugKotlin` -> EXITOSO
+  - `:app:testDebugUnitTest` -> 204 aprobadas, 0 fallidas, 0 omitidas
+  - `:app:assembleDebug` -> EXITOSO
+- **Limitaciones conocidas:** no existe integración con backend ni imágenes de producto. El inventario inicial es demostrativo; pagos de prueba no representan transacciones comerciales reales.
