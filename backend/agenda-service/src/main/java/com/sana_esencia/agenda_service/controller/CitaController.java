@@ -4,6 +4,8 @@ import com.sana_esencia.agenda_service.entity.Cita;
 import com.sana_esencia.agenda_service.service.CitaService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,6 +42,46 @@ public class CitaController {
             return ResponseEntity.ok(service.obtenerPorId(id));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/retenciones")
+    public ResponseEntity<?> retener(
+            @Valid @RequestBody Cita cita,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        try {
+            if (jwt == null || !cita.getUsuarioEmail().equalsIgnoreCase(jwt.getSubject())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("El usuario de la cita no coincide con la sesión");
+            }
+            return ResponseEntity.status(HttpStatus.CREATED).body(service.retener(cita));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/{id}/confirmar")
+    public ResponseEntity<?> confirmarRetencion(
+            @PathVariable Integer id,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        try {
+            return ResponseEntity.ok(service.confirmarRetencion(id, jwt == null ? null : jwt.getSubject()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/{id}/retencion/liberar")
+    public ResponseEntity<?> liberarRetencion(
+            @PathVariable Integer id,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        try {
+            service.liberarRetencion(id, jwt == null ? null : jwt.getSubject());
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         }
     }
 

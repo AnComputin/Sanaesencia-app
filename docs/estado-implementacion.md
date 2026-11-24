@@ -23,7 +23,7 @@ El repositorio contiene una aplicación Android Compose con persistencia local R
 - **Autenticación:** registro, validación de campos/RUT, inicio de sesión y estado de sesión en memoria mediante `SesionRepository`. La sesión no se restaura al reiniciar.
 - **Catálogo:** especialidades y especialistas locales, detalle de servicio y navegación hacia agenda.
 - **Beneficiarios:** alta, consulta, edición, desactivación/reactivación y estado ligado a sesión. El propietario se deriva de la sesión y el DAO limita consultas y cambios por propietario.
-- **Agenda:** disponibilidad, reglas de solapamiento, selección de box, reserva, pago de cita simulado, confirmación y Mis citas, persistidos localmente.
+- **Agenda:** conserva el flujo de selección/pago y las reglas locales de Valentina. Con Retrofit inicializado, `CitaRepository` crea una retención remota `EN_PAGO` de 10 minutos, confirma esa misma cita en el backend y refleja el resultado en Room. Room mantiene el estado usado por la interfaz; la API responde por la disponibilidad del servidor.
 - **Tienda:** productos y ventas locales, carrito y flujo de compra simulado; no hay pasarela ni procesamiento de pagos real.
 - **Administración:** gestión de catálogo/agenda y productos/stock dentro de los flujos existentes.
 - **Terapeuta:** pantallas presentes, pero la consulta de pacientes/citas y escritura clínica no están habilitadas sin asociación persistida y autorizada entre cuenta y especialista/pacientes.
@@ -45,7 +45,7 @@ Cada servicio tiene su propio datasource MySQL, migraciones Flyway, entidades JP
 
 ### Cliente Android de servicios
 
-`data/remote` contiene RetrofitClient, interfaces de API, AuthInterceptor y TokenManager. `MainActivity` inicializa RetrofitClient. En cambio, `AppContainer` expone repositorios que usan Room, y los ViewModels actuales dependen principalmente de esos repositorios. Por tanto, la presencia de endpoints/DTO y la inicialización Retrofit **no prueban consumo efectivo del backend**.
+`data/remote` contiene RetrofitClient, interfaces de API, AuthInterceptor y TokenManager. `MainActivity` inicializa RetrofitClient. `CitaRepository` ahora consume agenda-service para listar/sincronizar citas, retener un horario, confirmar la retención, liberarla y cambiar estados; si Retrofit no está inicializado (pruebas/previews) usa Room. Cuando Retrofit sí está inicializado, una falla HTTP/de red no se convierte en una reserva local exitosa. Los demás repositorios siguen usando Room en sus flujos principales, por lo que la integración general Android-backend continúa siendo parcial.
 
 El cliente apunta a loopback HTTP configurado para desarrollo y el manifiesto permite cleartext. Para usar un emulador, dispositivo físico o despliegue remoto se necesita configurar una URL alcanzable y HTTPS según entorno.
 
@@ -67,7 +67,8 @@ En la revisión de 2026-11-24:
 - La ejecución Maven con JDK del sistema falló porque el código requiere Java 21 y el entorno disponía de Java 17.
 - Se ejecutó `mvnw.cmd "-Djava.version=17" test` en los cinco servicios. Cada servicio terminó correctamente con una prueba de contexto (1 test, 0 fallos). Esta ejecución temporal con nivel de bytecode 17 no sustituye validación con Java 21.
 - Maven descargó dependencias desde Maven Central; aparecieron avisos 401 al consultar metadatos de repositorios secundarios, pero no bloquearon esas cinco ejecuciones.
-- No se ejecutaron pruebas de endpoint con JWT real, autorización por rol/propietario, despliegue de los cinco servicios ni pruebas Android contra el backend.
+- Tras añadir la retención remota de Agenda, `mvnw.cmd "-Djava.version=17" test` pasó en agenda-service (1 prueba de contexto, 0 fallos); Flyway validó y aplicó V2 en la base local configurada. `:app:compileDebugKotlin` pasó y las suites `CitaViewModelTest` y `CitaRepositoryTest` pasaron.
+- No se ejecutaron pruebas de endpoint contra JWT real, autorización integral por rol/propietario, despliegue de los cinco servicios ni una prueba de extremo a extremo Android contra un servidor iniciado.
 - Estas pruebas de humo confirman que los contextos de Spring arrancan bajo la configuración de prueba usada; no validan las reglas de seguridad ni el comportamiento integral de la API.
 
 ## Comandos Maven
@@ -83,7 +84,7 @@ Servicios: `usuarios-service`, `catalogo-service`, `terapeutas-service`, `agenda
 ## Pendientes para considerar integrada la solución
 
 1. Configurar perfiles por entorno y secretos fuera del repositorio; establecer HTTPS y URLs para emulador/dispositivo.
-2. Conectar repositorios Android a Retrofit y definir estrategia de persistencia/cache/error, sin mezclar silenciosamente Room y remoto.
+2. Completar la integración Retrofit de los repositorios restantes (usuarios, catálogo, terapeutas y tienda) y definir estrategia de cache/error de forma uniforme.
 3. Derivar identidad/rol del JWT en backend y agregar pruebas de autorización por rol y por propietario.
 4. Agregar pruebas de integración para login, emisión/validación JWT y operaciones protegidas.
 5. Ejecutar build/tests con JDK 21 y probar los servicios contra una configuración de base de datos reproducible.

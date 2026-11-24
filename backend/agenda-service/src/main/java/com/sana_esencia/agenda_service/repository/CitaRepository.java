@@ -3,6 +3,7 @@ package com.sana_esencia.agenda_service.repository;
 import com.sana_esencia.agenda_service.entity.Cita;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
@@ -12,6 +13,10 @@ public interface CitaRepository extends JpaRepository<Cita, Integer> {
     List<Cita> findByUsuarioEmailOrderByInicioMillisDesc(String usuarioEmail);
 
     List<Cita> findByEspecialistaIdOrderByInicioMillisAsc(Integer especialistaId);
+
+    @Modifying
+    @Query("DELETE FROM Cita c WHERE c.estado = 'EN_PAGO' AND c.expiraEnMillis <= :ahora")
+    int eliminarRetencionesExpiradas(@Param("ahora") long ahora);
 
     @Query("""
         SELECT COUNT(c) > 0 FROM Cita c
