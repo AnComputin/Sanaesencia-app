@@ -1,7 +1,19 @@
+import java.io.File
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+}
+
+// Leer keystore.properties desde la raíz del proyecto (ignorado por Git).
+// Las credenciales se mantienen fuera del repositorio y nunca se escriben en este archivo.
+val keystorePropsFile = rootProject.file("keystore.properties")
+val keystoreProps = Properties().apply {
+    if (keystorePropsFile.exists()) {
+        keystorePropsFile.inputStream().use { load(it) }
+    }
 }
 
 android {
@@ -20,8 +32,25 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            val sf = keystoreProps["storeFile"] as String?
+            if (!sf.isNullOrBlank()) {
+                // Si la ruta es absoluta se usa directamente; si es relativa, se resuelve desde rootDir.
+                val resolved = File(sf).let {
+                    if (it.isAbsolute) it else rootProject.file(sf)
+                }
+                storeFile = resolved
+            }
+            storePassword = keystoreProps["storePassword"] as String?
+            keyAlias     = keystoreProps["keyAlias"]     as String?
+            keyPassword  = keystoreProps["keyPassword"]  as String?
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("release")
             optimization {
                 enable = false
             }
