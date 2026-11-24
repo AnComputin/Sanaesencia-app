@@ -5,6 +5,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface EspecialistaRepository extends JpaRepository<Especialista, Integer> {
-    List<Especialista> findByEspecialidadIdAndActivoTrue(Integer especialidadId);
-    List<Especialista> findByActivoTrue();
+    List<Especialista> findByActivoTrueOrderByNombreAsc();
+    List<Especialista> findAllByOrderByNombreAsc();
+    List<Especialista> findByEspecialidadIdAndActivoTrueOrderByNombreAsc(Integer especialidadId);
+    List<Especialista> findByEspecialidadIdOrderByNombreAsc(Integer especialidadId);
 }

@@ -1,7 +1,7 @@
-// entity/Venta.java
 package com.sana_esencia.tienda_service.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,9 +16,11 @@ public class Venta {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @NotBlank(message = "El correo del comprador es obligatorio")
     @Column(name = "comprador_email", nullable = false, length = 150)
     private String compradorEmail;
 
+    @NotBlank(message = "El nombre del comprador es obligatorio")
     @Column(name = "comprador_nombre", nullable = false, length = 120)
     private String compradorNombre;
 
@@ -29,8 +31,9 @@ public class Venta {
     private Integer total;
 
     @Column(nullable = false, length = 30)
-    private String estado;
+    private String estado = "PAGADA";
 
+    @NotBlank(message = "El método de pago es obligatorio")
     @Column(name = "metodo_pago", nullable = false, length = 50)
     private String metodoPago;
 

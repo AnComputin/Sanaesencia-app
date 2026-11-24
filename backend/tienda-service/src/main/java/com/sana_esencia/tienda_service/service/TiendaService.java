@@ -1,4 +1,3 @@
-// service/TiendaService.java
 package com.sana_esencia.tienda_service.service;
 
 import com.sana_esencia.tienda_service.entity.DetalleVenta;
@@ -24,12 +23,36 @@ public class TiendaService {
 
     @Transactional(readOnly = true)
     public List<Producto> listarProductos(boolean soloActivos) {
-        return soloActivos ? productoRepository.findByActivoTrue() : productoRepository.findAll();
+        return soloActivos
+                ? productoRepository.findByActivoTrueOrderByNombreAsc()
+                : productoRepository.findAllByOrderByNombreAsc();
+    }
+
+    @Transactional(readOnly = true)
+    public Producto obtenerProductoPorId(Integer id) {
+        return productoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Producto no encontrado con id: " + id));
     }
 
     @Transactional
-    public Producto guardarProducto(Producto producto) {
+    public Producto crearProducto(Producto producto) {
+        producto.setId(null);
+        producto.setNombre(producto.getNombre().trim());
+        producto.setDescripcion(producto.getDescripcion().trim());
+        producto.setIcono(producto.getIcono().trim());
         return productoRepository.save(producto);
+    }
+
+    @Transactional
+    public Producto actualizarProducto(Integer id, Producto datos) {
+        Producto actual = obtenerProductoPorId(id);
+        actual.setNombre(datos.getNombre().trim());
+        actual.setDescripcion(datos.getDescripcion().trim());
+        actual.setPrecio(datos.getPrecio());
+        actual.setStock(datos.getStock());
+        actual.setIcono(datos.getIcono().trim());
+        actual.setActivo(datos.isActivo());
+        return productoRepository.save(actual);
     }
 
     @Transactional
@@ -41,18 +64,29 @@ public class TiendaService {
         Venta venta = new Venta();
         venta.setCompradorEmail(ventaRequest.getCompradorEmail().trim().toLowerCase());
         venta.setCompradorNombre(ventaRequest.getCompradorNombre().trim());
-        venta.setFechaMillis(ventaRequest.getFechaMillis() != null ? ventaRequest.getFechaMillis() : System.currentTimeMillis());
-        venta.setMetodoPago(ventaRequest.getMetodoPago());
+        venta.setFechaMillis(
+                ventaRequest.getFechaMillis() != null ? ventaRequest.getFechaMillis() : System.currentTimeMillis()
+        );
+        venta.setMetodoPago(ventaRequest.getMetodoPago().trim());
         venta.setEstado("PAGADA");
 
         int totalCalculado = 0;
 
         for (DetalleVenta item : ventaRequest.getDetalles()) {
-            Producto producto = productoRepository.findById(item.getProductoId())
-                    .orElseThrow(() -> new IllegalArgumentException("Producto no encontrado: " + item.getProductoId()));
+            if (item.getProductoId() == null || item.getCantidad() == null || item.getCantidad() <= 0) {
+                throw new IllegalArgumentException("Cada detalle debe indicar productoId y una cantidad mayor a 0");
+            }
 
-            if (!producto.isActivo() || producto.getStock() < item.getCantidad()) {
-                throw new IllegalArgumentException("Stock insuficiente para: " + producto.getNombre());
+            Producto producto = obtenerProductoPorId(item.getProductoId());
+
+            if (!producto.isActivo()) {
+                throw new IllegalArgumentException("El producto '" + producto.getNombre() + "' no está disponible");
+            }
+
+            if (producto.getStock() < item.getCantidad()) {
+                throw new IllegalArgumentException(
+                        "Stock insuficiente para '" + producto.getNombre() + "'. Disponible: " + producto.getStock()
+                );
             }
 
             producto.setStock(producto.getStock() - item.getCantidad());
@@ -76,7 +110,10 @@ public class TiendaService {
     }
 
     @Transactional(readOnly = true)
-    public List<Venta> listarComprasPorUsuario(String email) {
-        return ventaRepository.findByCompradorEmailOrderByFechaMillisDesc(email.trim().toLowerCase());
+    public List<Venta> listarVentas(String compradorEmail) {
+        if (compradorEmail != null && !compradorEmail.isBlank()) {
+            return ventaRepository.findByCompradorEmailOrderByFechaMillisDesc(compradorEmail.trim().toLowerCase());
+        }
+        return ventaRepository.findAllByOrderByFechaMillisDesc();
     }
 }

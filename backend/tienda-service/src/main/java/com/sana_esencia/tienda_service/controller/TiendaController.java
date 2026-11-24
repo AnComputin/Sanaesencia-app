@@ -1,9 +1,9 @@
-// controller/TiendaController.java
 package com.sana_esencia.tienda_service.controller;
 
 import com.sana_esencia.tienda_service.entity.Producto;
 import com.sana_esencia.tienda_service.entity.Venta;
 import com.sana_esencia.tienda_service.service.TiendaService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,20 +26,31 @@ public class TiendaController {
         return ResponseEntity.ok(service.listarProductos(soloActivos));
     }
 
+    @GetMapping("/productos/{id}")
+    public ResponseEntity<?> obtenerProducto(@PathVariable Integer id) {
+        try {
+            return ResponseEntity.ok(service.obtenerProductoPorId(id));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
     @PostMapping("/productos")
-    public ResponseEntity<Producto> crearProducto(@RequestBody Producto producto) {
-        producto.setId(null);
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.guardarProducto(producto));
+    public ResponseEntity<Producto> crearProducto(@Valid @RequestBody Producto producto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.crearProducto(producto));
     }
 
     @PutMapping("/productos/{id}")
-    public ResponseEntity<Producto> actualizarProducto(@PathVariable Integer id, @RequestBody Producto producto) {
-        producto.setId(id);
-        return ResponseEntity.ok(service.guardarProducto(producto));
+    public ResponseEntity<?> actualizarProducto(@PathVariable Integer id, @Valid @RequestBody Producto producto) {
+        try {
+            return ResponseEntity.ok(service.actualizarProducto(id, producto));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
 
     @PostMapping("/ventas")
-    public ResponseEntity<?> registrarVenta(@RequestBody Venta venta) {
+    public ResponseEntity<?> registrarVenta(@Valid @RequestBody Venta venta) {
         try {
             return ResponseEntity.status(HttpStatus.CREATED).body(service.registrarCompra(venta));
         } catch (IllegalArgumentException e) {
@@ -48,7 +59,7 @@ public class TiendaController {
     }
 
     @GetMapping("/ventas")
-    public ResponseEntity<List<Venta>> listarVentas(@RequestParam String compradorEmail) {
-        return ResponseEntity.ok(service.listarComprasPorUsuario(compradorEmail));
+    public ResponseEntity<List<Venta>> listarVentas(@RequestParam(required = false) String compradorEmail) {
+        return ResponseEntity.ok(service.listarVentas(compradorEmail));
     }
 }

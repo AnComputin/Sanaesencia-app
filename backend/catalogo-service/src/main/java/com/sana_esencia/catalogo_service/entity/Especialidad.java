@@ -1,6 +1,7 @@
 package com.sana_esencia.catalogo_service.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 
 @Entity
 @Table(name = "especialidades")
@@ -10,18 +11,23 @@ public class Especialidad {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @NotBlank(message = "El nombre es obligatorio")
     @Column(nullable = false, length = 120)
     private String nombre;
 
+    @NotBlank(message = "La descripción es obligatoria")
     @Column(nullable = false, length = 500)
     private String descripcion;
 
+    @NotBlank(message = "El icono es obligatorio")
     @Column(nullable = false, length = 80)
     private String icono;
 
+    @NotBlank(message = "El profesional es obligatorio")
     @Column(nullable = false, length = 120)
     private String profesional;
 
+    @NotBlank(message = "La modalidad es obligatoria")
     @Column(nullable = false, length = 30)
     private String modalidad; // "Presencial", "Online", "Ambas"
 

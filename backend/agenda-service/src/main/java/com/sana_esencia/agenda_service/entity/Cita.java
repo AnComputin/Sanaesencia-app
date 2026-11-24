@@ -1,6 +1,8 @@
 package com.sana_esencia.agenda_service.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 @Entity
 @Table(
@@ -16,33 +18,43 @@ public class Cita {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @NotBlank(message = "El correo del usuario es obligatorio")
     @Column(name = "usuario_email", nullable = false, length = 150)
     private String usuarioEmail;
 
+    @NotNull(message = "El ID de especialidad es obligatorio")
     @Column(name = "especialidad_id", nullable = false)
     private Integer especialidadId;
 
+    @NotBlank(message = "El nombre de la especialidad es obligatorio")
     @Column(name = "especialidad_nombre", nullable = false, length = 120)
     private String especialidadNombre;
 
+    @NotNull(message = "El ID del especialista es obligatorio")
     @Column(name = "especialista_id", nullable = false)
     private Integer especialistaId;
 
+    @NotBlank(message = "El nombre del especialista es obligatorio")
     @Column(name = "especialista_nombre", nullable = false, length = 120)
     private String especialistaNombre;
 
+    @NotBlank(message = "La modalidad es obligatoria")
     @Column(nullable = false, length = 30)
     private String modalidad; // "PRESENCIAL", "ONLINE"
 
+    @NotNull(message = "La hora de inicio es obligatoria")
     @Column(name = "inicio_millis", nullable = false)
     private Long inicioMillis;
 
+    @NotNull(message = "La hora de término es obligatoria")
     @Column(name = "fin_millis", nullable = false)
     private Long finMillis;
 
+    @NotBlank(message = "La hora formateada es obligatoria")
     @Column(nullable = false, length = 20)
     private String hora;
 
+    @NotBlank(message = "El nombre del paciente es obligatorio")
     @Column(name = "paciente_nombre", nullable = false, length = 120)
     private String pacienteNombre;
 
@@ -50,7 +62,7 @@ public class Cita {
     private Integer beneficiarioId;
 
     @Column(nullable = false, length = 30)
-    private String estado; // "CONFIRMADA", "COMPLETADA", "CANCELADA"
+    private String estado = "CONFIRMADA"; // "CONFIRMADA", "COMPLETADA", "CANCELADA"
 
     @Column(name = "box_asignado")
     private Integer boxAsignado;

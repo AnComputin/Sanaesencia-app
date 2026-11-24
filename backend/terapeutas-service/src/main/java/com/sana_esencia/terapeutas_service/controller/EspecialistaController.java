@@ -2,6 +2,7 @@ package com.sana_esencia.terapeutas_service.controller;
 
 import com.sana_esencia.terapeutas_service.entity.Especialista;
 import com.sana_esencia.terapeutas_service.service.EspecialistaService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,22 +23,41 @@ public class EspecialistaController {
     @GetMapping
     public ResponseEntity<List<Especialista>> listar(
             @RequestParam(required = false) Integer especialidadId,
-            @RequestParam(defaultValue = "true") boolean soloActivos) {
+            @RequestParam(defaultValue = "true") boolean soloActivos
+    ) {
         if (especialidadId != null) {
-            return ResponseEntity.ok(service.listarPorEspecialidad(especialidadId));
+            return ResponseEntity.ok(service.listarPorEspecialidad(especialidadId, soloActivos));
         }
         return ResponseEntity.ok(service.listarTodos(soloActivos));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> obtenerPorId(@PathVariable Integer id) {
+        try {
+            return ResponseEntity.ok(service.obtenerPorId(id));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
     @PostMapping
-    public ResponseEntity<Especialista> crear(@RequestBody Especialista especialista) {
+    public ResponseEntity<Especialista> crear(@Valid @RequestBody Especialista especialista) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.crear(especialista));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> actualizar(@PathVariable Integer id, @RequestBody Especialista datos) {
+    public ResponseEntity<?> actualizar(@PathVariable Integer id, @Valid @RequestBody Especialista datos) {
         try {
             return ResponseEntity.ok(service.actualizar(id, datos));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    @PatchMapping("/{id}/activo")
+    public ResponseEntity<?> cambiarEstado(@PathVariable Integer id, @RequestParam boolean activo) {
+        try {
+            return ResponseEntity.ok(service.cambiarEstadoActivo(id, activo));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }

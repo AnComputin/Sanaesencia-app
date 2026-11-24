@@ -1,4 +1,3 @@
-// entity/DetalleVenta.java
 package com.sana_esencia.tienda_service.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
