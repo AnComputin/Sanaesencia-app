@@ -16,7 +16,7 @@ Reunir en una aplicación los flujos de atención del centro y herramientas de b
 - Android SDK: compile/target 37; min SDK 24.
 - AGP 9.3.3, Kotlin 2.2.10, Room 2.8.4 (versiones declaradas en el proyecto).
 
-No hay Retrofit ni backend configurados. Las operaciones descritas como simuladas no cobran dinero ni llaman a una pasarela.
+El repositorio incluye un cliente Retrofit y cinco microservicios Spring Boot con MySQL/Flyway. La app inicializa el cliente, pero sus repositorios actuales usan Room; la integración de los flujos Android con los servicios remotos no está comprobada. Las operaciones de compra descritas como simuladas no cobran dinero ni llaman a una pasarela.
 
 ## Arquitectura
 
@@ -70,6 +70,7 @@ El portal conserva sus pantallas, pero los datos clínicos están **bloqueados**
 - [Terapeuta](docs/modulos/terapeuta.md): alcance actual, bloqueo clínico y dependencias pendientes.
 - [Juegos](docs/modulos/juegos.md): Respiración Guiada, Pausa Consciente, Memorice Zen, Gato Armónico y Camino del Bienestar.
 - [Productos](docs/modulos/productos.md): catálogo separado, detalle, carrito y compra simulada.
+- [Estado de implementación](docs/estado-implementacion.md): inventario Android/backend, límites de integración, seguridad observada y verificación disponible.
 
 ## Navegación
 
@@ -93,7 +94,8 @@ El portal conserva sus pantallas, pero los datos clínicos están **bloqueados**
 
 - **Implementados:** Inicio, catálogo terapéutico, Beneficiarios, Juegos y sección de Productos con compra simulada.
 - **Parcial / bloqueado por dependencia:** portal Terapeuta. Sus pantallas están presentes, pero la lectura clínica y edición permanecen deshabilitadas hasta tener relación y autorización persistidas.
-- **No integrado:** backend, API comercial, pasarela de pago real e imágenes remotas.
+- **Parcial/no comprobado:** backend presente con cinco servicios y contratos Retrofit, pero los repositorios Android actuales siguen usando Room; no se ha validado la conexión integral de los flujos móviles.
+- **No integrado:** pasarela de pago real e imágenes remotas.
 
 ## Instalación y ejecución
 
