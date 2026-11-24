@@ -3,6 +3,7 @@ package com.example.sanaesenciaapp.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.sanaesenciaapp.data.remote.RetrofitClient
 import com.example.sanaesenciaapp.data.repository.CitaRepository
 import com.example.sanaesenciaapp.data.repository.ReglasAgenda
 import com.example.sanaesenciaapp.data.room.CitaDao
@@ -110,7 +111,6 @@ class CitaViewModel(
     private var pagoInicioMillis: Long? = null
 
     private var retencionId: Int? = null
-    private var retencionIdRemota: Int? = null
     private var retencion: CitaEntity? = null
 
     val puedeContinuar: StateFlow<Boolean> = _uiState.map { estado ->
@@ -134,8 +134,7 @@ class CitaViewModel(
 
         val dao = citaDao ?: return true
 
-        citaRepository?.sincronizarCitasDesdeServidor(usuarioEmail.trim().lowercase())
-        // Limpia solo las copias locales de retenciones anteriores; el backend decide disponibilidad.
+        citaRepository?.sincronizarCitasDesdeServidor(null)
         runCatching { dao.eliminarRetenciones() }
 
         val entidad = construirEntidad(usuarioEmail, ReglasAgenda.ESTADO_EN_PAGO)
@@ -147,15 +146,7 @@ class CitaViewModel(
             return false
         }
 
-        val retenidaRemota = citaRepository?.retenerCita(retenida)
-        if (retenidaRemota?.id == null || retenidaRemota.id <= 0) {
-            runCatching { dao.eliminar(retenida.id) }
-            _uiState.update { it.copy(hora = null) }
-            return false
-        }
-
         retencionId = retenida.id
-        retencionIdRemota = retenidaRemota.id
         retencion = retenida
         return true
     }
@@ -174,17 +165,13 @@ class CitaViewModel(
 
     fun liberarRetencion() {
         val id = retencionId
-        val idRemoto = retencionIdRemota
         retencionId = null
-        retencionIdRemota = null
         retencion = null
 
         val dao = citaDao
-        val repo = citaRepository
         if (id != null && dao != null) {
             viewModelScope.launch {
                 runCatching { dao.eliminar(id) }
-                if (idRemoto != null) repo?.liberarRetencionRemota(idRemoto)
             }
         }
         reiniciarPago()
@@ -295,10 +282,9 @@ class CitaViewModel(
         val dao = citaDao
         val repo = citaRepository
         val idRetencion = retencionId
-        val idRetencionRemota = retencionIdRemota
 
-        // VA-04: confirma en el backend la retención EN_PAGO ya existente.
-        if (dao != null && repo != null && idRetencion != null && idRetencionRemota != null) {
+        // Ruta VA-04: confirma la retención EN_PAGO y registra la cita en agenda-service (:8084)
+        if (dao != null && repo != null && idRetencion != null) {
             val retenida = retencion
             viewModelScope.launch {
                 val existe = runCatching {
@@ -307,31 +293,69 @@ class CitaViewModel(
 
                 if (retenida == null || existe == null) {
                     retencionId = null
-                    retencionIdRemota = null
                     retencion = null
                     _uiState.update { it.copy(hora = null) }
                     onResultado(false)
                     return@launch
                 }
 
-                val guardadaFinal = repo.confirmarRetencion(idRetencionRemota)
+                val requestRemoto = CrearCitaRequest(
+                    usuarioEmail = existe.usuarioEmail.trim().lowercase(),
+                    especialidadId = existe.especialidadId,
+                    especialidadNombre = existe.especialidadNombre,
+                    especialistaId = existe.especialistaId,
+                    especialistaNombre = existe.especialistaNombre,
+                    modalidad = existe.modalidad,
+                    inicioMillis = existe.inicioMillis,
+                    finMillis = existe.finMillis,
+                    hora = existe.hora,
+                    pacienteNombre = existe.pacienteNombre,
+                    beneficiarioId = existe.beneficiarioId,
+                    estado = ReglasAgenda.ESTADO_CONFIRMADA,
+                    boxAsignado = existe.boxAsignado
+                )
 
-                if (guardadaFinal == null) {
+                var guardadaFinal: CitaEntity? = null
+                var rechazadaPorServidor = false
+
+                try {
+                    val response = RetrofitClient.agendaApi.reservarCita(requestRemoto)
+                    when {
+                        response.isSuccessful -> {
+                            guardadaFinal = response.body() ?: existe.copy(estado = ReglasAgenda.ESTADO_CONFIRMADA)
+                        }
+                        response.code() == 400 || response.code() == 409 -> {
+                            rechazadaPorServidor = true
+                        }
+                        else -> {
+                            guardadaFinal = existe.copy(estado = ReglasAgenda.ESTADO_CONFIRMADA)
+                        }
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Exception) {
+                    // Sin conexión: se confirma en Room localmente
+                    guardadaFinal = existe.copy(estado = ReglasAgenda.ESTADO_CONFIRMADA)
+                }
+
+                if (rechazadaPorServidor || guardadaFinal == null) {
                     runCatching { dao.eliminar(idRetencion) }
                     retencionId = null
-                    retencionIdRemota = null
                     retencion = null
                     _uiState.update { it.copy(hora = null) }
                     onResultado(false)
                     return@launch
                 }
 
-                dao.actualizarEstado(idRetencion, ReglasAgenda.ESTADO_CONFIRMADA)
+                // Reemplaza la retención temporal por la cita confirmada (con el ID real de MySQL)
+                runCatching {
+                    dao.eliminar(idRetencion)
+                    dao.reservarSiDisponible(guardadaFinal)
+                }
 
                 retencionId = null
-                retencionIdRemota = null
                 retencion = null
-                _ultimaCita.value = guardadaFinal.copy(id = idRetencion).toItem()
+                _ultimaCita.value = guardadaFinal.toItem()
                 limpiarFormularioTrasReserva()
                 onResultado(true)
             }

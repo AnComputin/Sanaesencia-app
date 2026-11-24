@@ -67,9 +67,6 @@ public class Cita {
     @Column(name = "box_asignado")
     private Integer boxAsignado;
 
-    @Column(name = "expira_en_millis")
-    private Long expiraEnMillis;
-
     public Cita() {}
 
     public Integer getId() { return id; }
@@ -100,6 +97,4 @@ public class Cita {
     public void setEstado(String estado) { this.estado = estado; }
     public Integer getBoxAsignado() { return boxAsignado; }
     public void setBoxAsignado(Integer boxAsignado) { this.boxAsignado = boxAsignado; }
-    public Long getExpiraEnMillis() { return expiraEnMillis; }
-    public void setExpiraEnMillis(Long expiraEnMillis) { this.expiraEnMillis = expiraEnMillis; }
 }

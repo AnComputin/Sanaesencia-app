@@ -109,15 +109,6 @@ interface AgendaApi {
     @POST("api/citas")
     suspend fun reservarCita(@Body cita: CrearCitaRequest): Response<CitaEntity>
 
-    @POST("api/citas/retenciones")
-    suspend fun retenerCita(@Body cita: CrearCitaRequest): Response<CitaEntity>
-
-    @POST("api/citas/{id}/confirmar")
-    suspend fun confirmarRetencion(@Path("id") id: Int): Response<CitaEntity>
-
-    @POST("api/citas/{id}/retencion/liberar")
-    suspend fun liberarRetencion(@Path("id") id: Int): Response<Unit>
-
     @PATCH("api/citas/{id}/estado")
     suspend fun cambiarEstadoCita(
         @Path("id") id: Int,

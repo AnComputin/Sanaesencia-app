@@ -75,7 +75,8 @@ class TiendaRepository(private val database: AppDatabase) : TiendaRepositoryCont
             RetrofitClient.tiendaApi.crearProducto(producto.copy(id = 0))
         }
         if (!response.isSuccessful) {
-            throw IllegalStateException("No se pudo guardar el producto en el servidor (HTTP ${response.code()}).")
+            val detalle = response.errorBody()?.string()?.takeIf { it.isNotBlank() }
+            throw IllegalStateException("No se pudo guardar el producto (HTTP ${response.code()}): ${detalle ?: response.message()}")
         }
         val guardadoRemoto = response.body()
             ?: throw IllegalStateException("El servidor no devolvió el producto guardado.")
@@ -87,7 +88,8 @@ class TiendaRepository(private val database: AppDatabase) : TiendaRepositoryCont
             ?: throw IllegalStateException("No se encontró el producto que deseas quitar.")
         val response = RetrofitClient.tiendaApi.actualizarProducto(id, actual.copy(activo = false))
         if (!response.isSuccessful) {
-            throw IllegalStateException("No se pudo actualizar el producto en el servidor (HTTP ${response.code()}).")
+            val detalle = response.errorBody()?.string()?.takeIf { it.isNotBlank() }
+            throw IllegalStateException("No se pudo actualizar el producto (HTTP ${response.code()}): ${detalle ?: response.message()}")
         }
         val actualizado = response.body() ?: actual.copy(activo = false)
         productoDao.guardar(actualizado)
@@ -98,7 +100,8 @@ class TiendaRepository(private val database: AppDatabase) : TiendaRepositoryCont
             ?: throw IllegalStateException("No se encontró el producto.")
         val response = RetrofitClient.tiendaApi.actualizarProducto(id, actual.copy(stock = nuevoStock.coerceAtLeast(0)))
         if (!response.isSuccessful) {
-            throw IllegalStateException("No se pudo actualizar el stock en el servidor (HTTP ${response.code()}).")
+            val detalle = response.errorBody()?.string()?.takeIf { it.isNotBlank() }
+            throw IllegalStateException("No se pudo actualizar el stock (HTTP ${response.code()}): ${detalle ?: response.message()}")
         }
         productoDao.guardar(response.body() ?: actual.copy(stock = nuevoStock.coerceAtLeast(0)))
     }

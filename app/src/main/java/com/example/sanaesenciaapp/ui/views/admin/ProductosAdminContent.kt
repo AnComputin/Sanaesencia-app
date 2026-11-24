@@ -29,6 +29,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,12 +53,21 @@ fun ProductosAdminContent(
     var mostrarDialogoNuevo by remember { mutableStateOf(false) }
     var productoPendienteEliminar by remember { mutableStateOf<ProductoEntity?>(null) }
     var productoEnEdicion by remember { mutableStateOf<ProductoEntity?>(null) }
+    val mensaje by tiendaViewModel.mensaje.collectAsState()
 
     LazyColumn(
         modifier = modifier.fillMaxWidth().padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
+            if (!mensaje.isNullOrBlank()) {
+                Text(
+                    text = mensaje.orEmpty(),
+                    color = if (mensaje!!.contains("correctamente", ignoreCase = true) || mensaje!!.contains("guardado", ignoreCase = true)) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                    fontSize = 12.sp,
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                )
+            }
             Spacer(Modifier.height(14.dp))
             Text(
                 "Gestión de productos",

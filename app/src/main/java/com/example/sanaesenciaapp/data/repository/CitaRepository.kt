@@ -23,12 +23,9 @@ class CitaRepository(
             .onStart { sincronizarCitasDesdeServidor(null) }
     }
 
-    private fun agendaApiOrNull() = runCatching { RetrofitClient.agendaApi }.getOrNull()
-
     suspend fun sincronizarCitasDesdeServidor(email: String?) {
-        val api = agendaApiOrNull() ?: return
         try {
-            val response = api.listarCitas(email)
+            val response = RetrofitClient.agendaApi.listarCitas(email)
             if (response.isSuccessful) {
                 response.body()?.forEach { remota ->
                     citaDao.reservarSiDisponible(remota)
@@ -44,65 +41,8 @@ class CitaRepository(
         }
     }
 
-    suspend fun retenerCita(cita: CitaEntity): CitaEntity? {
-        val api = agendaApiOrNull() ?: return cita
-        return try {
-            val response = api.retenerCita(cita.toRequest("EN_PAGO"))
-            if (response.isSuccessful) response.body() else null
-        } catch (e: CancellationException) {
-            throw e
-        } catch (_: Exception) {
-            null
-        }
-    }
-
-    suspend fun confirmarRetencion(idRemoto: Int): CitaEntity? {
-        val api = agendaApiOrNull()
-        if (api == null) {
-            return citaDao.obtenerTodas().firstOrNull { it.id == idRemoto }
-                ?.copy(estado = "CONFIRMADA")
-        }
-        return try {
-            val response = api.confirmarRetencion(idRemoto)
-            if (response.isSuccessful) response.body() else null
-        } catch (e: CancellationException) {
-            throw e
-        } catch (_: Exception) {
-            null
-        }
-    }
-
-    suspend fun liberarRetencionRemota(idRemoto: Int) {
-        val api = agendaApiOrNull() ?: return
-        try {
-            api.liberarRetencion(idRemoto)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (_: Exception) {
-            // La expiración en backend libera el horario aunque el dispositivo esté desconectado.
-        }
-    }
-
-    private fun CitaEntity.toRequest(estado: String) = CrearCitaRequest(
-        usuarioEmail = usuarioEmail.trim().lowercase(),
-        especialidadId = especialidadId,
-        especialidadNombre = especialidadNombre,
-        especialistaId = especialistaId,
-        especialistaNombre = especialistaNombre,
-        modalidad = modalidad,
-        inicioMillis = inicioMillis,
-        finMillis = finMillis,
-        hora = hora,
-        pacienteNombre = pacienteNombre,
-        beneficiarioId = beneficiarioId,
-        estado = estado,
-        boxAsignado = boxAsignado
-    )
-
     /* Reserva cita en agenda-service (:8084) y la guarda en Room; retorna null si el horario no está disponible */
     suspend fun reservarCita(cita: CitaEntity): CitaEntity? {
-        val api = agendaApiOrNull()
-        if (api == null) return citaDao.reservarSiDisponible(cita)
         return try {
             val request = CrearCitaRequest(
                 usuarioEmail = cita.usuarioEmail.trim().lowercase(),
@@ -119,7 +59,7 @@ class CitaRepository(
                 estado = cita.estado,
                 boxAsignado = cita.boxAsignado
             )
-            val response = api.reservarCita(request)
+            val response = RetrofitClient.agendaApi.reservarCita(request)
 
             when {
                 response.isSuccessful -> {
@@ -127,30 +67,24 @@ class CitaRepository(
                     citaDao.reservarSiDisponible(guardadaRemota) ?: guardadaRemota
                 }
                 response.code() == 400 || response.code() == 409 -> null
-                else -> null
+                else -> citaDao.reservarSiDisponible(cita)
             }
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
-            null
+            citaDao.reservarSiDisponible(cita)
         }
     }
 
     /* Actualiza estado de cita en agenda-service (:8084) y en Room */
     suspend fun actualizarEstadoCita(id: Int, nuevoEstado: String) {
-        val api = agendaApiOrNull()
-        if (api == null) {
-            citaDao.actualizarEstado(id, nuevoEstado)
-            return
-        }
         try {
-            val response = api.cambiarEstadoCita(id = id, estado = nuevoEstado)
-            if (response.isSuccessful) citaDao.actualizarEstado(id, nuevoEstado)
+            RetrofitClient.agendaApi.cambiarEstadoCita(id = id, estado = nuevoEstado)
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
-            // Room no se marca como actualizado si la fuente remota rechazó el cambio.
         }
+        citaDao.actualizarEstado(id, nuevoEstado)
     }
 
     /* Cancela una cita */
