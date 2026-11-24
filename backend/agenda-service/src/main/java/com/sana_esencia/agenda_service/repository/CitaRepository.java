@@ -25,4 +25,18 @@ public interface CitaRepository extends JpaRepository<Cita, Integer> {
             @Param("inicioMillis") Long inicioMillis,
             @Param("finMillis") Long finMillis
     );
+
+    @Query("""
+        SELECT COUNT(c) > 0 FROM Cita c
+        WHERE c.boxAsignado = :boxAsignado
+          AND c.modalidad = 'PRESENCIAL'
+          AND c.estado <> 'CANCELADA'
+          AND c.inicioMillis < :finMillis
+          AND c.finMillis > :inicioMillis
+    """)
+    boolean existeSolapamientoBox(
+            @Param("boxAsignado") Integer boxAsignado,
+            @Param("inicioMillis") Long inicioMillis,
+            @Param("finMillis") Long finMillis
+    );
 }

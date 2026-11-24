@@ -1,6 +1,8 @@
 package com.sana_esencia.terapeutas_service.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 @Entity
 @Table(
@@ -15,12 +17,15 @@ public class Especialista {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @NotBlank(message = "El nombre del especialista es obligatorio")
     @Column(nullable = false, length = 120)
     private String nombre;
 
+    @NotNull(message = "El ID de especialidad es obligatorio")
     @Column(name = "especialidad_id", nullable = false)
     private Integer especialidadId;
 
+    @NotBlank(message = "La modalidad es obligatoria")
     @Column(nullable = false, length = 30)
     private String modalidad; // "Presencial", "Online", "Ambas"
 
