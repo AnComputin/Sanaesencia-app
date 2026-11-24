@@ -4,6 +4,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.example.sanaesenciaapp.data.remote.CrearEspecialidadRequest
+import com.example.sanaesenciaapp.data.remote.CrearEspecialistaRequest
+import com.example.sanaesenciaapp.data.remote.RetrofitClient
+import com.example.sanaesenciaapp.data.repository.SesionRepository
+import com.example.sanaesenciaapp.data.repository.SesionUsuario
+import com.example.sanaesenciaapp.data.repository.TiendaRepository
+import com.example.sanaesenciaapp.data.repository.UsuarioRepository
 import com.example.sanaesenciaapp.data.room.AppDatabase
 import com.example.sanaesenciaapp.data.room.BeneficiarioEntity
 import com.example.sanaesenciaapp.data.room.ESPECIALIDADES_INICIALES
@@ -11,10 +18,8 @@ import com.example.sanaesenciaapp.data.room.ESPECIALISTAS_INICIALES
 import com.example.sanaesenciaapp.data.room.EspecialidadEntity
 import com.example.sanaesenciaapp.data.room.EspecialistaEntity
 import com.example.sanaesenciaapp.data.room.UsuarioEntity
-import com.example.sanaesenciaapp.data.repository.SesionRepository
-import com.example.sanaesenciaapp.data.repository.SesionUsuario
-import com.example.sanaesenciaapp.data.repository.UsuarioRepository
 import com.example.sanaesenciaapp.utils.Seguridad
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -80,7 +85,7 @@ class AppState(
 
     fun cargarDatos() {
         scope.launch {
-            // Usuario administrador ficticio para la demostración del prototipo.
+            // 1. Usuario administrador de demostración
             val usuariosAntes = usuarioRepository.obtenerTodos()
             val adminExistente = usuariosAntes.find {
                 it.email.equals("admin@sanaesencia.cl", ignoreCase = true)
@@ -98,10 +103,73 @@ class AppState(
             )
             usuarioRepository.insertar(adminEntity)
 
-            // Los seeds SOLO completan registros faltantes. Así los cambios del panel Admin
-            // (modalidad y agendaPausada) se conservan al cerrar y volver a abrir la app.
-            db.especialidadDao().insertarTodas(ESPECIALIDADES_INICIALES)
-            db.especialistaDao().insertarTodos(ESPECIALISTAS_INICIALES)
+            // 2. Sincronizar Especialidades desde catalogo-service (:8082)
+            var especialidadesRemotas = try {
+                val resp = RetrofitClient.catalogoApi.listarEspecialidades()
+                if (resp.isSuccessful) resp.body().orEmpty() else emptyList()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                emptyList()
+            }
+
+            if (especialidadesRemotas.isEmpty()) {
+                val creadas = ESPECIALIDADES_INICIALES.mapNotNull { esp ->
+                    runCatching {
+                        RetrofitClient.catalogoApi.crearEspecialidad(
+                            CrearEspecialidadRequest(
+                                nombre = esp.nombre,
+                                descripcion = esp.descripcion,
+                                icono = esp.icono,
+                                profesional = esp.profesional,
+                                modalidad = esp.modalidad,
+                                agendaPausada = esp.agendaPausada
+                            )
+                        ).body()
+                    }.getOrNull()
+                }
+                if (creadas.isNotEmpty()) especialidadesRemotas = creadas
+            }
+
+            if (especialidadesRemotas.isNotEmpty()) {
+                db.especialidadDao().insertarTodas(especialidadesRemotas)
+            } else {
+                db.especialidadDao().insertarTodas(ESPECIALIDADES_INICIALES)
+            }
+
+            // 3. Sincronizar Especialistas desde terapeutas-service (:8083)
+            var especialistasRemotos = try {
+                val resp = RetrofitClient.terapeutasApi.listarEspecialistas()
+                if (resp.isSuccessful) resp.body().orEmpty() else emptyList()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                emptyList()
+            }
+
+            if (especialistasRemotos.isEmpty()) {
+                val creados = ESPECIALISTAS_INICIALES.mapNotNull { doc ->
+                    runCatching {
+                        RetrofitClient.terapeutasApi.crearEspecialista(
+                            CrearEspecialistaRequest(
+                                nombre = doc.nombre,
+                                especialidadId = doc.especialidadId,
+                                modalidad = doc.modalidad
+                            )
+                        ).body()
+                    }.getOrNull()
+                }
+                if (creados.isNotEmpty()) especialistasRemotos = creados
+            }
+
+            if (especialistasRemotos.isNotEmpty()) {
+                db.especialistaDao().insertarTodos(especialistasRemotos)
+            } else {
+                db.especialistaDao().insertarTodos(ESPECIALISTAS_INICIALES)
+            }
+
+            // 4. Sincronizar Productos y precios desde tienda-service (:8085)
+            TiendaRepository(db).sincronizarProductosDesdeServidor()
 
             val usuariosDb = usuarioRepository.obtenerTodos()
             val usuariosMapeados = usuariosDb.map {
@@ -122,13 +190,12 @@ class AppState(
                 usuarios.addAll(usuariosMapeados)
             }
 
-            // Room notifica en vivo los cambios hechos desde el panel administrador.
+            // Room notifica en vivo los cambios de especialidades.
             db.especialidadDao().obtenerTodasFlow().collect { listaActualizada ->
                 withContext(Dispatchers.Main) {
                     especialidades.clear()
                     especialidades.addAll(listaActualizada.sortedBy { it.id })
 
-                    // Mantener sincronizada la especialidad actualmente seleccionada.
                     especialidadSeleccionada?.let { seleccionada ->
                         especialidadSeleccionada = listaActualizada.find { it.id == seleccionada.id }
                     }
@@ -139,6 +206,18 @@ class AppState(
 
     fun cargarEspecialistasPorEspecialidad(especialidadId: Int) {
         scope.launch {
+            try {
+                val resp = RetrofitClient.terapeutasApi.listarEspecialistas(especialidadId)
+                if (resp.isSuccessful) {
+                    resp.body()?.takeIf { it.isNotEmpty() }?.let { remotos ->
+                        db.especialistaDao().insertarTodos(remotos)
+                    }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+            }
+
             val lista = db.especialistaDao().obtenerPorEspecialidad(especialidadId)
             withContext(Dispatchers.Main) {
                 especialistas.clear()
@@ -150,6 +229,18 @@ class AppState(
     private fun observarBeneficiarios(email: String) {
         beneficiariosJob?.cancel()
         beneficiariosJob = scope.launch {
+            try {
+                val resp = RetrofitClient.usuariosApi.listarBeneficiarios(email.trim().lowercase())
+                if (resp.isSuccessful) {
+                    resp.body()?.forEach { remoto ->
+                        db.beneficiarioDao().registrarOReactivar(remoto)
+                    }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+            }
+
             db.beneficiarioDao().obtenerPorPropietarioFlow(email).collect { lista ->
                 withContext(Dispatchers.Main) {
                     beneficiarios.clear()
@@ -180,22 +271,45 @@ class AppState(
             return
         }
 
+        val fechaIso = normalizarFechaIso(fechaNacimiento)
         val nuevo = BeneficiarioEntity(
-            propietarioEmail = email,
+            propietarioEmail = email.trim().lowercase(),
             nombre = nombre.trim(),
             rut = rut.trim().replace(".", "").uppercase(),
-            fechaNacimiento = fechaNacimiento.trim(),
+            fechaNacimiento = fechaIso,
             parentesco = parentesco.trim()
         )
 
         scope.launch {
-            val id = db.beneficiarioDao().insertar(nuevo)
-            withContext(Dispatchers.Main) {
-                if (id > 0) {
-                    beneficiarioSeleccionado = nuevo.copy(id = id.toInt())
+            try {
+                val resp = RetrofitClient.usuariosApi.crearBeneficiario(nuevo)
+                if (!resp.isSuccessful) {
+                    val errorMsg = resp.errorBody()?.string()?.takeIf { it.isNotBlank() }
+                        ?: "No se pudo registrar el beneficiario"
+                    withContext(Dispatchers.Main) {
+                        onResultado(false, errorMsg)
+                    }
+                    return@launch
+                }
+
+                val guardadoRemoto = resp.body() ?: nuevo
+                val idLocal = db.beneficiarioDao().insertar(guardadoRemoto)
+
+                withContext(Dispatchers.Main) {
+                    beneficiarioSeleccionado = if (guardadoRemoto.id > 0) {
+                        guardadoRemoto
+                    } else if (idLocal > 0) {
+                        guardadoRemoto.copy(id = idLocal.toInt())
+                    } else {
+                        guardadoRemoto
+                    }
                     onResultado(true, null)
-                } else {
-                    onResultado(false, "Este beneficiario ya está registrado en tu cuenta")
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                withContext(Dispatchers.Main) {
+                    onResultado(false, "Error de conexión con el servidor")
                 }
             }
         }
@@ -217,7 +331,6 @@ class AppState(
             return false
         }
 
-        // El registro público nunca debe crear administradores.
         val rolSeguro = if (rol == "TERAPEUTA") "TERAPEUTA" else "PACIENTE"
         val passwordHasheada = Seguridad.hashear(password)
 
@@ -235,8 +348,8 @@ class AppState(
         usuarios.add(nuevoUsuario)
 
         scope.launch {
-            usuarioRepository.insertar(
-                UsuarioEntity(
+            usuarioRepository.registrar(
+                usuario = UsuarioEntity(
                     nombre = nuevoUsuario.nombre,
                     email = nuevoUsuario.email,
                     password = nuevoUsuario.password,
@@ -245,7 +358,8 @@ class AppState(
                     fechaNacimiento = nuevoUsuario.fechaNacimiento,
                     comuna = nuevoUsuario.comuna,
                     rol = nuevoUsuario.rol
-                )
+                ),
+                passwordPlano = password
             )
         }
 
@@ -268,5 +382,16 @@ class AppState(
         especialidadSeleccionada = null
         especialistaSeleccionado = null
         especialistas.clear()
+    }
+
+    private fun normalizarFechaIso(fecha: String): String {
+        val limpia = fecha.trim()
+        val match = Regex("""^(\d{2})[/-](\d{2})[/-](\d{4})$""").matchEntire(limpia)
+        return if (match != null) {
+            val (dia, mes, anio) = match.destructured
+            "$anio-$mes-$dia"
+        } else {
+            limpia
+        }
     }
 }

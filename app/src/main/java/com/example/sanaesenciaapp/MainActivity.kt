@@ -12,6 +12,7 @@ import com.example.sanaesenciaapp.data.AppState
 import com.example.sanaesenciaapp.di.AppContainer
 import com.example.sanaesenciaapp.navigation.AppNavigation
 import com.example.sanaesenciaapp.ui.theme.SanaEsenciaAppTheme
+import com.example.sanaesenciaapp.data.remote.RetrofitClient
 
 class MainActivity : ComponentActivity() {
 
@@ -28,6 +29,7 @@ class MainActivity : ComponentActivity() {
         val appState = AppState(db, appContainer.sesionRepository, appContainer.usuarioRepository)
 
         appState.cargarDatos()
+        RetrofitClient.init(this)
 
         setContent {
 

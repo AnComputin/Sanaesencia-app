@@ -39,6 +39,7 @@ public class TiendaService {
         producto.setId(null);
         producto.setNombre(producto.getNombre().trim());
         producto.setDescripcion(producto.getDescripcion().trim());
+        producto.setCategoria(producto.getCategoria().trim());
         producto.setIcono(producto.getIcono().trim());
         return productoRepository.save(producto);
     }
@@ -48,6 +49,7 @@ public class TiendaService {
         Producto actual = obtenerProductoPorId(id);
         actual.setNombre(datos.getNombre().trim());
         actual.setDescripcion(datos.getDescripcion().trim());
+        actual.setCategoria(datos.getCategoria().trim());
         actual.setPrecio(datos.getPrecio());
         actual.setStock(datos.getStock());
         actual.setIcono(datos.getIcono().trim());
@@ -71,8 +73,18 @@ public class TiendaService {
         venta.setEstado("PAGADA");
 
         int totalCalculado = 0;
-
+        java.util.Map<Integer, Integer> cantidadesPorProducto = new java.util.LinkedHashMap<>();
         for (DetalleVenta item : ventaRequest.getDetalles()) {
+            if (item.getProductoId() == null || item.getCantidad() == null || item.getCantidad() <= 0) {
+                throw new IllegalArgumentException("Cada detalle debe indicar productoId y una cantidad mayor a 0");
+            }
+            cantidadesPorProducto.merge(item.getProductoId(), item.getCantidad(), Math::addExact);
+        }
+
+        for (var entrada : cantidadesPorProducto.entrySet()) {
+            DetalleVenta item = new DetalleVenta();
+            item.setProductoId(entrada.getKey());
+            item.setCantidad(entrada.getValue());
             if (item.getProductoId() == null || item.getCantidad() == null || item.getCantidad() <= 0) {
                 throw new IllegalArgumentException("Cada detalle debe indicar productoId y una cantidad mayor a 0");
             }
@@ -92,8 +104,8 @@ public class TiendaService {
             producto.setStock(producto.getStock() - item.getCantidad());
             productoRepository.save(producto);
 
-            int subtotal = producto.getPrecio() * item.getCantidad();
-            totalCalculado += subtotal;
+            int subtotal = Math.multiplyExact(producto.getPrecio(), item.getCantidad());
+            totalCalculado = Math.addExact(totalCalculado, subtotal);
 
             DetalleVenta detalle = new DetalleVenta();
             detalle.setProductoId(producto.getId());

@@ -15,6 +15,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -28,6 +29,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,12 +52,22 @@ fun ProductosAdminContent(
 ) {
     var mostrarDialogoNuevo by remember { mutableStateOf(false) }
     var productoPendienteEliminar by remember { mutableStateOf<ProductoEntity?>(null) }
+    var productoEnEdicion by remember { mutableStateOf<ProductoEntity?>(null) }
+    val mensaje by tiendaViewModel.mensaje.collectAsState()
 
     LazyColumn(
         modifier = modifier.fillMaxWidth().padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
+            if (!mensaje.isNullOrBlank()) {
+                Text(
+                    text = mensaje.orEmpty(),
+                    color = if (mensaje!!.contains("correctamente", ignoreCase = true) || mensaje!!.contains("guardado", ignoreCase = true)) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                    fontSize = 12.sp,
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                )
+            }
             Spacer(Modifier.height(14.dp))
             Text(
                 "Gestión de productos",
@@ -65,7 +77,7 @@ fun ProductosAdminContent(
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                "Agrega productos a la tienda, controla sus existencias y retira los que ya no ofrecerás. Los cambios se guardan en Room.",
+                "Agrega productos a la tienda, controla sus existencias y retira los que ya no ofrecerás. Los cambios se guardan en el servidor y se sincronizan con la aplicación.",
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.72f)
             )
@@ -97,6 +109,7 @@ fun ProductosAdminContent(
                     producto = producto,
                     onAumentar = { tiendaViewModel.actualizarStock(producto.id, producto.stock + 1) },
                     onDisminuir = { tiendaViewModel.actualizarStock(producto.id, (producto.stock - 1).coerceAtLeast(0)) },
+                    onEditar = { productoEnEdicion = producto },
                     onEliminar = { productoPendienteEliminar = producto }
                 )
             }
@@ -106,10 +119,22 @@ fun ProductosAdminContent(
 
     if (mostrarDialogoNuevo) {
         DialogoNuevoProducto(
+            productoInicial = null,
             onDismiss = { mostrarDialogoNuevo = false },
             onGuardar = { producto ->
                 tiendaViewModel.guardarProducto(producto)
                 mostrarDialogoNuevo = false
+            }
+        )
+    }
+
+    productoEnEdicion?.let { producto ->
+        DialogoNuevoProducto(
+            productoInicial = producto,
+            onDismiss = { productoEnEdicion = null },
+            onGuardar = { actualizado ->
+                tiendaViewModel.guardarProducto(actualizado)
+                productoEnEdicion = null
             }
         )
     }
@@ -139,6 +164,7 @@ private fun ProductoAdminCard(
     producto: ProductoEntity,
     onAumentar: () -> Unit,
     onDisminuir: () -> Unit,
+    onEditar: () -> Unit,
     onEliminar: () -> Unit
 ) {
     Card(
@@ -154,6 +180,9 @@ private fun ProductoAdminCard(
                 Column(Modifier.weight(1f)) {
                     Text(producto.nombre, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = MaterialTheme.colorScheme.secondary)
                     Text(producto.categoria, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                }
+                IconButton(onClick = onEditar) {
+                    Icon(Icons.Default.Edit, contentDescription = "Editar producto", tint = MaterialTheme.colorScheme.primary)
                 }
                 IconButton(onClick = onEliminar) {
                     Icon(Icons.Default.DeleteOutline, contentDescription = "Quitar producto", tint = MaterialTheme.colorScheme.error)
@@ -191,20 +220,21 @@ private fun ProductoAdminCard(
 
 @Composable
 private fun DialogoNuevoProducto(
+    productoInicial: ProductoEntity?,
     onDismiss: () -> Unit,
     onGuardar: (ProductoEntity) -> Unit
 ) {
-    var nombre by remember { mutableStateOf("") }
-    var descripcion by remember { mutableStateOf("") }
-    var categoria by remember { mutableStateOf("Bienestar") }
-    var precio by remember { mutableStateOf("") }
-    var stock by remember { mutableStateOf("0") }
-    var icono by remember { mutableStateOf("🌿") }
+    var nombre by remember(productoInicial) { mutableStateOf(productoInicial?.nombre.orEmpty()) }
+    var descripcion by remember(productoInicial) { mutableStateOf(productoInicial?.descripcion.orEmpty()) }
+    var categoria by remember(productoInicial) { mutableStateOf(productoInicial?.categoria ?: "Bienestar") }
+    var precio by remember(productoInicial) { mutableStateOf(productoInicial?.precio?.toString().orEmpty()) }
+    var stock by remember(productoInicial) { mutableStateOf(productoInicial?.stock?.toString() ?: "0") }
+    var icono by remember(productoInicial) { mutableStateOf(productoInicial?.icono ?: "🌿") }
     var error by remember { mutableStateOf<String?>(null) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Nuevo producto") },
+        title = { Text(if (productoInicial == null) "Nuevo producto" else "Editar producto") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
@@ -271,6 +301,7 @@ private fun DialogoNuevoProducto(
                         stockNumero == null -> error = "Ingresa un stock válido."
                         else -> onGuardar(
                             ProductoEntity(
+                                id = productoInicial?.id ?: 0,
                                 nombre = nombre.trim(),
                                 descripcion = descripcion.trim(),
                                 categoria = categoria.trim(),

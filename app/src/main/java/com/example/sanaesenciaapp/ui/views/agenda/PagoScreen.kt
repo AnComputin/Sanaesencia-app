@@ -420,14 +420,9 @@ fun PagoScreen(
                     )
 
                     Row(
-                        modifier =
-                            Modifier.fillMaxWidth(),
-
-                        horizontalArrangement =
-                            Arrangement.SpaceBetween,
-
-                        verticalAlignment =
-                            Alignment.CenterVertically
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
 
                         Text(
@@ -436,31 +431,25 @@ fun PagoScreen(
                                     "El tiempo está por finalizar"
                                 else
                                     "Tu horario queda reservado durante los 10 minutos de pago",
-
                             fontSize = 13.sp,
                             color =
                                 MaterialTheme.colorScheme
                                     .onSurface
-                                    .copy(alpha = 0.65f)
+                                    .copy(alpha = 0.65f),
+                            modifier = Modifier.weight(1f)
                         )
 
                         Text(
                             text = tiempoTexto,
                             fontSize = 21.sp,
-                            fontWeight =
-                                FontWeight.Bold,
-
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false,
                             color =
-                                if (
-                                    tiempoRestante < 60
-                                )
-                                    MaterialTheme
-                                        .colorScheme
-                                        .error
+                                if (tiempoRestante < 60)
+                                    MaterialTheme.colorScheme.error
                                 else
-                                    MaterialTheme
-                                        .colorScheme
-                                        .secondary
+                                    MaterialTheme.colorScheme.secondary
                         )
                     }
 

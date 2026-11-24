@@ -21,6 +21,12 @@ interface ProductoDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun guardar(producto: ProductoEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun guardarTodos(productos: List<ProductoEntity>)
+
+    @Query("DELETE FROM productos")
+    suspend fun eliminarTodos()
+
     @Query("DELETE FROM productos WHERE id = :id")
     suspend fun eliminarPorId(id: Int): Int
 
