@@ -503,7 +503,7 @@ private fun BoxesAdminContent(
                 )
             ) {
                 Text(
-                    text = "PANEL SOLO PARA ADMINISTRADOR.",
+                    text = "El estado se actualiza desde Room. Solo cuentan citas PRESENCIAL con estado CONFIRMADA que se superponen con el horario seleccionado.",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
                     modifier = Modifier.padding(16.dp)

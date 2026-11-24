@@ -169,7 +169,7 @@ class TiendaViewModel(
     fun guardarProducto(producto: ProductoEntity) {
         viewModelScope.launch {
             runCatching { repository.guardarProducto(producto) }
-                .onFailure { _mensaje.value = it.message ?: "No se pudo guardar el producto." }
+                .onFailure { _mensaje.value = "No se pudo guardar el producto." }
                 .onSuccess { _mensaje.value = "Producto guardado correctamente." }
         }
     }
@@ -177,7 +177,7 @@ class TiendaViewModel(
     fun eliminarProducto(productoId: Int) {
         viewModelScope.launch {
             runCatching { repository.eliminarProducto(productoId) }
-                .onFailure { _mensaje.value = it.message ?: "No se pudo quitar el producto." }
+                .onFailure { _mensaje.value = "No se pudo quitar el producto." }
                 .onSuccess { _mensaje.value = "Producto quitado de la tienda." }
         }
     }
@@ -185,8 +185,7 @@ class TiendaViewModel(
     fun actualizarStock(productoId: Int, nuevoStock: Int) {
         viewModelScope.launch {
             runCatching { repository.actualizarStock(productoId, nuevoStock) }
-                .onFailure { _mensaje.value = it.message ?: "No se pudo actualizar el stock." }
-                .onSuccess { _mensaje.value = "Stock actualizado correctamente." }
+                .onFailure { _mensaje.value = "No se pudo actualizar el stock." }
         }
     }
 
