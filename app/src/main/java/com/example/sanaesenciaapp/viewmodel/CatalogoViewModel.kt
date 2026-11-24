@@ -1,43 +1,112 @@
 package com.example.sanaesenciaapp.viewmodel
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.sanaesenciaapp.data.room.AppDatabase
-import com.example.sanaesenciaapp.data.room.ESPECIALIDADES_INICIALES
+import com.example.sanaesenciaapp.data.repository.CatalogoRepository
 import com.example.sanaesenciaapp.data.room.EspecialidadEntity
-import kotlinx.coroutines.launch
+import com.example.sanaesenciaapp.data.room.EspecialistaEntity
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.update
 
-class CatalogoViewModel(private val db: AppDatabase) : ViewModel() {
+data class CatalogoUiState(
+    val cargandoEspecialidades: Boolean = true,
+    val cargandoEspecialistas: Boolean = true,
+    val errorEspecialidades: Boolean = false,
+    val errorEspecialistas: Boolean = false
+)
 
-    // Lista observable para la interfaz gráfica
-    var especialidades by mutableStateOf<List<EspecialidadEntity>>(emptyList())
-        private set
+@OptIn(ExperimentalCoroutinesApi::class)
+class CatalogoViewModel(
+    private val catalogoRepository: CatalogoRepository,
+    savedStateHandle: SavedStateHandle
+) : ViewModel() {
+    private val _uiState = MutableStateFlow(CatalogoUiState())
+    val uiState: StateFlow<CatalogoUiState> = _uiState.asStateFlow()
 
-    var especialidadSeleccionada by mutableStateOf<EspecialidadEntity?>(null)
-        private set
+    private val reintentosEspecialidades = MutableStateFlow(0)
+    private val reintentosEspecialistas = MutableStateFlow(0)
 
-    init {
-        cargarEspecialidades()
-    }
+    val especialidadId: StateFlow<Int?> =
+        savedStateHandle.getStateFlow(ARG_ESPECIALIDAD_ID, null)
 
-    fun cargarEspecialidades() {
-        viewModelScope.launch {
-            val dao = db.especialidadDao()
-            var lista = dao.obtenerTodas()
-
-            // Si la base de datos local está vacía, insertamos los datos por defecto (Seed data)
-            if (lista.isEmpty()) {
-                dao.insertarTodas(ESPECIALIDADES_INICIALES)
-                lista = dao.obtenerTodas()
+    val especialidades: StateFlow<List<EspecialidadEntity>> =
+        reintentosEspecialidades
+            .flatMapLatest {
+                _uiState.update { it.copy(cargandoEspecialidades = true, errorEspecialidades = false) }
+                catalogoRepository.observarEspecialidades()
+                    .onEach {
+                        _uiState.update { estado ->
+                            estado.copy(
+                                cargandoEspecialidades = false,
+                                errorEspecialidades = false
+                            )
+                        }
+                    }
+                    .catch {
+                        _uiState.update { estado ->
+                            estado.copy(
+                                cargandoEspecialidades = false,
+                                errorEspecialidades = true
+                            )
+                        }
+                        emit(emptyList())
+                    }
             }
-            especialidades = lista
-        }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val especialistas: StateFlow<List<EspecialistaEntity>> =
+        combine(reintentosEspecialistas, especialidadId) { _, id -> id }
+            .flatMapLatest { id ->
+                if (id == null) {
+                    _uiState.update { it.copy(cargandoEspecialistas = false, errorEspecialistas = false) }
+                    flowOf(emptyList())
+                } else {
+                    _uiState.update { it.copy(cargandoEspecialistas = true, errorEspecialistas = false) }
+                    catalogoRepository.observarEspecialistas(id)
+                        .onEach {
+                            _uiState.update { estado ->
+                                estado.copy(
+                                    cargandoEspecialistas = false,
+                                    errorEspecialistas = false
+                                )
+                            }
+                        }
+                        .catch {
+                            _uiState.update { estado ->
+                                estado.copy(
+                                    cargandoEspecialistas = false,
+                                    errorEspecialistas = true
+                                )
+                            }
+                            emit(emptyList())
+                        }
+                }
+            }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun especialidadSeleccionada(): EspecialidadEntity? =
+        especialidades.value.firstOrNull { it.id == especialidadId.value }
+
+    fun reintentarEspecialidades() {
+        reintentosEspecialidades.update { it + 1 }
     }
 
-    fun seleccionarEspecialidad(esp: EspecialidadEntity) {
-        especialidadSeleccionada = esp
+    fun reintentarEspecialistas() {
+        reintentosEspecialistas.update { it + 1 }
+    }
+
+    private companion object {
+        const val ARG_ESPECIALIDAD_ID = "especialidadId"
     }
 }

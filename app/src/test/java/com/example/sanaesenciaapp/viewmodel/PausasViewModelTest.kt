@@ -3,6 +3,9 @@ package com.example.sanaesenciaapp.viewmodel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.After
@@ -85,6 +88,8 @@ class PausasViewModelTest {
 
         val state = viewModel.uiState.value
         assertEquals(1, state.pasoIndex)
+        assertTrue(state.estaActivo)
+        assertFalse(state.estaPausado)
     }
 
     @Test
@@ -98,5 +103,40 @@ class PausasViewModelTest {
 
         val state = viewModel.uiState.value
         assertTrue(state.estaCompletado)
+
+        viewModel.reiniciar()
+        assertEquals(0, viewModel.uiState.value.pasoIndex)
+        assertFalse(viewModel.uiState.value.estaCompletado)
+        assertFalse(viewModel.uiState.value.estaActivo)
+    }
+
+    @Test
+    fun `respiracion avanza fases pausa y completa al finalizar el minuto`() = runTest(testDispatcher) {
+        val store = androidx.lifecycle.ViewModelStore()
+        val viewModel = RespiracionViewModel().also { store.put("respiracion", it) }
+        try {
+            viewModel.iniciar()
+            advanceTimeBy(4_000L)
+            runCurrent()
+            assertEquals(FaseRespiracion.MANTENER, viewModel.uiState.value.fase)
+
+            viewModel.pausar()
+            val segundosPausados = viewModel.uiState.value.tiempoRestanteTotal
+            advanceTimeBy(5_000L)
+            runCurrent()
+            assertEquals(segundosPausados, viewModel.uiState.value.tiempoRestanteTotal)
+
+            viewModel.reanudar()
+            advanceTimeBy(60_000L)
+            runCurrent()
+            assertTrue(viewModel.uiState.value.estaCompletado)
+            assertEquals(0, viewModel.uiState.value.tiempoRestanteTotal)
+
+            viewModel.reiniciar()
+            assertFalse(viewModel.uiState.value.estaCompletado)
+            assertEquals(60, viewModel.uiState.value.tiempoRestanteTotal)
+        } finally {
+            store.clear()
+        }
     }
 }

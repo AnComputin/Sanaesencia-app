@@ -1,5 +1,8 @@
 package com.example.sanaesenciaapp.ui.views.catalogo
 
+import androidx.compose.ui.res.stringResource
+import com.example.sanaesenciaapp.R
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,8 +21,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,37 +34,35 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
-import com.example.sanaesenciaapp.data.AppState
 import com.example.sanaesenciaapp.data.room.EspecialistaEntity
 import com.example.sanaesenciaapp.ui.components.SanaBackground
 import com.example.sanaesenciaapp.viewmodel.CitaViewModel
+import com.example.sanaesenciaapp.viewmodel.CatalogoViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SeleccionEspecialistaScreen(
-    navController: NavController,
-    appState: AppState,
-    citaViewModel: CitaViewModel
+    catalogoViewModel: CatalogoViewModel,
+    citaViewModel: CitaViewModel,
+    onNavigateBack: () -> Unit,
+    onEspecialistaSelected: () -> Unit
 ) {
-    val especialidad = appState.especialidadSeleccionada
+    val especialidades by catalogoViewModel.especialidades.collectAsStateWithLifecycle()
+    val especialistas by catalogoViewModel.especialistas.collectAsStateWithLifecycle()
+    val catalogoState by catalogoViewModel.uiState.collectAsStateWithLifecycle()
+    val especialidadId by catalogoViewModel.especialidadId.collectAsStateWithLifecycle()
+    val especialidad = especialidades.firstOrNull { it.id == especialidadId }
 
-    LaunchedEffect(especialidad?.id) {
-        appState.especialistas.clear()
-        appState.especialistaSeleccionado = null
-        especialidad?.let {
-            appState.cargarEspecialistasPorEspecialidad(it.id)
-        }
-    }
-
-    val especialistasCompatibles = appState.especialistas.filter { especialista ->
+    val especialistasCompatibles = especialistas.filter { especialista ->
         modalidadCompatible(
             modalidadEspecialidad = especialidad?.modalidad ?: "Ambas",
             modalidadEspecialista = especialista.modalidad
@@ -72,16 +75,16 @@ fun SeleccionEspecialistaScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Seleccionar especialista",
+                        text = stringResource(R.string.especialista_topbar),
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver"
+                            contentDescription = stringResource(R.string.beneficiario_accessibility_volver)
                         )
                     }
                 }
@@ -100,7 +103,7 @@ fun SeleccionEspecialistaScreen(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Text(
-                        text = especialidad?.nombre ?: "Especialidad",
+                        text = especialidad?.nombre ?: stringResource(R.string.catalogo_error_especialidad_predeterminada),
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
@@ -110,7 +113,7 @@ fun SeleccionEspecialistaScreen(
 
                     Text(
                         text = especialidad?.descripcion
-                            ?: "Selecciona el profesional para tu atención.",
+                            ?: stringResource(R.string.especialista_subt),
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f)
                     )
@@ -118,7 +121,7 @@ fun SeleccionEspecialistaScreen(
                     Spacer(modifier = Modifier.height(10.dp))
 
                     Text(
-                        text = "Profesionales disponibles (${especialistasCompatibles.size})",
+                        text = stringResource(R.string.especialista_disponibles, especialistasCompatibles.size),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -129,22 +132,49 @@ fun SeleccionEspecialistaScreen(
 
                 if (especialidad == null) {
                     item {
-                        MensajeEspecialistas("No se pudo cargar la especialidad seleccionada.")
+                        MensajeEspecialistas(
+                            texto = stringResource(R.string.especialista_error_cargar),
+                            esError = true,
+                            onReintentar = { catalogoViewModel.reintentarEspecialidades() }
+                        )
                     }
                 } else if (especialidad.agendaPausada) {
                     item {
                         MensajeEspecialistas(
-                            "La agenda de esta especialidad está pausada temporalmente."
+                            texto = stringResource(R.string.especialista_error_pausada)
                         )
                     }
-                } else if (appState.especialistas.isEmpty()) {
+                } else if (catalogoState.errorEspecialistas) {
                     item {
-                        MensajeEspecialistas("Cargando especialistas...")
+                        MensajeEspecialistas(
+                            texto = stringResource(R.string.especialista_error_carga),
+                            esError = true,
+                            onReintentar = { catalogoViewModel.reintentarEspecialistas() }
+                        )
+                    }
+                } else if (catalogoState.cargandoEspecialidades || catalogoState.cargandoEspecialistas) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                } else if (especialistas.isEmpty()) {
+                    item {
+                        MensajeEspecialistas(
+                            texto = stringResource(R.string.especialista_vacio)
+                        )
                     }
                 } else if (especialistasCompatibles.isEmpty()) {
                     item {
                         MensajeEspecialistas(
-                            "No hay especialistas activos compatibles con la modalidad actual."
+                            texto = stringResource(R.string.especialista_error_incompatibles)
                         )
                     }
                 } else {
@@ -158,7 +188,6 @@ fun SeleccionEspecialistaScreen(
                                 )
 
                                 if (modalidadPermitida != null) {
-                                    appState.especialistaSeleccionado = especialista
 
                                     citaViewModel.seleccionarServicio(
                                         especialidad = especialidad.nombre,
@@ -168,7 +197,7 @@ fun SeleccionEspecialistaScreen(
                                         especialistaId = especialista.id
                                     )
 
-                                    navController.navigate("agendar")
+                                    onEspecialistaSelected()
                                 }
                             }
                         )
@@ -184,19 +213,38 @@ fun SeleccionEspecialistaScreen(
 }
 
 @Composable
-private fun MensajeEspecialistas(texto: String) {
+private fun MensajeEspecialistas(
+    texto: String,
+    esError: Boolean = false,
+    onReintentar: (() -> Unit)? = null
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = if (esError) MaterialTheme.colorScheme.errorContainer
+            else MaterialTheme.colorScheme.surface
         )
     ) {
-        Text(
-            text = texto,
+        Column(
             modifier = Modifier.padding(20.dp),
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                text = texto,
+                color = if (esError) MaterialTheme.colorScheme.onErrorContainer
+                else MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = if (esError) FontWeight.SemiBold else FontWeight.Normal
+            )
+            if (onReintentar != null) {
+                Button(
+                    onClick = onReintentar,
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(stringResource(R.string.catalogo_btn_reintentar))
+                }
+            }
+        }
     }
 }
 
@@ -267,7 +315,7 @@ private fun EspecialistaCard(
                     color = MaterialTheme.colorScheme.secondaryContainer
                 ) {
                     Text(
-                        text = "Modalidad: ${especialista.modalidad}",
+                        text = stringResource(R.string.detalle_modalidad, especialista.modalidad),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -302,4 +350,18 @@ private fun modalidadCompatible(
         "Online" in disponibles -> "Online"
         else -> null
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun EspecialistaCardPreview() {
+    EspecialistaCard(
+        especialista = EspecialistaEntity(
+            id = 1,
+            nombre = "Dra. Marcela Paz",
+            especialidadId = 1,
+            modalidad = "Presencial"
+        ),
+        onClick = {}
+    )
 }

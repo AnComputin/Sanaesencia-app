@@ -1,13 +1,18 @@
 package com.example.sanaesenciaapp.viewmodel
 
+import androidx.lifecycle.ViewModelStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -40,6 +45,35 @@ class MemoriceViewModelTest {
     }
 
     @Test
+    fun `reiniciar cancela el ocultado pendiente de una pareja anterior`() = runTest(testDispatcher) {
+        val viewModelStore = ViewModelStore()
+        val viewModel = MemoriceViewModel().also { viewModelStore.put("memorice", it) }
+
+        try {
+            val cartas = viewModel.uiState.value.cartas
+            val primera = cartas.first()
+            val segunda = cartas.first { it.parejaId != primera.parejaId }
+
+            viewModel.voltearCarta(primera.id)
+            viewModel.voltearCarta(segunda.id)
+            assertTrue(viewModel.uiState.value.bloqueado)
+
+            viewModel.reiniciarJuego()
+            val estadoReiniciado = viewModel.uiState.value
+            assertFalse(estadoReiniciado.bloqueado)
+            assertTrue(estadoReiniciado.cartas.none { it.volteada || it.encontrada })
+
+            advanceTimeBy(800L)
+            runCurrent()
+
+            assertEquals(estadoReiniciado.cartas, viewModel.uiState.value.cartas)
+            assertFalse(viewModel.uiState.value.bloqueado)
+        } finally {
+            viewModelStore.clear()
+        }
+    }
+
+    @Test
     fun `reiniciar juego restablece intentos y cartas`() {
         val viewModel = MemoriceViewModel()
         viewModel.reiniciarJuego()
@@ -48,5 +82,26 @@ class MemoriceViewModelTest {
         assertEquals(16, state.cartas.size)
         assertEquals(0, state.intentos)
         assertFalse(state.juegoTerminado)
+    }
+
+    @Test
+    fun `encontrar todas las parejas completa y reiniciar inicia nueva ronda`() = runTest(testDispatcher) {
+        val store = ViewModelStore()
+        val viewModel = MemoriceViewModel().also { store.put("memorice", it) }
+        try {
+            viewModel.uiState.value.cartas.groupBy { it.parejaId }.values.forEach { pareja ->
+                viewModel.voltearCarta(pareja[0].id)
+                viewModel.voltearCarta(pareja[1].id)
+            }
+            assertTrue(viewModel.uiState.value.juegoTerminado)
+            assertTrue(viewModel.uiState.value.cartas.all { it.encontrada })
+
+            viewModel.reiniciarJuego()
+            assertFalse(viewModel.uiState.value.juegoTerminado)
+            assertEquals(0, viewModel.uiState.value.intentos)
+            assertTrue(viewModel.uiState.value.cartas.none { it.encontrada || it.volteada })
+        } finally {
+            store.clear()
+        }
     }
 }

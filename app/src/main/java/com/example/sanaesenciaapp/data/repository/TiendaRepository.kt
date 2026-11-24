@@ -18,27 +18,41 @@ data class ResultadoCompra(
     val total: Int = 0
 )
 
-class TiendaRepository(private val database: AppDatabase) {
+interface TiendaRepositoryContract {
+    val productos: kotlinx.coroutines.flow.Flow<List<ProductoEntity>>
+    val todosLosProductos: kotlinx.coroutines.flow.Flow<List<ProductoEntity>>
+    suspend fun guardarProducto(producto: ProductoEntity)
+    suspend fun eliminarProducto(id: Int)
+    suspend fun actualizarStock(id: Int, nuevoStock: Int)
+    suspend fun registrarCompra(
+        email: String,
+        nombre: String,
+        metodoPago: String,
+        lineas: List<LineaCompra>
+    ): ResultadoCompra
+}
+
+class TiendaRepository(private val database: AppDatabase) : TiendaRepositoryContract {
 
     private val productoDao = database.productoDao()
     private val ventaDao = database.ventaDao()
 
-    val productos = productoDao.obtenerActivosFlow()
-    val todosLosProductos = productoDao.obtenerTodosFlow()
+    override val productos = productoDao.obtenerActivosFlow()
+    override val todosLosProductos = productoDao.obtenerTodosFlow()
 
-    suspend fun guardarProducto(producto: ProductoEntity) {
+    override suspend fun guardarProducto(producto: ProductoEntity) {
         productoDao.guardar(producto)
     }
 
-    suspend fun eliminarProducto(id: Int) {
+    override suspend fun eliminarProducto(id: Int) {
         productoDao.eliminarPorId(id)
     }
 
-    suspend fun actualizarStock(id: Int, nuevoStock: Int) {
+    override suspend fun actualizarStock(id: Int, nuevoStock: Int) {
         productoDao.actualizarStock(id, nuevoStock.coerceAtLeast(0))
     }
 
-    suspend fun registrarCompra(
+    override suspend fun registrarCompra(
         email: String,
         nombre: String,
         metodoPago: String,

@@ -8,6 +8,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -45,5 +46,24 @@ class CaminoViewModelTest {
         val state = viewModel.uiState.value
         assertEquals(1, state.turnoCount)
         assertEquals(true, state.posicionActual > 1)
+    }
+
+    @Test
+    fun `alcanzar la meta completa el juego y reiniciar restaura el estado`() {
+        val dados = ArrayDeque(listOf(6, 6, 6, 6, 6))
+        val viewModel = CaminoViewModel { dados.removeFirst() }
+
+        repeat(5) { viewModel.tirarDado() }
+
+        assertTrue(viewModel.uiState.value.juegoTerminado)
+        assertEquals(25, viewModel.uiState.value.posicionActual)
+        val turnosFinales = viewModel.uiState.value.turnoCount
+        viewModel.tirarDado()
+        assertEquals(turnosFinales, viewModel.uiState.value.turnoCount)
+
+        viewModel.reiniciarJuego()
+        assertFalse(viewModel.uiState.value.juegoTerminado)
+        assertEquals(1, viewModel.uiState.value.posicionActual)
+        assertEquals(0, viewModel.uiState.value.turnoCount)
     }
 }

@@ -7,10 +7,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.sanaesenciaapp.data.AppState
 import com.example.sanaesenciaapp.ui.views.tienda.CarritoTiendaScreen
+import com.example.sanaesenciaapp.ui.views.tienda.DetalleProductoTiendaScreen
 import com.example.sanaesenciaapp.ui.views.tienda.CompraConfirmadaScreen
 import com.example.sanaesenciaapp.ui.views.tienda.PagoTiendaScreen
 import com.example.sanaesenciaapp.ui.views.tienda.TiendaScreen
 import com.example.sanaesenciaapp.viewmodel.TiendaViewModel
+
+internal fun rutaDetalleProducto(productoId: Int): String =
+    "producto_detalle/$productoId"
 
 fun NavGraphBuilder.tiendaGraph(
     navController: NavHostController,
@@ -26,6 +30,17 @@ fun NavGraphBuilder.tiendaGraph(
 
     composable("carrito_tienda") {
         CarritoTiendaScreen(
+            navController = navController,
+            tiendaViewModel = tiendaViewModel
+        )
+    }
+
+    composable(
+        route = "producto_detalle/{productoId}",
+        arguments = listOf(navArgument("productoId") { type = NavType.IntType })
+    ) { entry ->
+        DetalleProductoTiendaScreen(
+            productoId = entry.arguments?.getInt("productoId") ?: -1,
             navController = navController,
             tiendaViewModel = tiendaViewModel
         )
