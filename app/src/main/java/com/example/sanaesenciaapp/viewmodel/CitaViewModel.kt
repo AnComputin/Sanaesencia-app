@@ -3,6 +3,8 @@ package com.example.sanaesenciaapp.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.sanaesenciaapp.data.repository.CitaApiException
+import com.example.sanaesenciaapp.data.repository.CitaFuente
 import com.example.sanaesenciaapp.data.repository.ReglasAgenda
 import com.example.sanaesenciaapp.data.room.CitaDao
 import com.example.sanaesenciaapp.data.room.CitaEntity
@@ -30,6 +32,21 @@ enum class EstadoReserva {
     COMPLETADA,
     CANCELADA,
     EN_PAGO
+}
+
+/**
+ * Estados de integración con la fuente remota de citas (VA-05).
+ * El mapeo de errores sigue el contrato actual de agenda-service:
+ * conflicto = 400 (409 aceptado por si se incorpora), 401/403 = autorización.
+ */
+sealed interface EstadoIntegracion {
+    object Inactivo : EstadoIntegracion
+    object Cargando : EstadoIntegracion
+    object Exito : EstadoIntegracion
+    data class Conflicto(val mensaje: String) : EstadoIntegracion
+    data class SinConexion(val mensaje: String) : EstadoIntegracion
+    data class NoAutorizado(val mensaje: String) : EstadoIntegracion
+    data class Error(val mensaje: String) : EstadoIntegracion
 }
 
 data class Horario(
@@ -75,11 +92,17 @@ data class CitaUiState(
  * Sin DAO (solo previews), usa una lista en memoria para que las vistas puedan renderizarse.
  */
 class CitaViewModel(
-    private val citaDao: CitaDao? = null
+    private val citaDao: CitaDao? = null,
+    private val citaFuente: CitaFuente? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CitaUiState())
     val uiState: StateFlow<CitaUiState> = _uiState.asStateFlow()
+
+    /*VA-05: estado de la integración con la fuente remota (Inactivo sin fuente registrada)*/
+    private val _estadoIntegracion =
+        MutableStateFlow<EstadoIntegracion>(EstadoIntegracion.Inactivo)
+    val estadoIntegracion: StateFlow<EstadoIntegracion> = _estadoIntegracion.asStateFlow()
 
     val fechasDisponibles: List<Long> = generarFechasDisponibles()
 
@@ -196,6 +219,54 @@ class CitaViewModel(
             }
         }
         reiniciarPago()
+    }
+
+    /**
+     * VA-05 Fase 1: carga las citas del usuario autenticado desde la fuente remota.
+     *
+     * Sin fuente registrada (infraestructura de Anaís pendiente) el estado vuelve
+     * a [EstadoIntegracion.Inactivo] y Room sigue siendo la única fuente visible.
+     * La identidad no viaja en los argumentos: la decide el backend vía JWT.
+     */
+    fun cargarMisCitas() {
+        val fuente = citaFuente
+        if (fuente == null) {
+            _estadoIntegracion.value = EstadoIntegracion.Inactivo
+            return
+        }
+
+        _estadoIntegracion.value = EstadoIntegracion.Cargando
+        viewModelScope.launch {
+            fuente.listarPropias().fold(
+                onSuccess = {
+                    _estadoIntegracion.value = EstadoIntegracion.Exito
+                },
+                onFailure = { error ->
+                    _estadoIntegracion.value = mapearErrorIntegracion(error)
+                }
+            )
+        }
+    }
+
+    private fun mapearErrorIntegracion(error: Throwable): EstadoIntegracion = when {
+        error is CitaApiException && error.codigoHttp == 401 ->
+            EstadoIntegracion.NoAutorizado("Tu sesión expiró. Vuelve a iniciar sesión.")
+
+        error is CitaApiException && error.codigoHttp == 403 ->
+            EstadoIntegracion.NoAutorizado("No tienes permiso para ver estas citas.")
+
+        error is CitaApiException && (error.codigoHttp == 400 || error.codigoHttp == 409) ->
+            EstadoIntegracion.Conflicto(
+                error.message ?: "La solicitud fue rechazada por el servidor."
+            )
+
+        error is java.io.IOException ->
+            EstadoIntegracion.SinConexion("Sin conexión con el servidor. Revisa tu internet.")
+
+        else ->
+            EstadoIntegracion.Error(
+                error.message ?: "Error inesperado al cargar tus citas."
+            )
     }
 
     fun seleccionarServicio(

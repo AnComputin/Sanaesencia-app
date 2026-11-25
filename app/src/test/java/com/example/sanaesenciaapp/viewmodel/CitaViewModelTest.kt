@@ -1,7 +1,11 @@
 package com.example.sanaesenciaapp.viewmodel
 
+import com.example.sanaesenciaapp.data.remote.CitaDto
+import com.example.sanaesenciaapp.data.repository.CitaApiException
+import com.example.sanaesenciaapp.data.repository.CitaFuente
 import com.example.sanaesenciaapp.data.room.CitaDao
 import com.example.sanaesenciaapp.data.room.CitaEntity
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -9,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -545,4 +550,166 @@ class CitaViewModelTest {
 
         assertEquals("CONFIRMADA", fakeDao.citasGuardadas.single().estado)
     }
+
+    // ════════════════════════════════════════════
+    // VA-05 FASE 1: FUENTE REMOTA Y ESTADOS
+    // ════════════════════════════════════════════
+
+    private class FakeCitaFuente(
+        private val resultado: Result<List<CitaDto>> = Result.success(emptyList())
+    ) : CitaFuente {
+        var listadosSolicitados = 0
+
+        override suspend fun reservar(cita: CitaDto): Result<CitaDto> =
+            Result.success(cita)
+
+        override suspend fun listarPropias(): Result<List<CitaDto>> {
+            listadosSolicitados++
+            return resultado
+        }
+    }
+
+    private class PausaCitaFuente : CitaFuente {
+        val gate = CompletableDeferred<Unit>()
+        override suspend fun reservar(cita: CitaDto): Result<CitaDto> =
+            Result.success(cita)
+
+        override suspend fun listarPropias(): Result<List<CitaDto>> {
+            gate.await()
+            return Result.success(emptyList())
+        }
+    }
+
+    @Test
+    fun `cargarMisCitas sin fuente queda Inactivo`() = runTest {
+        viewModel.cargarMisCitas()
+        advanceUntilIdle()
+
+        assertEquals(EstadoIntegracion.Inactivo, viewModel.estadoIntegracion.value)
+    }
+
+    @Test
+    fun `cargarMisCitas con fuente exitosa pasa a Exito`() = runTest {
+        val fuente = FakeCitaFuente(Result.success(listOf(dtoEjemplo())))
+        val vm = CitaViewModel(fakeDao, fuente)
+
+        vm.cargarMisCitas()
+        advanceUntilIdle()
+
+        assertEquals(EstadoIntegracion.Exito, vm.estadoIntegracion.value)
+        assertEquals(1, fuente.listadosSolicitados)
+    }
+
+    @Test
+    fun `cargarMisCitas muestra Cargando mientras la fuente no responde`() = runTest {
+        val fuente = PausaCitaFuente()
+        val vm = CitaViewModel(fakeDao, fuente)
+
+        vm.cargarMisCitas()
+
+        assertEquals(EstadoIntegracion.Cargando, vm.estadoIntegracion.value)
+
+        fuente.gate.complete(Unit)
+        advanceUntilIdle()
+
+        assertEquals(EstadoIntegracion.Exito, vm.estadoIntegracion.value)
+    }
+
+    @Test
+    fun `cargarMisCitas con 401 queda NoAutorizado`() = runTest {
+        val vm = CitaViewModel(
+            fakeDao,
+            FakeCitaFuente(Result.failure(CitaApiException(401)))
+        )
+
+        vm.cargarMisCitas()
+        advanceUntilIdle()
+
+        val estado = vm.estadoIntegracion.value
+        assertTrue(estado is EstadoIntegracion.NoAutorizado)
+    }
+
+    @Test
+    fun `cargarMisCitas con conflicto 400 queda Conflicto`() = runTest {
+        val vm = CitaViewModel(
+            fakeDao,
+            FakeCitaFuente(Result.failure(CitaApiException(400, "Horario ocupado")))
+        )
+
+        vm.cargarMisCitas()
+        advanceUntilIdle()
+
+        val estado = vm.estadoIntegracion.value
+        assertTrue(estado is EstadoIntegracion.Conflicto)
+        assertEquals("Horario ocupado", (estado as EstadoIntegracion.Conflicto).mensaje)
+    }
+
+    @Test
+    fun `cargarMisCitas con 409 tambien se interpreta como Conflicto`() = runTest {
+        val vm = CitaViewModel(
+            fakeDao,
+            FakeCitaFuente(Result.failure(CitaApiException(409)))
+        )
+
+        vm.cargarMisCitas()
+        advanceUntilIdle()
+
+        assertTrue(vm.estadoIntegracion.value is EstadoIntegracion.Conflicto)
+    }
+
+    @Test
+    fun `cargarMisCitas sin conexion queda SinConexion`() = runTest {
+        val vm = CitaViewModel(
+            fakeDao,
+            FakeCitaFuente(Result.failure(java.io.IOException("timeout")))
+        )
+
+        vm.cargarMisCitas()
+        advanceUntilIdle()
+
+        assertTrue(vm.estadoIntegracion.value is EstadoIntegracion.SinConexion)
+    }
+
+    @Test
+    fun `cargarMisCitas con error inesperado queda Error`() = runTest {
+        val vm = CitaViewModel(
+            fakeDao,
+            FakeCitaFuente(Result.failure(RuntimeException("boom")))
+        )
+
+        vm.cargarMisCitas()
+        advanceUntilIdle()
+
+        assertTrue(vm.estadoIntegracion.value is EstadoIntegracion.Error)
+    }
+
+    @Test
+    fun `cargarMisCitas con 403 queda NoAutorizado sin permiso`() = runTest {
+        val vm = CitaViewModel(
+            fakeDao,
+            FakeCitaFuente(Result.failure(CitaApiException(403)))
+        )
+
+        vm.cargarMisCitas()
+        advanceUntilIdle()
+
+        assertTrue(vm.estadoIntegracion.value is EstadoIntegracion.NoAutorizado)
+    }
+
+    private fun dtoEjemplo() = CitaDto(
+        id = 1,
+        usuarioEmail = "test@mail.com",
+        especialidadId = 1,
+        especialidadNombre = "Psicología",
+        especialistaId = 1,
+        especialistaNombre = "Dr. Test",
+        modalidad = "PRESENCIAL",
+        inicioMillis = 1000L,
+        finMillis = 4000L,
+        hora = "09:00",
+        pacienteNombre = "Paciente Test",
+        beneficiarioId = null,
+        estado = "CONFIRMADA",
+        boxAsignado = 1
+    )
 }

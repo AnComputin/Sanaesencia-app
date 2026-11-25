@@ -22,6 +22,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -33,6 +34,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -49,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import com.example.sanaesenciaapp.utils.CalendarioHelper
 import com.example.sanaesenciaapp.viewmodel.CitaItem
 import com.example.sanaesenciaapp.viewmodel.CitaViewModel
+import com.example.sanaesenciaapp.viewmodel.EstadoIntegracion
 import com.example.sanaesenciaapp.viewmodel.EstadoReserva
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -64,9 +67,16 @@ fun MisCitasScreen(
     onVolver: () -> Unit
 ) {
     val todasLasCitas by citaViewModel.citas.collectAsState()
+    val estadoIntegracion by citaViewModel.estadoIntegracion.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+
+    // VA-05: al entrar se intenta cargar desde la fuente remota (si no hay
+    // fuente registrada el estado queda Inactivo y Room sigue mandando).
+    LaunchedEffect(Unit) {
+        citaViewModel.cargarMisCitas()
+    }
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     var citaACancelar by remember { mutableStateOf<CitaItem?>(null) }
@@ -141,6 +151,55 @@ fun MisCitasScreen(
                         color = MaterialTheme.colorScheme.onBackground
                             .copy(alpha = 0.7f)
                     )
+                }
+
+                // VA-05: estados de integración con la fuente remota
+                if (estadoIntegracion is EstadoIntegracion.Cargando) {
+                    LinearProgressIndicator(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+                }
+
+                val mensajeIntegracion = when (val estado = estadoIntegracion) {
+                    is EstadoIntegracion.Conflicto -> estado.mensaje
+                    is EstadoIntegracion.SinConexion -> estado.mensaje
+                    is EstadoIntegracion.NoAutorizado -> estado.mensaje
+                    is EstadoIntegracion.Error -> estado.mensaje
+                    else -> null
+                }
+
+                mensajeIntegracion?.let { mensaje ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = mensaje,
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+
+                            Button(
+                                onClick = { citaViewModel.cargarMisCitas() }
+                            ) {
+                                Text("Reintentar")
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
                 }
 
                 TabRow(
