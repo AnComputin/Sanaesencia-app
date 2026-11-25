@@ -4,13 +4,14 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.rememberNavController
 import com.example.sanaesenciaapp.data.AppState
-import com.example.sanaesenciaapp.data.room.AppDatabase
+import com.example.sanaesenciaapp.di.AppContainer
 import com.example.sanaesenciaapp.navigation.AppNavigation
 import com.example.sanaesenciaapp.ui.theme.SanaEsenciaAppTheme
+import com.example.sanaesenciaapp.data.remote.RetrofitClient
 
 class MainActivity : ComponentActivity() {
 
@@ -22,14 +23,11 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
 
-        val db =
-            AppDatabase.getInstance(
-                applicationContext
-            )
+        val appContainer = (application as MyApplication).appContainer
+        val db = appContainer.database
+        val appState = AppState(db, appContainer.sesionRepository, appContainer.usuarioRepository)
 
-        val appState =
-            AppState(db)
-
+        RetrofitClient.init(this)
         appState.cargarDatos()
 
         setContent {
@@ -37,7 +35,8 @@ class MainActivity : ComponentActivity() {
             SanaEsenciaAppTheme {
 
                 SanaEsenciaApp(
-                    appState
+                    appState = appState,
+                    appContainer = appContainer
                 )
             }
         }
@@ -47,17 +46,16 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun SanaEsenciaApp(
-    appState: AppState
+    appState: AppState,
+    appContainer: AppContainer = (LocalContext.current.applicationContext as MyApplication).appContainer
 ) {
 
     val navController =
         rememberNavController()
 
-    MaterialTheme {
-
-        AppNavigation(
-            navController,
-            appState
-        )
-    }
+    AppNavigation(
+        navController = navController,
+        appState = appState,
+        appContainer = appContainer
+    )
 }

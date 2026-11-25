@@ -1,7 +1,13 @@
 package com.example.sanaesenciaapp.ui.views
 
-import androidx.compose.foundation.background
+import androidx.compose.ui.res.stringResource
+import com.example.sanaesenciaapp.R
+
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -9,7 +15,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -24,37 +34,57 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import com.example.sanaesenciaapp.data.AppState
+import com.example.sanaesenciaapp.data.room.EspecialidadEntity
+import com.example.sanaesenciaapp.ui.components.SanaBackground
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    navController: NavController,
-    appState: AppState
+    appState: AppState,
+    onLoginClick: () -> Unit,
+    onReserveClick: () -> Unit,
+    onMyAppointmentsClick: () -> Unit,
+    onSpecialtyClick: (Int) -> Unit,
+    especialidades: List<EspecialidadEntity>,
+    cargandoCatalogo: Boolean,
+    errorCatalogo: Boolean,
+    onLocationClick: () -> Unit,
+    onGamesClick: () -> Unit,
+    onLogoutClick: () -> Unit,
+    onTiendaClick: () -> Unit = {}
 ) {
 
     val usuario = appState.usuarioActual
+    val hojaColor = MaterialTheme.colorScheme.primary
 
     Scaffold(
-
-        containerColor =
-            MaterialTheme.colorScheme.background,
+        containerColor = MaterialTheme.colorScheme.background,
 
         topBar = {
-
             TopAppBar(
-
                 title = {
-
-                    Text(
-                        text = "🌿 SanaEsencia",
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.secondary
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_sanaesencia_logo),
+                            contentDescription = stringResource(R.string.inicio_app_name),
+                            modifier = Modifier.size(30.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(R.string.inicio_brand_title),
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                    }
                 },
 
                 actions = {
@@ -63,12 +93,11 @@ fun HomeScreen(
 
                         TextButton(
                             onClick = {
-                                navController.navigate("login")
+                                onLoginClick()
                             }
                         ) {
-
                             Text(
-                                text = "Ingresar",
+                                text = stringResource(R.string.inicio_topbar_ingresar),
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
@@ -76,7 +105,7 @@ fun HomeScreen(
                     } else {
 
                         Text(
-                            text = "Hola, ${usuario.nombre}",
+                            text = stringResource(R.string.inicio_saludo, usuario.nombre),
                             modifier = Modifier.padding(end = 16.dp),
                             color = MaterialTheme.colorScheme.secondary
                         )
@@ -87,199 +116,366 @@ fun HomeScreen(
 
     ) { padding ->
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(20.dp)
-        ) {
+        SanaBackground {
 
-            // Presentación
-            Text(
-                text = "Bienestar integral",
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.secondary
-            )
-
-            Spacer(
-                modifier = Modifier.height(8.dp)
-            )
-
-            Text(
-                text = "Acompañamos tu bienestar físico, emocional y mental.",
-                fontSize = 17.sp,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-
-            Spacer(
-                modifier = Modifier.height(24.dp)
-            )
-
-            // Botón reservar
-            Button(
-                onClick = {
-
-                    if (usuario == null) {
-
-                        navController.navigate("login")
-
-                    } else {
-
-                        // Después crearemos la pantalla de reservas
-                    }
-                },
-
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(55.dp),
-
-                shape = RoundedCornerShape(18.dp),
-
-                colors = ButtonDefaults.buttonColors(
-                    containerColor =
-                        MaterialTheme.colorScheme.primary
-                )
+                    .fillMaxSize()
+                    .padding(padding)
             ) {
 
-                Text(
-                    text = "Reservar hora",
-                    fontSize = 17.sp
-                )
-            }
-
-            Spacer(
-                modifier = Modifier.height(32.dp)
-            )
-
-            Text(
-                text = "Especialidades",
-                fontSize = 25.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.secondary
-            )
-
-            Spacer(
-                modifier = Modifier.height(16.dp)
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement =
-                    Arrangement.spacedBy(12.dp)
-            ) {
-
-                EspecialidadCard(
-                    nombre = "Psicología",
-                    icono = "🧠",
-                    modifier = Modifier.weight(1f)
-                )
-
-                EspecialidadCard(
-                    nombre = "Fonoaudiología",
-                    icono = "💬",
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Spacer(
-                modifier = Modifier.height(12.dp)
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement =
-                    Arrangement.spacedBy(12.dp)
-            ) {
-
-                EspecialidadCard(
-                    nombre = "Terapia\nOcupacional",
-                    icono = "🖐️",
-                    modifier = Modifier.weight(1f)
-                )
-
-                EspecialidadCard(
-                    nombre = "Nutrición",
-                    icono = "🍏",
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Spacer(
-                modifier = Modifier.height(32.dp)
-            )
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-
-                shape = RoundedCornerShape(20.dp),
-
-                colors = CardDefaults.cardColors(
-                    containerColor =
-                        MaterialTheme.colorScheme.primaryContainer
-                )
-            ) {
-
-                Column(
-                    modifier = Modifier.padding(20.dp)
+                // Hoja decorativa grande del Home
+                Canvas(
+                    modifier = Modifier.fillMaxSize()
                 ) {
 
+                    // Hoja principal
+                    rotate(
+                        degrees = -28f,
+                        pivot = Offset(
+                            x = size.width * 0.82f,
+                            y = size.height * 0.19f
+                        )
+                    ) {
+
+                        drawOval(
+                            color = hojaColor.copy(alpha = 0.065f),
+                            topLeft = Offset(
+                                x = size.width * 0.58f,
+                                y = size.height * 0.04f
+                            ),
+                            size = Size(
+                                width = size.width * 0.36f,
+                                height = size.height * 0.23f
+                            )
+                        )
+
+                        // Nervadura central
+                        drawLine(
+                            color = hojaColor.copy(alpha = 0.085f),
+                            start = Offset(
+                                x = size.width * 0.76f,
+                                y = size.height * 0.055f
+                            ),
+                            end = Offset(
+                                x = size.width * 0.76f,
+                                y = size.height * 0.255f
+                            ),
+                            strokeWidth = 4f
+                        )
+
+                        // Nervaduras pequeñas
+                        drawLine(
+                            color = hojaColor.copy(alpha = 0.055f),
+                            start = Offset(
+                                x = size.width * 0.76f,
+                                y = size.height * 0.11f
+                            ),
+                            end = Offset(
+                                x = size.width * 0.66f,
+                                y = size.height * 0.09f
+                            ),
+                            strokeWidth = 3f
+                        )
+
+                        drawLine(
+                            color = hojaColor.copy(alpha = 0.055f),
+                            start = Offset(
+                                x = size.width * 0.76f,
+                                y = size.height * 0.15f
+                            ),
+                            end = Offset(
+                                x = size.width * 0.86f,
+                                y = size.height * 0.13f
+                            ),
+                            strokeWidth = 3f
+                        )
+
+                        drawLine(
+                            color = hojaColor.copy(alpha = 0.055f),
+                            start = Offset(
+                                x = size.width * 0.76f,
+                                y = size.height * 0.19f
+                            ),
+                            end = Offset(
+                                x = size.width * 0.66f,
+                                y = size.height * 0.18f
+                            ),
+                            strokeWidth = 3f
+                        )
+                    }
+                }
+
+                // CONTENIDO ORIGINAL
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(20.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+
+                    // Presentación
                     Text(
-                        text = "Atención presencial y online",
-                        fontSize = 20.sp,
+                        text = stringResource(R.string.inicio_titulo_bienestar),
+                        fontSize = 32.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.secondary
                     )
 
                     Spacer(
-                        modifier = Modifier.height(6.dp)
+                        modifier = Modifier.height(8.dp)
                     )
 
                     Text(
-                        text = "Elige la modalidad que más se adapte a ti."
+                        text = stringResource(R.string.inicio_desc_bienestar),
+                        fontSize = 17.sp,
+                        color = MaterialTheme.colorScheme.onBackground
                     )
-                }
-            }
 
-            Spacer(
-                modifier = Modifier.height(16.dp)
-            )
+                    Spacer(
+                        modifier = Modifier.height(24.dp)
+                    )
 
-            // Botón de acceso a la ubicación y GPS
-            OutlinedButton(
-                onClick = { navController.navigate("ubicacion") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Text(
-                    text = "📍 Ver Sede y Distancia (GPS)",
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.secondary
-                )
-            }
+                    // Botón reservar
+                    Button(
+                        onClick = {
 
-            Spacer(
-                modifier = Modifier.height(24.dp)
-            )
+                            if (usuario == null) {
 
-            if (usuario != null) {
+                                onLoginClick()
 
-                TextButton(
-                    onClick = {
+                            } else {
 
-                        appState.logout()
+                                onReserveClick()
+                            }
+                        },
 
-                    },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(55.dp),
 
-                    modifier =
-                        Modifier.align(
-                            Alignment.CenterHorizontally
+                        shape = RoundedCornerShape(18.dp),
+
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
                         )
-                ) {
+                    ) {
 
-                    Text("Cerrar sesión")
+                        Text(
+                            text = stringResource(R.string.inicio_btn_reservar),
+                            fontSize = 17.sp
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Acceso a la tienda virtual del centro.
+                    OutlinedButton(
+                        onClick = { onTiendaClick() },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(55.dp),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.inicio_btn_tienda),
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                    }
+
+                    if (usuario != null) {
+
+                        Spacer(
+                            modifier = Modifier.height(12.dp)
+                        )
+
+                        // Botón Mis citas (visible solo si el usuario tiene sesión iniciada)
+                        OutlinedButton(
+                            onClick = {
+                                onMyAppointmentsClick()
+                            },
+
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(55.dp),
+
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+
+                            Text(
+                                text = stringResource(R.string.inicio_btn_mis_citas),
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                        }
+                    }
+
+                    Spacer(
+                        modifier = Modifier.height(32.dp)
+                    )
+
+                    Text(
+                        text = stringResource(R.string.inicio_titulo_especialidades),
+                        fontSize = 25.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+
+                    Spacer(
+                        modifier = Modifier.height(16.dp)
+                    )
+
+                    when {
+                        errorCatalogo -> Text(
+                            text = stringResource(R.string.catalogo_error_carga),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        cargandoCatalogo -> Text(
+                            text = stringResource(R.string.catalogo_cargando),
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        especialidades.isEmpty() -> Text(
+                            text = stringResource(R.string.catalogo_vacio),
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        else -> especialidades.chunked(2).forEach { fila ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                fila.forEach { especialidad ->
+                                    EspecialidadCard(
+                                        nombre = especialidad.nombre,
+                                        icono = especialidad.icono,
+                                        modifier = Modifier.weight(1f),
+                                        onClick = { onSpecialtyClick(especialidad.id) }
+                                    )
+                                }
+                                if (fila.size == 1) {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
+                            }
+                            if (fila != especialidades.chunked(2).last()) {
+                                Spacer(modifier = Modifier.height(12.dp))
+                            }
+                        }
+                    }
+
+                    Spacer(
+                        modifier = Modifier.height(32.dp)
+                    )
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+
+                        shape = RoundedCornerShape(20.dp),
+
+                        colors = CardDefaults.cardColors(
+                            containerColor =
+                                MaterialTheme.colorScheme.primaryContainer
+                        )
+                    ) {
+
+                        Column(
+                            modifier = Modifier.padding(20.dp)
+                        ) {
+
+                            Text(
+                                text = stringResource(R.string.inicio_card_atencion_titulo),
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+
+                            Spacer(
+                                modifier = Modifier.height(6.dp)
+                            )
+
+                            Text(
+                                text = stringResource(R.string.inicio_card_atencion_desc)
+                            )
+                        }
+                    }
+
+                    Spacer(
+                        modifier = Modifier.height(16.dp)
+                    )
+
+                    // GPS
+                    OutlinedButton(
+                        onClick = {
+                            onLocationClick()
+                        },
+
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+
+                        Text(
+                            text = stringResource(R.string.inicio_btn_ubicacion),
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                    }
+
+                    Spacer(
+                        modifier = Modifier.height(12.dp)
+                    )
+
+                    // Espacio de Bienestar
+                    Button(
+                        onClick = {
+                            onGamesClick()
+                        },
+
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+
+                        shape = RoundedCornerShape(16.dp),
+
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.secondary
+                        )
+                    ) {
+
+                        Text(
+                            text = stringResource(R.string.inicio_btn_juegos),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 17.sp
+                        )
+                    }
+
+                    Spacer(
+                        modifier = Modifier.height(24.dp)
+                    )
+
+                    if (usuario != null) {
+
+                        TextButton(
+                            onClick = {
+                                onLogoutClick()
+                            },
+
+                            modifier = Modifier.align(
+                                Alignment.CenterHorizontally
+                            )
+                        ) {
+
+                            Text(stringResource(R.string.inicio_btn_cerrar_sesion))
+                        }
+                    }
+
+                    Spacer(
+                        modifier = Modifier.height(20.dp)
+                    )
                 }
             }
         }
@@ -290,29 +486,26 @@ fun HomeScreen(
 fun EspecialidadCard(
     nombre: String,
     icono: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
 
     Card(
         modifier = modifier
-            .height(125.dp),
+            .height(125.dp)
+            .clickable { onClick() },
 
-        shape =
-            RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(20.dp),
 
-        colors =
-            CardDefaults.cardColors(
-                containerColor =
-                    MaterialTheme.colorScheme.surface
-            )
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
 
         Column(
-            modifier =
-                Modifier.padding(16.dp),
+            modifier = Modifier.padding(16.dp),
 
-            verticalArrangement =
-                Arrangement.Center
+            verticalArrangement = Arrangement.Center
         ) {
 
             Text(
@@ -321,16 +514,23 @@ fun EspecialidadCard(
             )
 
             Spacer(
-                modifier =
-                    Modifier.height(8.dp)
+                modifier = Modifier.height(8.dp)
             )
 
             Text(
                 text = nombre,
                 fontWeight = FontWeight.Bold,
-                color =
-                    MaterialTheme.colorScheme.secondary
+                color = MaterialTheme.colorScheme.secondary
             )
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun EspecialidadCardPreview() {
+    EspecialidadCard(
+        nombre = "Psicología",
+        icono = "🧠"
+    )
 }

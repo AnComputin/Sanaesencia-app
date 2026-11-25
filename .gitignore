@@ -13,3 +13,15 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Keystore and signing credentials
+*.jks
+*.keystore
+keystore.properties
+
+# Local artifacts and device configurations
+/.artifacts/
+/.idea/deploymentTargetSelector.xml
+/.idea/deviceManager.xml
+.env
+backend/.env

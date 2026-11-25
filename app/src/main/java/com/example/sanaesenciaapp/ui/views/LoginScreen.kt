@@ -1,5 +1,10 @@
 package com.example.sanaesenciaapp.ui.views
 
+import androidx.compose.ui.res.stringResource
+import com.example.sanaesenciaapp.R
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -7,199 +12,418 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.sanaesenciaapp.data.AppState
+import com.example.sanaesenciaapp.ui.components.SanaBackground
+import com.example.sanaesenciaapp.ui.components.validationMessageText
+import com.example.sanaesenciaapp.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(navController: NavController,
-                appState: AppState) {
+fun LoginScreen(
+    onNavigateToHome: () -> Unit,
+    onNavigateToRegistro: () -> Unit,
+    appState: AppState? = null,
+    authViewModel: AuthViewModel = viewModel(factory = AuthViewModel.Factory)
+) {
 
-    var email by remember {
-        mutableStateOf("")
-    }
+    val state by authViewModel.uiState.collectAsState()
 
-    var password by remember {
-        mutableStateOf("")
-    }
+    val app = appState
 
-    var error by remember {
-        mutableStateOf("")
+    LaunchedEffect(state.loginExitoso) {
+        if (state.loginExitoso) {
+            onNavigateToHome()
+            authViewModel.onLoginNavegado()
+        }
     }
 
     Scaffold(
-
-        containerColor =
-            MaterialTheme.colorScheme.background,
+        containerColor = MaterialTheme.colorScheme.background,
 
         topBar = {
-
             TopAppBar(
                 title = {
-                    Text("Iniciar sesión")
+                    Text(
+                        text = stringResource(R.string.inicio_btn_iniciar_sesion),
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
                 }
             )
         }
 
     ) { padding ->
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(24.dp),
+        SanaBackground {
 
-            verticalArrangement = Arrangement.Center
-        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(
+                        horizontal = 22.dp,
+                        vertical = 28.dp
+                    ),
 
-            Text(
-                text = "Bienvenido nuevamente",
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.secondary
-            )
+                horizontalAlignment =
+                    Alignment.CenterHorizontally,
 
-            Text(
-                text = "Ingresa a tu cuenta SanaEsencia",
-                color = MaterialTheme.colorScheme.onBackground
-            )
+                verticalArrangement =
+                    Arrangement.Center
+            ) {
 
-            OutlinedTextField(
-                value = email,
-
-                onValueChange = {
-                    email = it
-                },
-
-                label = {
-                    Text("Correo electrónico")
-                },
-
-                singleLine = true,
-
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(
-                modifier = Modifier.height(12.dp)
-            )
-
-
-            Spacer(
-                modifier = Modifier.height(28.dp)
-            )
-
-            OutlinedTextField(
-                value = password,
-
-                onValueChange = {
-                    password = it
-                },
-
-                label = {
-                    Text("Contraseña")
-                },
-
-                singleLine = true,
-
-                visualTransformation = PasswordVisualTransformation(),
-
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(
-                modifier = Modifier.height(16.dp)
-            )
-
-            if (error.isNotEmpty()) {
-
-                Text(
-                    text = error,
-                    color = MaterialTheme.colorScheme.error
+                Image(
+                    painter = painterResource(id = R.drawable.ic_sanaesencia_logo),
+                    contentDescription = stringResource(R.string.inicio_app_name),
+                    modifier = Modifier.size(76.dp)
                 )
 
                 Spacer(
                     modifier = Modifier.height(8.dp)
                 )
-            }
 
-            Button(
+                Text(
+                    text = stringResource(R.string.inicio_login_bienvenida),
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.secondary
+                )
 
-                onClick = {
+                Spacer(
+                    modifier = Modifier.height(6.dp)
+                )
 
-                    when {
+                Text(
+                    text = stringResource(R.string.inicio_login_subtitulo),
+                    fontSize = 15.sp,
+                    color = MaterialTheme.colorScheme.onBackground
+                        .copy(alpha = 0.70f)
+                )
 
-                        email.isBlank() ||
-                                password.isBlank() -> {
+                Spacer(
+                    modifier = Modifier.height(28.dp)
+                )
 
-                            error =
-                                "Debe ingresar correo y contraseña"
-                        }
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
 
-                        password.length < 4 -> {
+                    shape = RoundedCornerShape(24.dp),
 
-                            error =
-                                "La contraseña debe tener al menos 4 caracteres"
-                        }
+                    colors = CardDefaults.cardColors(
+                        containerColor =
+                            MaterialTheme.colorScheme.surface
+                    ),
 
-                        appState.login(
-                            email.trim(),
-                            password
-                        ) -> {
+                    elevation = CardDefaults.cardElevation(
+                        defaultElevation = 2.dp
+                    )
+                ) {
 
-                            error = ""
+                    Column(
+                        modifier = Modifier.padding(22.dp)
+                    ) {
 
-                            navController.navigate("home") {
+                        Text(
+                            text = stringResource(R.string.inicio_login_acceso),
+                            fontSize = 19.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
 
-                                popUpTo("login") {
-                                    inclusive = true
+                        Spacer(
+                            modifier = Modifier.height(18.dp)
+                        )
+
+                        // Correo
+                        OutlinedTextField(
+                            value = state.email,
+
+                            onValueChange = {
+                                authViewModel.onEmailChange(it)
+                            },
+
+                            label = {
+                                Text(stringResource(R.string.inicio_label_correo))
+                            },
+
+                            leadingIcon = {
+                                Icon(
+                                    imageVector =
+                                        Icons.Default.Email,
+                                    contentDescription = stringResource(R.string.inicio_accessibility_email)
+                                )
+                            },
+
+                            isError =
+                                state.errorEmail != null,
+
+                            supportingText = {
+
+                                AnimatedVisibility(
+                                    visible =
+                                        state.errorEmail != null
+                                ) {
+
+                                    Text(
+                                        text =
+                                            validationMessageText(state.errorEmail),
+
+                                        color =
+                                            MaterialTheme
+                                                .colorScheme
+                                                .error
+                                    )
                                 }
+                            },
+
+                            singleLine = true,
+
+                            shape =
+                                RoundedCornerShape(16.dp),
+
+                            modifier =
+                                Modifier.fillMaxWidth()
+                        )
+
+                        Spacer(
+                            modifier = Modifier.height(12.dp)
+                        )
+
+                        // Contraseña
+                        OutlinedTextField(
+                            value = state.password,
+
+                            onValueChange = {
+                                authViewModel
+                                    .onLoginPasswordChange(it)
+                            },
+
+                            label = {
+                                Text(stringResource(R.string.inicio_label_contrasena))
+                            },
+
+                            leadingIcon = {
+                                Icon(
+                                    imageVector =
+                                        Icons.Default.Lock,
+
+                                    contentDescription =
+                                        stringResource(R.string.inicio_accessibility_contrasena)
+                                )
+                            },
+
+                            trailingIcon = {
+
+                                IconButton(
+                                    onClick = {
+                                        authViewModel
+                                            .togglePasswordVisibility()
+                                    }
+                                ) {
+
+                                    Icon(
+                                        imageVector =
+                                            if (
+                                                state.isPasswordVisible
+                                            )
+                                                Icons.Default
+                                                    .VisibilityOff
+                                            else
+                                                Icons.Default
+                                                    .Visibility,
+
+                                        contentDescription =
+                                            if (
+                                                state.isPasswordVisible
+                                            )
+                                                stringResource(R.string.inicio_accessibility_ocultar_contrasena)
+                                            else
+                                                stringResource(R.string.inicio_accessibility_ver_contrasena)
+                                    )
+                                }
+                            },
+
+                            visualTransformation =
+                                if (state.isPasswordVisible)
+                                    VisualTransformation.None
+                                else
+                                    PasswordVisualTransformation(),
+
+                            isError =
+                                state.errorPassword != null,
+
+                            supportingText = {
+
+                                AnimatedVisibility(
+                                    visible =
+                                        state.errorPassword != null
+                                ) {
+
+                                    Text(
+                                        text =
+                                            validationMessageText(state.errorPassword),
+
+                                        color =
+                                            MaterialTheme
+                                                .colorScheme
+                                                .error
+                                    )
+                                }
+                            },
+
+                            singleLine = true,
+
+                            shape =
+                                RoundedCornerShape(16.dp),
+
+                            modifier =
+                                Modifier.fillMaxWidth()
+                        )
+
+                        // Error general
+                        AnimatedVisibility(
+                            visible =
+                                state.errorGeneral != null
+                        ) {
+
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 12.dp),
+
+                                shape =
+                                    RoundedCornerShape(14.dp),
+
+                                colors =
+                                    CardDefaults.cardColors(
+                                        containerColor =
+                                            MaterialTheme
+                                                .colorScheme
+                                                .errorContainer
+                                    )
+                            ) {
+
+                                Text(
+                                    text =
+                                        state.errorGeneral ?: "",
+
+                                    color =
+                                        MaterialTheme
+                                            .colorScheme
+                                            .onErrorContainer,
+
+                                    fontSize = 13.sp,
+
+                                    modifier =
+                                        Modifier.padding(12.dp)
+                                )
                             }
                         }
 
-                        else -> {
+                        Spacer(
+                            modifier = Modifier.height(22.dp)
+                        )
 
-                            error =
-                                "Correo o contraseña incorrectos"
+                        Button(
+                            onClick = {
+                                authViewModel.iniciarSesion(appState = app)
+                            },
+                            enabled = !state.isLoading,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(55.dp),
+
+                            shape =
+                                RoundedCornerShape(18.dp)
+                        ) {
+                            if (state.isLoading) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Text(
+                                    text = stringResource(R.string.inicio_btn_iniciar_sesion),
+                                    fontSize = 16.sp,
+                                    fontWeight =
+                                        FontWeight.SemiBold
+                                )
+                            }
                         }
                     }
-                },
-
-                modifier =
-                    Modifier.fillMaxWidth()
-
-            ) {
-
-                Text("Iniciar sesión")
-            }
-
-            TextButton(
-
-                onClick = {
-                    navController.navigate("registro")
                 }
 
-            ) {
+                Spacer(
+                    modifier = Modifier.height(20.dp)
+                )
 
-                Text("¿No tienes cuenta? Regístrate")
+                Text(
+                    text = stringResource(R.string.inicio_login_sin_cuenta),
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onBackground
+                        .copy(alpha = 0.70f)
+                )
+
+                Spacer(
+                    modifier = Modifier.height(8.dp)
+                )
+
+                Button(
+                    onClick = onNavigateToRegistro,
+
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+
+                    shape =
+                        RoundedCornerShape(18.dp)
+                ) {
+
+                    Text(
+                        text = stringResource(R.string.inicio_login_crear_cuenta),
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                Spacer(
+                    modifier = Modifier.height(24.dp)
+                )
             }
         }
     }
