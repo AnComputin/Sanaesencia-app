@@ -610,7 +610,9 @@ class CitaViewModelTest {
             while (ok == null) kotlinx.coroutines.delay(10L)
         }
         assertTrue(ok == true)
-        assertEquals(1, viewModel.ultimaCita.value?.boxAsignado)
+        // El servidor asigna box 3 y CitaDao.reservarSiDisponible lo conserva
+        // mientras sea válido y esté libre (contrato con el auto-asignado del backend).
+        assertEquals(3, viewModel.ultimaCita.value?.boxAsignado)
 
         // 2. Rechazo HTTP 409 elimina retencion y limpia hora
         val client409 = OkHttpClient.Builder()

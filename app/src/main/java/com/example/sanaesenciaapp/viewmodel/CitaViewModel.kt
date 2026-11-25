@@ -378,13 +378,19 @@ class CitaViewModel(
                     return@launch
                 }
 
-                // Reemplaza la retención temporal por la cita confirmada (evitando colisión de PK local)
+                // Reemplaza la retención temporal por la cita confirmada.
+                // Cada paso va en su propio runCatching y se inserta con id=0:
+                // si el id del servidor colisionara con un id local, Room lanzaría
+                // y el intento con id automático nunca llegaría a ejecutarse
+                // (cita zombi en el servidor que luego rechazaba el reintento con 400).
                 var guardadaLocal: CitaEntity? = null
-                runCatching {
-                    dao.eliminar(idRetencion)
-                    guardadaLocal = dao.reservarSiDisponible(guardadaFinal)
-                        ?: dao.reservarSiDisponible(guardadaFinal.copy(id = 0))
-                }
+                runCatching { dao.eliminar(idRetencion) }
+                guardadaLocal = runCatching {
+                    dao.reservarSiDisponible(guardadaFinal)
+                }.getOrNull()
+                    ?: runCatching {
+                        dao.reservarSiDisponible(guardadaFinal.copy(id = 0))
+                    }.getOrNull()
 
                 retencionId = null
                 retencion = null

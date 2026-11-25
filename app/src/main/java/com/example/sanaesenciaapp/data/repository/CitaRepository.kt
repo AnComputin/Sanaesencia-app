@@ -28,10 +28,33 @@ class CitaRepository(
         try {
             val response = RetrofitClient.agendaApi.listarCitas(email)
             if (response.isSuccessful) {
+                val locales = citaDao.obtenerTodas()
                 response.body()?.forEach { remota ->
-                    citaDao.reservarSiDisponible(remota)
-                    if (remota.id > 0) {
-                        citaDao.actualizarEstado(remota.id, remota.estado)
+                    // Deduplica por (especialista, inicio, usuario): si ya está en
+                    // Room solo sincroniza el estado por su id LOCAL, y así cada
+                    // sincronización no vuelve a insertar la misma cita.
+                    val existente = locales.find {
+                        it.especialistaId == remota.especialistaId &&
+                            it.inicioMillis == remota.inicioMillis &&
+                            it.usuarioEmail.trim()
+                                .equals(remota.usuarioEmail.trim(), ignoreCase = true)
+                    }
+                    if (existente != null) {
+                        if (existente.estado != remota.estado) {
+                            citaDao.actualizarEstado(existente.id, remota.estado)
+                        }
+                    } else {
+                        // Conserva el id del servidor (los PATCH usan ese id).
+                        // Si el id colisionara con una fila local, Room lanza y se
+                        // reintenta con id local libre para no abortar toda la sync.
+                        val insertada = runCatching {
+                            citaDao.reservarSiDisponible(remota)
+                        }.getOrNull()
+                        if (insertada == null) {
+                            runCatching {
+                                citaDao.reservarSiDisponible(remota.copy(id = 0))
+                            }
+                        }
                     }
                 }
             }
@@ -68,7 +91,15 @@ class CitaRepository(
             when {
                 response.isSuccessful -> {
                     val guardadaRemota = response.body() ?: cita
-                    citaDao.reservarSiDisponible(guardadaRemota) ?: guardadaRemota
+                    // Primero con el id del servidor (los PATCH dependen de él);
+                    // si colisiona con una fila local, se reintenta con id libre.
+                    runCatching {
+                        citaDao.reservarSiDisponible(guardadaRemota)
+                    }.getOrNull()
+                        ?: runCatching {
+                            citaDao.reservarSiDisponible(guardadaRemota.copy(id = 0))
+                        }.getOrNull()
+                        ?: guardadaRemota
                 }
                 else -> null
             }
@@ -79,14 +110,22 @@ class CitaRepository(
         }
     }
 
-    /* Actualiza estado de cita en agenda-service (:8084) y en Room */
+    /* Actualiza estado de cita en agenda-service (:8084) y en Room.
+       Room solo se toca si el servidor confirmó (o si no hay backend):
+       si el servidor rechaza (p. ej. 403 porque PATCH es solo ADMIN),
+       marcarla igual en Room la desincroniza y el servidor sigue
+       bloqueando el horario mientras la app lo muestra libre. */
     suspend fun actualizarEstadoCita(id: Int, nuevoEstado: String) {
         if (RetrofitClient.estaInicializado()) {
-            try {
+            val respuesta = try {
                 RetrofitClient.agendaApi.cambiarEstadoCita(id = id, estado = nuevoEstado)
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
+                null
+            }
+            if (respuesta == null || !respuesta.isSuccessful) {
+                return
             }
         }
         citaDao.actualizarEstado(id, nuevoEstado)
