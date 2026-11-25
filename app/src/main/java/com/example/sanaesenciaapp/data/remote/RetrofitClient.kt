@@ -12,7 +12,7 @@ object RetrofitClient {
 
     // Cambia USE_REMOTE_BACKEND a true y coloca tu IP/dominio de AWS cuando el backend esté arriba
     private const val USE_REMOTE_BACKEND = true
-    private const val REMOTE_BASE_URL = "http://3.80.135.51/"
+    private const val REMOTE_BASE_URL = "http://34.236.155.95/"
 
     private const val LOCAL_HOST = "127.0.0.1"
 
