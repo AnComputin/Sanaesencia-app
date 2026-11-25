@@ -1,6 +1,7 @@
 package com.sana_esencia.agenda_service;
 
 import com.sana_esencia.agenda_service.controller.CitaController;
+import com.sana_esencia.agenda_service.dto.OcupacionCitaDto;
 import com.sana_esencia.agenda_service.entity.Cita;
 import com.sana_esencia.agenda_service.repository.CitaRepository;
 import com.sana_esencia.agenda_service.security.SecurityConfig;
@@ -154,6 +155,10 @@ class AgendaUnitTests {
         assertEquals(1, controller.listar(admin, "pac@sana.cl", null).getBody().size());
         assertEquals(1, controller.listar(admin, null, 2).getBody().size());
         assertEquals(1, controller.listar(admin, null, null).getBody().size());
+
+        when(repository.findOcupacionActiva()).thenReturn(List.of(new OcupacionCitaDto(2, "PRESENCIAL", 1000L, 3601000L)));
+        assertEquals(1, controller.listarOcupacion().getBody().size());
+        assertEquals(2, controller.listarOcupacion().getBody().get(0).especialistaId());
 
         when(repository.findById(1)).thenReturn(Optional.of(c));
         assertEquals(HttpStatus.OK, controller.obtenerPorId(1, paciente).getStatusCode());

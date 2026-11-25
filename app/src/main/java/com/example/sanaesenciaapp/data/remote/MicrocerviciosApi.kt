@@ -114,9 +114,19 @@ interface TerapeutasApi {
 }
 
 // --- 4. agenda-service (:8084) ---
+data class OcupacionCitaDto(
+    val especialistaId: Int,
+    val modalidad: String,
+    val inicioMillis: Long,
+    val finMillis: Long
+)
+
 interface AgendaApi {
     @GET("api/citas")
     suspend fun listarCitas(@Query("usuarioEmail") email: String? = null): Response<List<CitaEntity>>
+
+    @GET("api/citas/ocupacion")
+    suspend fun listarOcupacion(): Response<List<OcupacionCitaDto>>
 
     @POST("api/citas")
     suspend fun reservarCita(@Body cita: CrearCitaRequest): Response<CitaEntity>

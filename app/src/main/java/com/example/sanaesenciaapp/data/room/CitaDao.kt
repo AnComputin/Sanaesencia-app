@@ -125,4 +125,38 @@ abstract class CitaDao {
 
         return citaAInsertar.copy(id = idGenerado.toInt())
     }
+
+    /**
+     * Sincroniza en Room una cita recibida desde el servidor sin colisionar por PK
+     * ni abortar el resto del lote si existe una cita local previa con el mismo id.
+     */
+    @Transaction
+    open suspend fun sincronizarRemota(remota: CitaEntity) {
+        val locales = obtenerTodas()
+        val existente = locales.firstOrNull { local ->
+            local.usuarioEmail.equals(remota.usuarioEmail, ignoreCase = true) &&
+                local.especialistaId == remota.especialistaId &&
+                local.inicioMillis == remota.inicioMillis &&
+                local.finMillis == remota.finMillis
+        }
+
+        if (existente != null) {
+            if (!existente.estado.equals(remota.estado, ignoreCase = true)) {
+                actualizarEstado(existente.id, remota.estado)
+            }
+            return
+        }
+
+        val idColisiona = remota.id > 0 && locales.any { it.id == remota.id }
+        val aInsertar = if (idColisiona) remota.copy(id = 0) else remota
+
+        if (
+            aInsertar.estado.equals(ReglasAgenda.ESTADO_CONFIRMADA, ignoreCase = true) ||
+            aInsertar.estado.equals(ReglasAgenda.ESTADO_EN_PAGO, ignoreCase = true)
+        ) {
+            runCatching { reservarSiDisponible(aInsertar) }
+        } else {
+            runCatching { insertarInterno(aInsertar) }
+        }
+    }
 }

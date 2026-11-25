@@ -3,7 +3,7 @@ x-java-env: &java-env
   SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Define MYSQL_ROOT_PASSWORD en .env}
   SPRING_JPA_SHOW_SQL: "false"
   JWT_SECRET: ${JWT_SECRET:?Define JWT_SECRET en .env}
-  JAVA_TOOL_OPTIONS: "-Xms64m -Xmx192m -XX:+UseSerialGC -XX:MaxMetaspaceSize=96m"
+  JAVA_TOOL_OPTIONS: "-Xms48m -Xmx192m -XX:+UseSerialGC -XX:MaxMetaspaceSize=160m"
 
 services:
   mysql:

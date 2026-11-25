@@ -23,6 +23,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import com.example.sanaesenciaapp.data.remote.CrearCitaRequest
+import com.example.sanaesenciaapp.data.remote.OcupacionCitaDto
 
 enum class Modalidad {
     PRESENCIAL,
@@ -102,8 +103,10 @@ class CitaViewModel(
     private val _mensajeErrorReserva = MutableStateFlow<String?>(null)
     val mensajeErrorReserva: StateFlow<String?> = _mensajeErrorReserva.asStateFlow()
 
-    val horarios: StateFlow<List<Horario>> = combine(_uiState, citas) { estado, listaCitas ->
-        calcularHorarios(estado, listaCitas)
+    private val _ocupacionRemota = MutableStateFlow<List<OcupacionCitaDto>>(emptyList())
+
+    val horarios: StateFlow<List<Horario>> = combine(_uiState, citas, _ocupacionRemota) { estado, listaCitas, ocupacionRemota ->
+        calcularHorarios(estado, listaCitas, ocupacionRemota)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
@@ -130,6 +133,22 @@ class CitaViewModel(
         initialValue = false
     )
 
+    fun refrescarOcupacion() {
+        val repo = citaRepository ?: return
+        viewModelScope.launch {
+            repo.obtenerOcupacionRemota()?.let { lista ->
+                _ocupacionRemota.value = lista
+            }
+        }
+    }
+
+    private suspend fun refrescarOcupacionInternal() {
+        val repo = citaRepository ?: return
+        repo.obtenerOcupacionRemota()?.let { lista ->
+            _ocupacionRemota.value = lista
+        }
+    }
+
     suspend fun iniciarPago(usuarioEmail: String): Boolean {
         _mensajeErrorReserva.value = null
         if (pagoInicioMillis == null) {
@@ -139,13 +158,29 @@ class CitaViewModel(
         val dao = citaDao ?: return true
 
         citaRepository?.sincronizarCitasDesdeServidor(null)
+        refrescarOcupacionInternal()
         runCatching { dao.eliminarRetenciones() }
 
         val entidad = construirEntidad(usuarioEmail, ReglasAgenda.ESTADO_EN_PAGO)
             ?: return false
 
+        val ocupadaEnServidor = slotOcupadoEnRemoto(
+            especialistaId = entidad.especialistaId,
+            modalidadPresencial = ReglasAgenda.esPresencial(entidad.modalidad),
+            inicio = entidad.inicioMillis,
+            fin = entidad.finMillis,
+            listaCitas = citas.value,
+            ocupacionRemota = _ocupacionRemota.value
+        )
+        if (ocupadaEnServidor) {
+            _mensajeErrorReserva.value = "La hora dejó de estar disponible. Vuelve a seleccionar un horario."
+            _uiState.update { it.copy(hora = null) }
+            return false
+        }
+
         val retenida = runCatching { dao.reservarSiDisponible(entidad) }.getOrNull()
         if (retenida == null) {
+            _mensajeErrorReserva.value = "La hora dejó de estar disponible. Vuelve a seleccionar un horario."
             _uiState.update { it.copy(hora = null) }
             return false
         }
@@ -171,6 +206,7 @@ class CitaViewModel(
         liberarRetencion()
         _mensajeErrorReserva.value = null
         _ultimaCita.value = null
+        _ocupacionRemota.value = emptyList()
         _uiState.value = CitaUiState()
     }
 
@@ -210,6 +246,7 @@ class CitaViewModel(
             modalidad = modalidadInicial
         )
         reiniciarPago()
+        refrescarOcupacion()
     }
 
     fun seleccionarModalidad(m: Modalidad) {
@@ -224,6 +261,7 @@ class CitaViewModel(
             estado.copy(fechaMillis = millis, hora = null)
         }
         reiniciarPago()
+        refrescarOcupacion()
     }
 
     fun seleccionarHora(hora: String) {
@@ -347,6 +385,16 @@ class CitaViewModel(
                                 rechazadaPorCupo = true
                                 errorServidor = response.errorBody()?.string()?.takeIf { it.isNotBlank() }
                                     ?: "La hora dejó de estar disponible. Vuelve a seleccionar un horario."
+                                _ocupacionRemota.update { actual ->
+                                    val nuevoSlot = OcupacionCitaDto(
+                                        especialistaId = existe.especialistaId,
+                                        modalidad = existe.modalidad,
+                                        inicioMillis = existe.inicioMillis,
+                                        finMillis = existe.finMillis
+                                    )
+                                    if (nuevoSlot in actual) actual else actual + nuevoSlot
+                                }
+                                refrescarOcupacion()
                             }
                             response.code() == 401 -> {
                                 errorServidor = "Tu sesión expiró en el servidor. Vuelve a iniciar sesión para confirmar tu cita."
@@ -379,12 +427,10 @@ class CitaViewModel(
                 }
 
                 // Reemplaza la retención temporal por la cita confirmada (evitando colisión de PK local)
-                var guardadaLocal: CitaEntity? = null
-                runCatching {
-                    dao.eliminar(idRetencion)
-                    guardadaLocal = dao.reservarSiDisponible(guardadaFinal)
-                        ?: dao.reservarSiDisponible(guardadaFinal.copy(id = 0))
-                }
+                runCatching { dao.eliminar(idRetencion) }
+                val guardadaLocal: CitaEntity? =
+                    runCatching { dao.reservarSiDisponible(guardadaFinal) }.getOrNull()
+                        ?: runCatching { dao.reservarSiDisponible(guardadaFinal.copy(id = 0)) }.getOrNull()
 
                 retencionId = null
                 retencion = null
@@ -406,6 +452,7 @@ class CitaViewModel(
                 val reservada = repo.reservarCita(entidad)
 
                 if (reservada == null) {
+                    _mensajeErrorReserva.value = "La hora dejó de estar disponible. Vuelve a seleccionar un horario."
                     _uiState.update { it.copy(hora = null) }
                     onResultado(false)
                     return@launch
@@ -516,7 +563,8 @@ class CitaViewModel(
 
     private fun calcularHorarios(
         estado: CitaUiState,
-        listaCitas: List<CitaItem>
+        listaCitas: List<CitaItem>,
+        ocupacionRemota: List<OcupacionCitaDto> = emptyList()
     ): List<Horario> {
         val fechaMillis = estado.fechaMillis
         if (fechaMillis == null || estado.especialistaId <= 0) {
@@ -527,28 +575,58 @@ class CitaViewModel(
             val inicio = construirInicio(fechaMillis, hora)
             val fin = ReglasAgenda.calcularFin(inicio)
 
-            val especialistaOcupado = listaCitas.any { cita ->
-                (cita.estado == EstadoReserva.CONFIRMADA || cita.estado == EstadoReserva.EN_PAGO) &&
-                        cita.especialistaId == estado.especialistaId &&
-                        ReglasAgenda.haySolapamiento(cita.inicioMillis, cita.finMillis, inicio, fin)
-            }
-
-            val hayBoxDisponible = if (estado.modalidad == Modalidad.PRESENCIAL) {
-                val presencialesSolapadas = listaCitas.count { cita ->
-                    (cita.estado == EstadoReserva.CONFIRMADA || cita.estado == EstadoReserva.EN_PAGO) &&
-                            cita.modalidad == Modalidad.PRESENCIAL &&
-                            ReglasAgenda.haySolapamiento(cita.inicioMillis, cita.finMillis, inicio, fin)
-                }
-                presencialesSolapadas < ReglasAgenda.TOTAL_BOXES
-            } else {
-                true
-            }
+            val ocupado = slotOcupadoEnRemoto(
+                especialistaId = estado.especialistaId,
+                modalidadPresencial = estado.modalidad == Modalidad.PRESENCIAL,
+                inicio = inicio,
+                fin = fin,
+                listaCitas = listaCitas,
+                ocupacionRemota = ocupacionRemota
+            )
 
             Horario(
                 hora = hora,
-                disponible = !especialistaOcupado && hayBoxDisponible
+                disponible = !ocupado
             )
         }
+    }
+
+    private fun slotOcupadoEnRemoto(
+        especialistaId: Int,
+        modalidadPresencial: Boolean,
+        inicio: Long,
+        fin: Long,
+        listaCitas: List<CitaItem>,
+        ocupacionRemota: List<OcupacionCitaDto>
+    ): Boolean {
+        val activasLocales = listaCitas.filter { cita ->
+            cita.estado == EstadoReserva.CONFIRMADA || cita.estado == EstadoReserva.EN_PAGO
+        }
+
+        val especialistaOcupado = activasLocales.any { cita ->
+            cita.especialistaId == especialistaId &&
+                ReglasAgenda.haySolapamiento(cita.inicioMillis, cita.finMillis, inicio, fin)
+        } || ocupacionRemota.any { remota ->
+            remota.especialistaId == especialistaId &&
+                ReglasAgenda.haySolapamiento(remota.inicioMillis, remota.finMillis, inicio, fin)
+        }
+        if (especialistaOcupado) return true
+
+        if (!modalidadPresencial) return false
+
+        val localesPresenciales = activasLocales.filter { cita ->
+            cita.modalidad == Modalidad.PRESENCIAL &&
+                ReglasAgenda.haySolapamiento(cita.inicioMillis, cita.finMillis, inicio, fin)
+        }
+        val clavesLocales = localesPresenciales.map { Triple(it.especialistaId, it.inicioMillis, it.finMillis) }.toSet()
+
+        val remotasAdicionales = ocupacionRemota.count { remota ->
+            remota.modalidad.equals(Modalidad.PRESENCIAL.name, ignoreCase = true) &&
+                ReglasAgenda.haySolapamiento(remota.inicioMillis, remota.finMillis, inicio, fin) &&
+                Triple(remota.especialistaId, remota.inicioMillis, remota.finMillis) !in clavesLocales
+        }
+
+        return (localesPresenciales.size + remotasAdicionales) >= ReglasAgenda.TOTAL_BOXES
     }
 
     private fun generarFechasDisponibles(): List<Long> {

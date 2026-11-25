@@ -54,9 +54,12 @@ fun PagoScreen(
     val mensajeErrorVm by citaViewModel.mensajeErrorReserva.collectAsState()
 
     var errorInicioPago by remember { mutableStateOf(false) }
+    var iniciandoPago by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
+        iniciandoPago = true
         val inicioOk = citaViewModel.iniciarPago(usuarioEmail)
+        iniciandoPago = false
         if (!inicioOk) {
             errorInicioPago = true
         }
@@ -88,8 +91,14 @@ fun PagoScreen(
         mutableStateOf<String?>(null)
     }
 
-    LaunchedEffect(tiempoRestante, errorInicioPago) {
-        if (errorInicioPago) return@LaunchedEffect
+    LaunchedEffect(mensajeErrorVm) {
+        if (mensajeErrorVm != null) {
+            errorReserva = mensajeErrorVm
+        }
+    }
+
+    LaunchedEffect(tiempoRestante, errorInicioPago, iniciandoPago) {
+        if (errorInicioPago || iniciandoPago) return@LaunchedEffect
 
         if (tiempoRestante > 0) {
 
@@ -488,14 +497,15 @@ fun PagoScreen(
                         if (exito) {
                             onPagoExitoso()
                         } else {
-                            errorReserva = mensajeErrorVm
+                            errorReserva = citaViewModel.mensajeErrorReserva.value
                                 ?: "La hora dejó de estar disponible. Vuelve a seleccionar un horario."
                         }
                     }
                 },
 
                 enabled =
-                    !estaExpirado &&
+                    !iniciandoPago &&
+                            !estaExpirado &&
                             tiempoRestante > 0 &&
                             !procesandoPago &&
                             usuarioEmail.isNotBlank() &&
@@ -510,7 +520,11 @@ fun PagoScreen(
             ) {
 
                 Text(
-                    text = if (procesandoPago) "Confirmando reserva..." else "Pagar $35.000",
+                    text = when {
+                        iniciandoPago -> "Preparando reserva..."
+                        procesandoPago -> "Confirmando reserva..."
+                        else -> "Pagar $35.000"
+                    },
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -618,7 +632,8 @@ fun PagoScreen(
 
             text = {
                 Text(
-                    "No pudimos reservar tu horario para pagar. Puede que ya esté ocupado; vuelve a seleccionar uno."
+                    mensajeErrorVm
+                        ?: "No pudimos reservar tu horario para pagar. Puede que ya esté ocupado; vuelve a seleccionar uno."
                 )
             },
 

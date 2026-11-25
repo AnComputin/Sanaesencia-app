@@ -1,5 +1,6 @@
 package com.sana_esencia.agenda_service.controller;
 
+import com.sana_esencia.agenda_service.dto.OcupacionCitaDto;
 import com.sana_esencia.agenda_service.entity.Cita;
 import com.sana_esencia.agenda_service.service.CitaService;
 import org.springframework.security.access.AccessDeniedException;
@@ -52,6 +53,16 @@ public class CitaController {
             return ResponseEntity.ok(service.listarPorEspecialista(especialistaId));
         }
         return ResponseEntity.ok(service.listarTodas());
+    }
+
+    /**
+     * Devuelve la ocupación horaria activa sin exponer datos personales de otros pacientes,
+     * permitiendo mostrar disponibilidad real antes de intentar el pago.
+     */
+    @GetMapping("/ocupacion")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PACIENTE')")
+    public ResponseEntity<List<OcupacionCitaDto>> listarOcupacion() {
+        return ResponseEntity.ok(service.listarOcupacionActiva());
     }
 
     @GetMapping("/{id}")

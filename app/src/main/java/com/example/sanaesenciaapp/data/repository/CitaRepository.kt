@@ -1,6 +1,7 @@
 package com.example.sanaesenciaapp.data.repository
 
 import com.example.sanaesenciaapp.data.remote.CrearCitaRequest
+import com.example.sanaesenciaapp.data.remote.OcupacionCitaDto
 import com.example.sanaesenciaapp.data.remote.RetrofitClient
 import com.example.sanaesenciaapp.data.room.CitaDao
 import com.example.sanaesenciaapp.data.room.CitaEntity
@@ -29,16 +30,25 @@ class CitaRepository(
             val response = RetrofitClient.agendaApi.listarCitas(email)
             if (response.isSuccessful) {
                 response.body()?.forEach { remota ->
-                    citaDao.reservarSiDisponible(remota)
-                    if (remota.id > 0) {
-                        citaDao.actualizarEstado(remota.id, remota.estado)
-                    }
+                    citaDao.sincronizarRemota(remota)
                 }
             }
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
             // Si no hay conexión, Room mantiene disponibles las citas locales
+        }
+    }
+
+    suspend fun obtenerOcupacionRemota(): List<OcupacionCitaDto>? {
+        if (!RetrofitClient.estaInicializado()) return null
+        return try {
+            val response = RetrofitClient.agendaApi.listarOcupacion()
+            if (response.isSuccessful) response.body() else null
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            null
         }
     }
 

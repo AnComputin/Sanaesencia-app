@@ -109,6 +109,9 @@ class RemoteRepositoriesTest {
                 .mapNotNull { it.boxAsignado }
         override suspend fun insertarInterno(cita: CitaEntity): Long {
             val id = if (cita.id > 0) cita.id else nextId++
+            if (citas.any { it.id == id }) {
+                throw IllegalStateException("PK collision $id")
+            }
             citas.add(cita.copy(id = id))
             return id.toLong()
         }
@@ -336,6 +339,27 @@ class RemoteRepositoriesTest {
 
         configurarRetrofit { throw IOException("sin red") }
         assertNull(repo.reservarCita(cita.copy(inicioMillis = 190000L, finMillis = 199000L)))
+        assertNull(repo.obtenerOcupacionRemota())
+
+        // Sincronización maneja colisión de PK local sin abortar el resto del lote
+        configurarRetrofit { chain ->
+            val path = chain.request().url.encodedPath
+            val body = when {
+                path.endsWith("/citas/ocupacion") ->
+                    """[{"especialistaId":3,"modalidad":"ONLINE","inicioMillis":400000,"finMillis":4000000}]"""
+                path.endsWith("/citas") ->
+                    """[
+                        {"id":10,"usuarioEmail":"otro@sana.cl","especialidadId":1,"especialidadNombre":"Psicología","especialistaId":4,"especialistaNombre":"Dr. X","modalidad":"ONLINE","inicioMillis":500000,"finMillis":4100000,"hora":"11:00","pacienteNombre":"Otro","beneficiarioId":null,"estado":"CONFIRMADA","boxAsignado":null},
+                        {"id":12,"usuarioEmail":"pac@sana.cl","especialidadId":1,"especialidadNombre":"Psicología","especialistaId":5,"especialistaNombre":"Dr. Y","modalidad":"ONLINE","inicioMillis":600000,"finMillis":4200000,"hora":"12:00","pacienteNombre":"Pac","beneficiarioId":null,"estado":"CONFIRMADA","boxAsignado":null}
+                    ]"""
+                else -> "[]"
+            }
+            Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1)
+                .code(200).message("OK").body(body.toResponseBody("application/json".toMediaType())).build()
+        }
+        repo.sincronizarCitasDesdeServidor(null)
+        assertTrue(dao.citas.any { it.especialistaId == 5 })
+        assertEquals(1, repo.obtenerOcupacionRemota()?.size)
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.sana_esencia.agenda_service.service;
 
+import com.sana_esencia.agenda_service.dto.OcupacionCitaDto;
 import com.sana_esencia.agenda_service.entity.Cita;
 import com.sana_esencia.agenda_service.repository.CitaRepository;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,11 @@ public class CitaService {
     @Transactional(readOnly = true)
     public List<Cita> listarTodas() {
         return repository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public List<OcupacionCitaDto> listarOcupacionActiva() {
+        return repository.findOcupacionActiva();
     }
 
     @Transactional(readOnly = true)

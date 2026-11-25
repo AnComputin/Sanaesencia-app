@@ -610,7 +610,7 @@ class CitaViewModelTest {
             while (ok == null) kotlinx.coroutines.delay(10L)
         }
         assertTrue(ok == true)
-        assertEquals(1, viewModel.ultimaCita.value?.boxAsignado)
+        assertEquals(3, viewModel.ultimaCita.value?.boxAsignado)
 
         // 2. Rechazo HTTP 409 elimina retencion y limpia hora
         val client409 = OkHttpClient.Builder()
@@ -737,5 +737,86 @@ class CitaViewModelTest {
         var confirmado: Boolean? = null
         viewModel.confirmarCita("test@mail.com") { confirmado = it }
         assertFalse(confirmado == true)
+    }
+
+    @Test
+    fun `ocupacionRemota bloquea horario ocupado por otro paciente y preserva mensaje de error real`() = runBlocking {
+        val fecha = viewModel.fechasDisponibles.first()
+        val inicio09 = java.util.Calendar.getInstance().apply {
+            timeInMillis = fecha
+            set(java.util.Calendar.HOUR_OF_DAY, 9)
+            set(java.util.Calendar.MINUTE, 0)
+            set(java.util.Calendar.SECOND, 0)
+            set(java.util.Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        val fin09 = inicio09 + 3_600_000L
+
+        val clientOcupacion = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val path = chain.request().url.encodedPath
+                val method = chain.request().method
+                val body = when {
+                    path.endsWith("/citas/ocupacion") && method == "GET" ->
+                        """[{"especialistaId":1,"modalidad":"PRESENCIAL","inicioMillis":$inicio09,"finMillis":$fin09}]"""
+                    path.endsWith("/citas") && method == "GET" -> "[]"
+                    else -> "{}"
+                }
+                Response.Builder()
+                    .request(chain.request())
+                    .protocol(Protocol.HTTP_1_1)
+                    .code(200)
+                    .message("OK")
+                    .body(body.toResponseBody("application/json".toMediaType()))
+                    .build()
+            }
+            .build()
+        RetrofitClient.configurarParaPruebas("http://localhost/", clientOcupacion, TokenManager(null))
+
+        val horariosJob = launch { viewModel.horarios.collect {} }
+        try {
+            viewModel.seleccionarServicio("Psicología", "Dr. Test", "Ambas", 1, 1)
+            viewModel.seleccionarModalidad(Modalidad.PRESENCIAL)
+            viewModel.seleccionarFecha(fecha)
+
+            withTimeout(3_000L) {
+                while (viewModel.horarios.value.first { it.hora == "09:00" }.disponible) {
+                    kotlinx.coroutines.delay(10L)
+                }
+            }
+            assertFalse(viewModel.horarios.value.first { it.hora == "09:00" }.disponible)
+            assertTrue(viewModel.horarios.value.first { it.hora == "10:30" }.disponible)
+
+            // 10:30 está libre: iniciarPago pasa, pero si el servidor devuelve 401 se expone el mensaje real
+            viewModel.seleccionarHora("10:30")
+            viewModel.seleccionarPaciente("Paciente Uno", null)
+            assertTrue(viewModel.iniciarPago("pac@sana.cl"))
+
+            val client401 = OkHttpClient.Builder()
+                .addInterceptor { chain ->
+                    val code = if (chain.request().method == "POST") 401 else 200
+                    val body = if (chain.request().method == "POST") "" else "[]"
+                    Response.Builder()
+                        .request(chain.request())
+                        .protocol(Protocol.HTTP_1_1)
+                        .code(code)
+                        .message("Unauthorized")
+                        .body(body.toResponseBody("application/json".toMediaType()))
+                        .build()
+                }
+                .build()
+            RetrofitClient.configurarParaPruebas("http://localhost/", client401, TokenManager(null))
+
+            var res401: Boolean? = null
+            viewModel.confirmarCita("pac@sana.cl") { res401 = it }
+            withTimeout(3_000L) {
+                while (res401 == null) kotlinx.coroutines.delay(10L)
+            }
+            assertFalse(res401 == true)
+            assertTrue(viewModel.mensajeErrorReserva.value?.contains("sesión expiró", ignoreCase = true) == true)
+            // Un 401 no limpia la hora ni la retención para permitir reintento o diagnóstico claro
+            assertEquals("10:30", viewModel.uiState.value.hora)
+        } finally {
+            horariosJob.cancel()
+        }
     }
 }
