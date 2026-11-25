@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,6 +34,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
@@ -81,7 +83,7 @@ import java.util.TimeZone
 fun RegistroScreen(
     onRegistroExitoso: () -> Unit,
     appState: AppState? = null,
-    authViewModel: AuthViewModel = viewModel()
+    authViewModel: AuthViewModel = viewModel(factory = AuthViewModel.Factory)
 ) {
 
     val state by authViewModel.uiState.collectAsState()
@@ -1171,77 +1173,23 @@ fun RegistroScreen(
 
                 Button(
                     onClick = {
-
-                        val valido =
-                            authViewModel
-                                .validarRegistro()
-
-                        if (valido) {
-
-                            if (appState == null) {
-
-                                authViewModel
-                                    .setErrorGeneral(
-                                        errorBaseDatos
+                        authViewModel.registrarCuenta(
+                            appState = appState,
+                            mensajeCorreoExistente = mensajeCorreoExistente,
+                            mensajeErrorBaseDatos = errorBaseDatos,
+                            onExito = {
+                                Toast
+                                    .makeText(
+                                        context,
+                                        mensajeRegistroExitoso,
+                                        Toast.LENGTH_SHORT
                                     )
-
-                            } else {
-
-                                val registrado =
-                                    appState
-                                        .registrarUsuario(
-                                            nombre =
-                                                state.nombre,
-
-                                            email =
-                                                state.email,
-
-                                            password =
-                                                state.password,
-
-                                            rut =
-                                                state.rut,
-
-                                            telefono =
-                                                state.telefono,
-
-                                            fechaNacimiento =
-                                                state.fechaNacimiento,
-
-                                            comuna =
-                                                state.comuna,
-
-                                            rol =
-                                                state.rol
-                                        )
-
-                                if (registrado) {
-
-                                    authViewModel
-                                        .setErrorGeneral(
-                                            null
-                                        )
-
-                                    Toast
-                                        .makeText(
-                                            context,
-                                            mensajeRegistroExitoso,
-                                            Toast.LENGTH_SHORT
-                                        )
-                                        .show()
-
-                                    onRegistroExitoso()
-
-                                } else {
-
-                                    authViewModel
-                                        .setErrorGeneral(
-                                            mensajeCorreoExistente
-                                        )
-                                }
+                                    .show()
+                                onRegistroExitoso()
                             }
-                        }
+                        )
                     },
+                    enabled = !state.isLoading,
 
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1250,12 +1198,19 @@ fun RegistroScreen(
                     shape =
                         RoundedCornerShape(18.dp)
                 ) {
-
-                    Text(
-                        text = stringResource(R.string.inicio_btn_crear_cuenta),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    if (state.isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(R.string.inicio_btn_crear_cuenta),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
 
                 Text(

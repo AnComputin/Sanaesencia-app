@@ -1,12 +1,21 @@
 package com.example.sanaesenciaapp.viewmodel
 
+import com.example.sanaesenciaapp.data.remote.RetrofitClient
+import com.example.sanaesenciaapp.data.remote.TokenManager
 import com.example.sanaesenciaapp.data.room.CitaDao
 import com.example.sanaesenciaapp.data.room.CitaEntity
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Protocol
+import okhttp3.Response
+import okhttp3.ResponseBody.Companion.toResponseBody
+import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -116,12 +125,14 @@ class CitaViewModelTest {
     @Before
     fun setup() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
+        RetrofitClient.resetParaPruebas()
         fakeDao = FakeCitaDao()
         viewModel = CitaViewModel(fakeDao)
     }
 
     @After
     fun tearDown() {
+        RetrofitClient.resetParaPruebas()
         Dispatchers.resetMain()
     }
 
@@ -544,5 +555,268 @@ class CitaViewModelTest {
         viewModel.liberarRetencion()
 
         assertEquals("CONFIRMADA", fakeDao.citasGuardadas.single().estado)
+    }
+
+    @Test
+    fun `limpiarSesion borra seleccion actual y ultimaCita al cerrar sesion`() = runTest {
+        prepararReserva()
+        var resultado: Boolean? = null
+        viewModel.confirmarCita("test@mail.com") { resultado = it }
+        assertTrue(resultado == true)
+        assertNotNull(viewModel.ultimaCita.value)
+
+        prepararReserva()
+        assertEquals("Psicología", viewModel.uiState.value.especialidad)
+
+        viewModel.limpiarSesion()
+
+        assertNull(viewModel.ultimaCita.value)
+        assertEquals("", viewModel.uiState.value.especialidad)
+        assertEquals("", viewModel.uiState.value.nombrePaciente)
+        assertEquals(0, viewModel.uiState.value.especialistaId)
+    }
+
+    @Test
+    fun `confirmarCita con retencion y Retrofit maneja exito 201 error HTTP 409 y error de red`() = runBlocking {
+        // 1. Exito 201 desde agenda-service
+        val clientOk = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val path = chain.request().url.encodedPath
+                val method = chain.request().method
+                val body = when {
+                    path.endsWith("/citas") && method == "GET" -> "[]"
+                    path.endsWith("/citas") && method == "POST" ->
+                        """{"id":50,"usuarioEmail":"test@mail.com","especialidadId":1,"especialidadNombre":"Psicología","especialistaId":1,"especialistaNombre":"Dr. Test","modalidad":"PRESENCIAL","inicioMillis":1000,"finMillis":3601000,"hora":"09:00","pacienteNombre":"Paciente Test","beneficiarioId":null,"estado":"CONFIRMADA","boxAsignado":3}"""
+                    else -> "{}"
+                }
+                Response.Builder()
+                    .request(chain.request())
+                    .protocol(Protocol.HTTP_1_1)
+                    .code(if (method == "POST") 201 else 200)
+                    .message("OK")
+                    .body(body.toResponseBody("application/json".toMediaType()))
+                    .build()
+            }
+            .build()
+        RetrofitClient.configurarParaPruebas("http://localhost/", clientOk, TokenManager(null))
+
+        prepararReserva()
+        assertTrue(viewModel.iniciarPago("test@mail.com"))
+        assertTrue(viewModel.segundosRestantesPago() in 0..600)
+
+        var ok: Boolean? = null
+        viewModel.confirmarCita("test@mail.com") { ok = it }
+        withTimeout(3_000L) {
+            while (ok == null) kotlinx.coroutines.delay(10L)
+        }
+        assertTrue(ok == true)
+        assertEquals(3, viewModel.ultimaCita.value?.boxAsignado)
+
+        // 2. Rechazo HTTP 409 elimina retencion y limpia hora
+        val client409 = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val method = chain.request().method
+                Response.Builder()
+                    .request(chain.request())
+                    .protocol(Protocol.HTTP_1_1)
+                    .code(if (method == "POST") 409 else 200)
+                    .message("Conflict")
+                    .body((if (method == "POST") "ocupado" else "[]").toResponseBody("application/json".toMediaType()))
+                    .build()
+            }
+            .build()
+        RetrofitClient.configurarParaPruebas("http://localhost/", client409, TokenManager(null))
+
+        prepararReserva(especialistaId = 2, hora = "10:30")
+        assertTrue(viewModel.iniciarPago("test@mail.com"))
+        var res409: Boolean? = null
+        viewModel.confirmarCita("test@mail.com") { res409 = it }
+        withTimeout(3_000L) {
+            while (res409 == null) kotlinx.coroutines.delay(10L)
+        }
+        assertFalse(res409 == true)
+        assertNull(viewModel.uiState.value.hora)
+        assertFalse(fakeDao.citasGuardadas.any { it.estado == "EN_PAGO" })
+
+        // 3. Error de red elimina retencion
+        var fallarPost = false
+        val clientRed = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                if (fallarPost && chain.request().method == "POST") throw IOException("sin red")
+                Response.Builder()
+                    .request(chain.request())
+                    .protocol(Protocol.HTTP_1_1)
+                    .code(200)
+                    .message("OK")
+                    .body("[]".toResponseBody("application/json".toMediaType()))
+                    .build()
+            }
+            .build()
+        RetrofitClient.configurarParaPruebas("http://localhost/", clientRed, TokenManager(null))
+
+        prepararReserva(especialistaId = 3, hora = "12:00")
+        assertTrue(viewModel.iniciarPago("test@mail.com"))
+        fallarPost = true
+        var resRed: Boolean? = null
+        viewModel.confirmarCita("test@mail.com") { resRed = it }
+        withTimeout(3_000L) {
+            while (resRed == null) kotlinx.coroutines.delay(10L)
+        }
+        assertFalse(resRed == true)
+    }
+
+    @Test
+    fun `modo en memoria sin DAO cubre seleccion de modalidad fija hora ocupada reserva y cancelacion`() = runBlocking {
+        val memVm = CitaViewModel(citaDao = null)
+        memVm.seleccionarServicio("Reiki", "Terapeuta", "Presencial", 2, 10)
+        assertEquals(Modalidad.PRESENCIAL, memVm.uiState.value.modalidad)
+
+        memVm.seleccionarServicio("Psicología", "Terapeuta 2", "Online", 1, 11)
+        assertEquals(Modalidad.ONLINE, memVm.uiState.value.modalidad)
+
+        val fechaFutura = memVm.fechasDisponibles[3]
+        memVm.seleccionarFecha(fechaFutura)
+        memVm.seleccionarHora("09:00")
+        memVm.seleccionarPaciente("", null)
+        assertNotNull(memVm.uiState.value.errorNombre)
+        memVm.seleccionarPaciente("Paciente Memoria", 4)
+        assertNull(memVm.uiState.value.errorNombre)
+
+        var okMem: Boolean? = null
+        memVm.confirmarCita("mem@mail.com") { okMem = it }
+        assertTrue(okMem == true)
+        val citaMemId = memVm.ultimaCita.value!!.id
+        assertTrue(memVm.cancelarCita(citaMemId))
+        assertEquals(EstadoReserva.CANCELADA, memVm.citas.value.first { it.id == citaMemId }.estado)
+
+        val horariosJob = launch { memVm.horarios.collect {} }
+        try {
+            // Presencial en memoria hasta llenar 8 boxes
+            for (esp in 1..8) {
+                memVm.seleccionarServicio("Masaje", "Esp $esp", "Presencial", 3, esp)
+                memVm.seleccionarFecha(fechaFutura)
+                memVm.seleccionarHora("10:30")
+                memVm.seleccionarPaciente("Pac $esp", null)
+                var res: Boolean? = null
+                memVm.confirmarCita("mem@mail.com") { res = it }
+                assertTrue(res == true)
+            }
+            memVm.seleccionarServicio("Masaje", "Esp 9", "Presencial", 3, 9)
+            memVm.seleccionarFecha(fechaFutura)
+            withTimeout(3_000L) {
+                while (memVm.horarios.value.first { it.hora == "10:30" }.disponible) {
+                    kotlinx.coroutines.delay(10L)
+                }
+            }
+            memVm.seleccionarHora("10:30")
+            assertNull(memVm.uiState.value.hora) // horario ocupado no se selecciona
+            memVm.seleccionarPaciente("Pac 9", null)
+            var res9: Boolean? = null
+            memVm.confirmarCita("mem@mail.com") { res9 = it }
+            assertFalse(res9 == true)
+        } finally {
+            horariosJob.cancel()
+        }
+    }
+
+    @Test
+    fun `iniciarPago falla cuando la retencion fue borrada antes de confirmar o horario ya ocupado`() = runTest {
+        prepararReserva(especialistaId = 1, hora = "09:00")
+        var confirmadaPrevia: Boolean? = null
+        viewModel.confirmarCita("test@mail.com") { confirmadaPrevia = it }
+        assertTrue(confirmadaPrevia == true)
+
+        // Otro flujo intenta iniciarPago en el mismo horario ya confirmado
+        prepararReserva(especialistaId = 1, hora = "09:00")
+        assertFalse(viewModel.iniciarPago("otro@mail.com"))
+
+        // Si se eliminan retenciones externamente antes de confirmarCita, falla limpio
+        prepararReserva(especialistaId = 2, hora = "14:00")
+        assertTrue(viewModel.iniciarPago("test@mail.com"))
+        fakeDao.eliminarRetenciones()
+        var confirmado: Boolean? = null
+        viewModel.confirmarCita("test@mail.com") { confirmado = it }
+        assertFalse(confirmado == true)
+    }
+
+    @Test
+    fun `ocupacionRemota bloquea horario ocupado por otro paciente y preserva mensaje de error real`() = runBlocking {
+        val fecha = viewModel.fechasDisponibles.first()
+        val inicio09 = java.util.Calendar.getInstance().apply {
+            timeInMillis = fecha
+            set(java.util.Calendar.HOUR_OF_DAY, 9)
+            set(java.util.Calendar.MINUTE, 0)
+            set(java.util.Calendar.SECOND, 0)
+            set(java.util.Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        val fin09 = inicio09 + 3_600_000L
+
+        val clientOcupacion = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val path = chain.request().url.encodedPath
+                val method = chain.request().method
+                val body = when {
+                    path.endsWith("/citas/ocupacion") && method == "GET" ->
+                        """[{"especialistaId":1,"modalidad":"PRESENCIAL","inicioMillis":$inicio09,"finMillis":$fin09}]"""
+                    path.endsWith("/citas") && method == "GET" -> "[]"
+                    else -> "{}"
+                }
+                Response.Builder()
+                    .request(chain.request())
+                    .protocol(Protocol.HTTP_1_1)
+                    .code(200)
+                    .message("OK")
+                    .body(body.toResponseBody("application/json".toMediaType()))
+                    .build()
+            }
+            .build()
+        RetrofitClient.configurarParaPruebas("http://localhost/", clientOcupacion, TokenManager(null))
+
+        val horariosJob = launch { viewModel.horarios.collect {} }
+        try {
+            viewModel.seleccionarServicio("Psicología", "Dr. Test", "Ambas", 1, 1)
+            viewModel.seleccionarModalidad(Modalidad.PRESENCIAL)
+            viewModel.seleccionarFecha(fecha)
+
+            withTimeout(3_000L) {
+                while (viewModel.horarios.value.first { it.hora == "09:00" }.disponible) {
+                    kotlinx.coroutines.delay(10L)
+                }
+            }
+            assertFalse(viewModel.horarios.value.first { it.hora == "09:00" }.disponible)
+            assertTrue(viewModel.horarios.value.first { it.hora == "10:30" }.disponible)
+
+            // 10:30 está libre: iniciarPago pasa, pero si el servidor devuelve 401 se expone el mensaje real
+            viewModel.seleccionarHora("10:30")
+            viewModel.seleccionarPaciente("Paciente Uno", null)
+            assertTrue(viewModel.iniciarPago("pac@sana.cl"))
+
+            val client401 = OkHttpClient.Builder()
+                .addInterceptor { chain ->
+                    val code = if (chain.request().method == "POST") 401 else 200
+                    val body = if (chain.request().method == "POST") "" else "[]"
+                    Response.Builder()
+                        .request(chain.request())
+                        .protocol(Protocol.HTTP_1_1)
+                        .code(code)
+                        .message("Unauthorized")
+                        .body(body.toResponseBody("application/json".toMediaType()))
+                        .build()
+                }
+                .build()
+            RetrofitClient.configurarParaPruebas("http://localhost/", client401, TokenManager(null))
+
+            var res401: Boolean? = null
+            viewModel.confirmarCita("pac@sana.cl") { res401 = it }
+            withTimeout(3_000L) {
+                while (res401 == null) kotlinx.coroutines.delay(10L)
+            }
+            assertFalse(res401 == true)
+            assertTrue(viewModel.mensajeErrorReserva.value?.contains("sesión expiró", ignoreCase = true) == true)
+            // Un 401 no limpia la hora ni la retención para permitir reintento o diagnóstico claro
+            assertEquals("10:30", viewModel.uiState.value.hora)
+        } finally {
+            horariosJob.cancel()
+        }
     }
 }

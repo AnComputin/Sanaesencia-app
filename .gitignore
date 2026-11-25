@@ -23,3 +23,5 @@ keystore.properties
 /.artifacts/
 /.idea/deploymentTargetSelector.xml
 /.idea/deviceManager.xml
+.env
+backend/.env

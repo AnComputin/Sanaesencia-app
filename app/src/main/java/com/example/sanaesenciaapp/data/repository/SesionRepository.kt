@@ -1,5 +1,6 @@
 package com.example.sanaesenciaapp.data.repository
 
+import com.example.sanaesenciaapp.data.remote.RetrofitClient
 import com.example.sanaesenciaapp.utils.Seguridad
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -9,9 +10,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 
-/**
- * Datos de identidad necesarios durante una sesión. No contiene credenciales.
- */
 data class SesionUsuario(
     val nombre: String,
     val email: String,
@@ -22,12 +20,6 @@ data class SesionUsuario(
     val rol: String
 )
 
-/**
- * Centraliza la autenticación y el estado en memoria de la sesión.
- *
- * Consulta las credenciales a través de [UsuarioRepository] en un contexto de coroutine [ioDispatcher]
- * sin exponer entidades Room completas ni hashes al resto de la aplicación.
- */
 class SesionRepository(
     private val usuarioRepository: UsuarioRepository,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
@@ -46,24 +38,57 @@ class SesionRepository(
             return@withContext null
         }
 
+        // 1. Intentar autenticación remota en usuarios-service (:8081) para obtener el token JWT
+        val usuarioRemoto = try {
+            usuarioRepository.login(emailLimpio, password)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            null
+        }
+
+        if (usuarioRemoto != null) {
+            return@withContext SesionUsuario(
+                nombre = usuarioRemoto.nombre,
+                email = usuarioRemoto.email,
+                rut = usuarioRemoto.rut,
+                telefono = usuarioRemoto.telefono,
+                fechaNacimiento = usuarioRemoto.fechaNacimiento,
+                comuna = usuarioRemoto.comuna,
+                rol = usuarioRemoto.rol
+            ).also { _sesionActual.value = it }
+        }
+
+        // Si falla el login remoto, descartar cualquier JWT anterior para no reutilizar
+        // accidentalmente el token de otra cuenta.
+        if (RetrofitClient.estaInicializado()) {
+            try {
+                RetrofitClient.getTokenManager().limpiarToken()
+            } catch (_: Exception) {
+            }
+        }
+
+        // 2. Respaldo local en Room solo para cuentas no administrativas.
+        // El administrador debe autenticarse contra usuarios-service para obtener un JWT ADMIN.
         val usuario = try {
             usuarioRepository.obtenerPorEmail(emailLimpio)
         } catch (e: CancellationException) {
             throw e
         } ?: return@withContext null
 
-        // Rechaza el intento de ingresar el hash KDF codificado almacenado como si fuera la contraseña
+        if (usuario.rol.equals("ADMIN", ignoreCase = true)) {
+            return@withContext null
+        }
+
         if (Seguridad.esFormatoKdfNuevo(usuario.password) && password == usuario.password) {
             return@withContext null
         }
 
         val passwordValida = Seguridad.verificar(password, usuario.password)
-
         if (!passwordValida) {
             return@withContext null
         }
 
-        // Migración transparente de credenciales históricas hacia KDF PBKDF2 al iniciar sesión exitosamente
         if (!Seguridad.esFormatoKdfNuevo(usuario.password)) {
             try {
                 val nuevoHash = Seguridad.hashear(password)
@@ -71,7 +96,6 @@ class SesionRepository(
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (_: Exception) {
-                // Si falla la persistencia de la migración, la autenticación no se interrumpe
             }
         }
 
@@ -87,6 +111,12 @@ class SesionRepository(
     }
 
     fun cerrarSesion() {
+        if (RetrofitClient.estaInicializado()) {
+            try {
+                RetrofitClient.getTokenManager().limpiarToken()
+            } catch (_: Exception) {
+            }
+        }
         _sesionActual.value = null
     }
 }

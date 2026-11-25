@@ -67,6 +67,12 @@ fun AgendarScreen(
     val horarios by citaViewModel.horarios.collectAsState()
     val puedeContinuar by citaViewModel.puedeContinuar.collectAsState()
 
+    LaunchedEffect(uiState.especialistaId, uiState.fechaMillis) {
+        if (uiState.especialistaId > 0) {
+            citaViewModel.refrescarOcupacion()
+        }
+    }
+
     // Al entrar por primera vez se propone al titular. Si se vuelve desde la ficha de
     // beneficiario, se selecciona automáticamente el menor recién registrado.
     LaunchedEffect(

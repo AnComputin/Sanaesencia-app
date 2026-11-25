@@ -1,19 +1,12 @@
-import java.io.File
-import java.util.Properties
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    id("jacoco")
 }
 
-// Leer keystore.properties desde la raíz del proyecto (ignorado por Git).
-// Las credenciales se mantienen fuera del repositorio y nunca se escriben en este archivo.
-val keystorePropsFile = rootProject.file("keystore.properties")
-val keystoreProps = Properties().apply {
-    if (keystorePropsFile.exists()) {
-        keystorePropsFile.inputStream().use { load(it) }
-    }
+jacoco {
+    toolVersion = "0.8.14"
 }
 
 android {
@@ -32,25 +25,11 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    signingConfigs {
-        create("release") {
-            val sf = keystoreProps["storeFile"] as String?
-            if (!sf.isNullOrBlank()) {
-                // Si la ruta es absoluta se usa directamente; si es relativa, se resuelve desde rootDir.
-                val resolved = File(sf).let {
-                    if (it.isAbsolute) it else rootProject.file(sf)
-                }
-                storeFile = resolved
-            }
-            storePassword = keystoreProps["storePassword"] as String?
-            keyAlias     = keystoreProps["keyAlias"]     as String?
-            keyPassword  = keystoreProps["keyPassword"]  as String?
-        }
-    }
-
     buildTypes {
+        debug {
+            enableUnitTestCoverage = true
+        }
         release {
-            signingConfig = signingConfigs.getByName("release")
             optimization {
                 enable = false
             }
@@ -100,4 +79,49 @@ dependencies {
     implementation(libs.kotlinx.serialization.core)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.compose.material.icons.core)
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+}
+
+tasks.register<JacocoReport>("jacocoLogicaReport") {
+    dependsOn("testDebugUnitTest")
+
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+
+    val excludes = listOf(
+        "**/R.class",
+        "**/R$*.class",
+        "**/BuildConfig.*",
+        "**/Manifest*.*",
+        "**/*Test*.*",
+        "android/**/*.*",
+        "**/*_Impl*",
+        "**/Com*",
+        "**/ui/**",
+        "**/navigation/**",
+        "**/MainActivity*",
+        "**/MyApplication*",
+        "**/ComposableSingletons*"
+    )
+
+    val classDirs = fileTree(layout.buildDirectory.dir("intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes")) {
+        exclude(excludes)
+    }
+    val legacyClassDirs = fileTree(layout.buildDirectory.dir("tmp/kotlin-classes/debug")) {
+        exclude(excludes)
+    }
+
+    classDirectories.setFrom(files(classDirs, legacyClassDirs))
+    sourceDirectories.setFrom(files("$projectDir/src/main/java"))
+    executionData.setFrom(fileTree(layout.buildDirectory) {
+        include(
+            "outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec",
+            "jacoco/testDebugUnitTest.exec"
+        )
+    })
 }

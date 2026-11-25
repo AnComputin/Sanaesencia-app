@@ -47,7 +47,7 @@ fun CarritoTiendaScreen(
     tiendaViewModel: TiendaViewModel
 ) {
     val carrito by tiendaViewModel.carrito.collectAsState()
-    val subtotal = carrito.sumOf { it.producto.precio.toLong() * it.cantidad }.toInt()
+    val subtotal = carrito.sumOf { it.producto.precio.toLong() * it.cantidad }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -124,7 +124,7 @@ fun CarritoTiendaScreen(
                         Column(Modifier.fillMaxWidth().padding(18.dp)) {
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text("Subtotal", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f))
-                                Text(formatearPrecioTienda(subtotal), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
+                                Text(formatearPrecioTienda(subtotal.toInt()), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                             }
                             Spacer(Modifier.height(5.dp))
                             Text(
@@ -138,7 +138,7 @@ fun CarritoTiendaScreen(
                                 modifier = Modifier.fillMaxWidth().height(52.dp),
                                 shape = RoundedCornerShape(16.dp)
                             ) {
-                                Text("Continuar al pago · ${formatearPrecioTienda(subtotal)}")
+                                Text("Continuar al pago · ${formatearPrecioTienda(subtotal.toInt())}")
                             }
                         }
                     }

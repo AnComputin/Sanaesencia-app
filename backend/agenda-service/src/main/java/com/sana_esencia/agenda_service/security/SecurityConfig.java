@@ -12,6 +12,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
@@ -34,10 +35,13 @@ public class SecurityConfig {
     public JwtDecoder jwtDecoder() {
         byte[] keyBytes = Base64.getDecoder().decode(jwtSecretBase64);
         SecretKey secretKey = new SecretKeySpec(keyBytes, "HmacSHA256");
-        return NimbusJwtDecoder
+        NimbusJwtDecoder decoder = NimbusJwtDecoder
                 .withSecretKey(secretKey)
                 .macAlgorithm(MacAlgorithm.HS256)
                 .build();
+        // Además de verificar firma y expiración, exigir el emisor oficial del login.
+        decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer("sana-esencia-usuarios"));
+        return decoder;
     }
 
     @Bean

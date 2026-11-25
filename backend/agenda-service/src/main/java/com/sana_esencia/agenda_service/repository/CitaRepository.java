@@ -1,5 +1,6 @@
 package com.sana_esencia.agenda_service.repository;
 
+import com.sana_esencia.agenda_service.dto.OcupacionCitaDto;
 import com.sana_esencia.agenda_service.entity.Cita;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -16,7 +17,7 @@ public interface CitaRepository extends JpaRepository<Cita, Integer> {
     @Query("""
         SELECT COUNT(c) > 0 FROM Cita c
         WHERE c.especialistaId = :especialistaId
-          AND c.estado <> 'CANCELADA'
+          AND c.estado IN ('CONFIRMADA', 'COMPLETADA')
           AND c.inicioMillis < :finMillis
           AND c.finMillis > :inicioMillis
     """)
@@ -30,7 +31,7 @@ public interface CitaRepository extends JpaRepository<Cita, Integer> {
         SELECT COUNT(c) > 0 FROM Cita c
         WHERE c.boxAsignado = :boxAsignado
           AND c.modalidad = 'PRESENCIAL'
-          AND c.estado <> 'CANCELADA'
+          AND c.estado IN ('CONFIRMADA', 'COMPLETADA')
           AND c.inicioMillis < :finMillis
           AND c.finMillis > :inicioMillis
     """)
@@ -39,4 +40,29 @@ public interface CitaRepository extends JpaRepository<Cita, Integer> {
             @Param("inicioMillis") Long inicioMillis,
             @Param("finMillis") Long finMillis
     );
+
+    @Query("""
+        SELECT DISTINCT c.boxAsignado FROM Cita c
+        WHERE c.modalidad = 'PRESENCIAL'
+          AND c.estado IN ('CONFIRMADA', 'COMPLETADA')
+          AND c.boxAsignado IS NOT NULL
+          AND c.inicioMillis < :finMillis
+          AND c.finMillis > :inicioMillis
+    """)
+    List<Integer> findBoxesOcupados(
+            @Param("inicioMillis") Long inicioMillis,
+            @Param("finMillis") Long finMillis
+    );
+
+    @Query("""
+        SELECT new com.sana_esencia.agenda_service.dto.OcupacionCitaDto(
+            c.especialistaId,
+            c.modalidad,
+            c.inicioMillis,
+            c.finMillis
+        )
+        FROM Cita c
+        WHERE c.estado IN ('CONFIRMADA', 'COMPLETADA')
+    """)
+    List<OcupacionCitaDto> findOcupacionActiva();
 }

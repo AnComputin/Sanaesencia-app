@@ -3,14 +3,18 @@ package com.example.sanaesenciaapp.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.sanaesenciaapp.data.remote.RetrofitClient
+import com.example.sanaesenciaapp.data.repository.CitaRepository
 import com.example.sanaesenciaapp.data.room.AppDatabase
 import com.example.sanaesenciaapp.data.room.CitaDao
 import com.example.sanaesenciaapp.data.room.CitaEntity
 import com.example.sanaesenciaapp.data.room.EspecialidadDao
 import com.example.sanaesenciaapp.data.room.EspecialidadEntity
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -49,8 +53,12 @@ data class BoxesAdminUiState(
 
 class AdminViewModel(
     private val especialidadDao: EspecialidadDao,
-    private val citaDao: CitaDao
+    private val citaDao: CitaDao,
+    private val citaRepository: CitaRepository = CitaRepository(citaDao)
 ) : ViewModel() {
+
+    private val _mensajeError = MutableStateFlow<String?>(null)
+    val mensajeError: StateFlow<String?> = _mensajeError.asStateFlow()
 
     val especialidades: StateFlow<List<EspecialidadEntity>> =
         especialidadDao.obtenerTodasFlow()
@@ -61,12 +69,33 @@ class AdminViewModel(
             )
 
     private val citas: StateFlow<List<CitaEntity>> =
-        citaDao.obtenerTodasFlow()
+        citaRepository.obtenerTodasLasCitas()
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.Eagerly,
                 initialValue = emptyList()
             )
+
+    init {
+        refrescarBoxes()
+    }
+
+    fun refrescarBoxes() {
+        if (!RetrofitClient.estaInicializado()) return
+        viewModelScope.launch {
+            try {
+                citaRepository.sincronizarCitasDesdeServidor(null)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _mensajeError.value = "No se pudo sincronizar la ocupación de boxes desde el servidor."
+            }
+        }
+    }
+
+    fun limpiarError() {
+        _mensajeError.value = null
+    }
 
     val fechasBoxes: List<Long> = generarFechasDisponibles()
     val horasBoxes: List<String> =
@@ -99,14 +128,58 @@ class AdminViewModel(
 
     fun actualizarModalidad(id: Int, nuevaModalidad: String) {
         viewModelScope.launch {
-            especialidadDao.actualizarModalidad(id, nuevaModalidad)
+            _mensajeError.value = null
+            if (!RetrofitClient.estaInicializado()) {
+                especialidadDao.actualizarModalidad(id, nuevaModalidad)
+                return@launch
+            }
+            val actual = especialidades.value.find { it.id == id }
+            if (actual == null) {
+                _mensajeError.value = "No se encontró la especialidad seleccionada."
+                return@launch
+            }
+            try {
+                val resp = RetrofitClient.catalogoApi.actualizarEspecialidad(
+                    id = id,
+                    especialidad = actual.copy(modalidad = nuevaModalidad)
+                )
+                if (resp.isSuccessful) {
+                    especialidadDao.actualizarModalidad(id, nuevaModalidad)
+                } else {
+                    _mensajeError.value = "No se pudo actualizar la modalidad (HTTP ${resp.code()})."
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _mensajeError.value = "Error de conexión al actualizar la modalidad."
+            }
         }
     }
 
     fun actualizarEstadoAgenda(id: Int, agendaDisponible: Boolean) {
         viewModelScope.launch {
+            _mensajeError.value = null
             // agendaDisponible = true -> agendaPausada = false
-            especialidadDao.actualizarAgendaPausada(id, !agendaDisponible)
+            val pausada = !agendaDisponible
+            if (!RetrofitClient.estaInicializado()) {
+                especialidadDao.actualizarAgendaPausada(id, pausada)
+                return@launch
+            }
+            try {
+                val resp = RetrofitClient.catalogoApi.cambiarEstadoAgenda(
+                    id = id,
+                    pausada = pausada
+                )
+                if (resp.isSuccessful) {
+                    especialidadDao.actualizarAgendaPausada(id, pausada)
+                } else {
+                    _mensajeError.value = "No se pudo cambiar el estado de agenda (HTTP ${resp.code()})."
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _mensajeError.value = "Error de conexión al cambiar el estado de agenda."
+            }
         }
     }
 

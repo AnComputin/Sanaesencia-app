@@ -1,10 +1,19 @@
 package com.example.sanaesenciaapp.data.repository
 
 import androidx.room.withTransaction
+import com.example.sanaesenciaapp.data.remote.CrearVentaRequest
+import com.example.sanaesenciaapp.data.remote.DetalleVentaItemRequest
+import com.example.sanaesenciaapp.data.remote.RetrofitClient
 import com.example.sanaesenciaapp.data.room.AppDatabase
 import com.example.sanaesenciaapp.data.room.DetalleVentaEntity
+import com.example.sanaesenciaapp.data.room.ProductoDao
 import com.example.sanaesenciaapp.data.room.ProductoEntity
+import com.example.sanaesenciaapp.data.room.VentaDao
 import com.example.sanaesenciaapp.data.room.VentaEntity
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 data class LineaCompra(
     val productoId: Int,
@@ -21,6 +30,7 @@ data class ResultadoCompra(
 interface TiendaRepositoryContract {
     val productos: kotlinx.coroutines.flow.Flow<List<ProductoEntity>>
     val todosLosProductos: kotlinx.coroutines.flow.Flow<List<ProductoEntity>>
+    suspend fun sincronizarProductosDesdeServidor() {}
     suspend fun guardarProducto(producto: ProductoEntity)
     suspend fun eliminarProducto(id: Int)
     suspend fun actualizarStock(id: Int, nuevoStock: Int)
@@ -32,24 +42,101 @@ interface TiendaRepositoryContract {
     ): ResultadoCompra
 }
 
-class TiendaRepository(private val database: AppDatabase) : TiendaRepositoryContract {
+class TiendaRepository internal constructor(
+    private val productoDao: ProductoDao,
+    private val ventaDao: VentaDao,
+    private val database: AppDatabase? = null
+) : TiendaRepositoryContract {
 
-    private val productoDao = database.productoDao()
-    private val ventaDao = database.ventaDao()
+    constructor(database: AppDatabase) : this(
+        productoDao = database.productoDao(),
+        ventaDao = database.ventaDao(),
+        database = database
+    )
+
+    private val sincronizacionMutex = Mutex()
+
+    private suspend fun ejecutarTransaccion(bloque: suspend () -> Unit) {
+        if (database != null) {
+            database.withTransaction { bloque() }
+        } else {
+            bloque()
+        }
+    }
 
     override val productos = productoDao.obtenerActivosFlow()
+        .onStart { sincronizarProductosDesdeServidor() }
+
     override val todosLosProductos = productoDao.obtenerTodosFlow()
+        .onStart { sincronizarProductosDesdeServidor() }
+
+    override suspend fun sincronizarProductosDesdeServidor() = sincronizacionMutex.withLock {
+        if (!RetrofitClient.estaInicializado()) return@withLock
+        try {
+            val response = RetrofitClient.tiendaApi.listarProductos(soloActivos = false)
+            if (response.isSuccessful) {
+                val catalogoRemoto = response.body().orEmpty().distinctBy { it.id }
+                ejecutarTransaccion {
+                    productoDao.eliminarTodos()
+                    if (catalogoRemoto.isNotEmpty()) productoDao.guardarTodos(catalogoRemoto)
+                }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // Si no hay conexión, Room conserva la última copia sincronizada.
+        }
+    }
 
     override suspend fun guardarProducto(producto: ProductoEntity) {
-        productoDao.guardar(producto)
+        if (!RetrofitClient.estaInicializado()) {
+            productoDao.guardar(producto)
+            return
+        }
+        val response = if (producto.id > 0) {
+            RetrofitClient.tiendaApi.actualizarProducto(producto.id, producto)
+        } else {
+            RetrofitClient.tiendaApi.crearProducto(producto.copy(id = 0))
+        }
+        if (!response.isSuccessful) {
+            val detalle = response.errorBody()?.string()?.takeIf { it.isNotBlank() }
+            throw IllegalStateException("No se pudo guardar el producto (HTTP ${response.code()}): ${detalle ?: response.message()}")
+        }
+        val guardadoRemoto = response.body()
+            ?: throw IllegalStateException("El servidor no devolvió el producto guardado.")
+        productoDao.guardar(guardadoRemoto)
     }
 
     override suspend fun eliminarProducto(id: Int) {
-        productoDao.eliminarPorId(id)
+        val actual = productoDao.obtenerPorId(id)
+            ?: throw IllegalStateException("No se encontró el producto que deseas quitar.")
+        if (!RetrofitClient.estaInicializado()) {
+            productoDao.guardar(actual.copy(activo = false))
+            return
+        }
+        val response = RetrofitClient.tiendaApi.actualizarProducto(id, actual.copy(activo = false))
+        if (!response.isSuccessful) {
+            val detalle = response.errorBody()?.string()?.takeIf { it.isNotBlank() }
+            throw IllegalStateException("No se pudo actualizar el producto (HTTP ${response.code()}): ${detalle ?: response.message()}")
+        }
+        val actualizado = response.body() ?: actual.copy(activo = false)
+        productoDao.guardar(actualizado)
     }
 
     override suspend fun actualizarStock(id: Int, nuevoStock: Int) {
-        productoDao.actualizarStock(id, nuevoStock.coerceAtLeast(0))
+        val actual = productoDao.obtenerPorId(id)
+            ?: throw IllegalStateException("No se encontró el producto.")
+        val stockSeguro = nuevoStock.coerceAtLeast(0)
+        if (!RetrofitClient.estaInicializado()) {
+            productoDao.actualizarStock(id, stockSeguro)
+            return
+        }
+        val response = RetrofitClient.tiendaApi.actualizarProducto(id, actual.copy(stock = stockSeguro))
+        if (!response.isSuccessful) {
+            val detalle = response.errorBody()?.string()?.takeIf { it.isNotBlank() }
+            throw IllegalStateException("No se pudo actualizar el stock (HTTP ${response.code()}): ${detalle ?: response.message()}")
+        }
+        productoDao.guardar(response.body() ?: actual.copy(stock = stockSeguro))
     }
 
     override suspend fun registrarCompra(
@@ -57,82 +144,82 @@ class TiendaRepository(private val database: AppDatabase) : TiendaRepositoryCont
         nombre: String,
         metodoPago: String,
         lineas: List<LineaCompra>
-    ): ResultadoCompra = database.withTransaction {
+    ): ResultadoCompra {
         if (email.isBlank()) {
-            return@withTransaction ResultadoCompra(false, "Debes iniciar sesión para comprar")
+            return ResultadoCompra(false, "Debes iniciar sesión para comprar")
         }
         if (lineas.isEmpty() || lineas.any { it.cantidad <= 0 }) {
-            return@withTransaction ResultadoCompra(false, "El carrito está vacío")
+            return ResultadoCompra(false, "El carrito está vacío")
         }
 
-        val productosActuales = mutableListOf<Pair<ProductoEntity, Int>>()
-        lineas.forEach { linea ->
-            val producto = productoDao.obtenerPorId(linea.productoId)
-                ?: return@withTransaction ResultadoCompra(
-                    false,
-                    "Uno de los productos ya no está disponible. Actualiza el carrito."
-                )
-
-            if (!producto.activo) {
-                return@withTransaction ResultadoCompra(
-                    false,
-                    "${producto.nombre} ya no está disponible. Actualiza el carrito."
-                )
-            }
-            if (producto.stock < linea.cantidad) {
-                return@withTransaction ResultadoCompra(
-                    false,
-                    "Stock insuficiente para ${producto.nombre}. Disponible: ${producto.stock}."
-                )
-            }
-            productosActuales += producto to linea.cantidad
-        }
-
-        val totalLong = productosActuales.sumOf { (producto, cantidad) ->
-            producto.precio.toLong() * cantidad
-        }
-        if (totalLong <= 0L || totalLong > Int.MAX_VALUE) {
-            return@withTransaction ResultadoCompra(false, "No se pudo calcular el total de la compra")
-        }
-
-        // Se descuenta el stock dentro de la misma transacción que guarda la venta.
-        // Si alguna operación falla, Room revierte todas las modificaciones.
-        for ((producto, cantidad) in productosActuales) {
-            val filasActualizadas = productoDao.descontarStock(producto.id, cantidad)
-            if (filasActualizadas != 1) {
-                error("No fue posible reservar el stock de ${producto.nombre}")
-            }
-        }
-
-        val ventaId = ventaDao.insertarVenta(
-            VentaEntity(
-                compradorEmail = email.trim(),
-                compradorNombre = nombre.trim(),
-                fechaMillis = System.currentTimeMillis(),
-                total = totalLong.toInt(),
-                estado = "PAGADO_SIMULADO",
-                metodoPago = metodoPago
-            )
-        ).toInt()
-
-        ventaDao.insertarDetalles(
-            productosActuales.map { (producto, cantidad) ->
-                DetalleVentaEntity(
-                    ventaId = ventaId,
-                    productoId = producto.id,
-                    nombreProducto = producto.nombre,
-                    precioUnitario = producto.precio,
-                    cantidad = cantidad,
-                    subtotal = producto.precio * cantidad
-                )
-            }
+        val lineasConsolidadas = lineas.groupBy { it.productoId }
+            .map { (id, items) -> LineaCompra(id, items.sumOf { it.cantidad }) }
+        val request = CrearVentaRequest(
+            compradorEmail = email.trim().lowercase(),
+            compradorNombre = nombre.trim(),
+            metodoPago = metodoPago,
+            detalles = lineasConsolidadas.map { DetalleVentaItemRequest(it.productoId, it.cantidad) }
         )
 
-        ResultadoCompra(
-            exito = true,
-            mensaje = "¡Compra simulada realizada correctamente!",
-            ventaId = ventaId,
-            total = totalLong.toInt()
-        )
+        return try {
+            val response = RetrofitClient.tiendaApi.registrarVenta(request)
+
+            when {
+                response.isSuccessful -> {
+                    val ventaRemota = response.body()
+                        ?: return ResultadoCompra(false, "Respuesta vacía del servidor")
+
+                    ejecutarTransaccion {
+                        for (det in ventaRemota.detalles) {
+                            productoDao.descontarStock(det.productoId, det.cantidad)
+                        }
+
+                        val ventaIdLocal = ventaDao.insertarVenta(
+                            VentaEntity(
+                                compradorEmail = ventaRemota.compradorEmail,
+                                compradorNombre = ventaRemota.compradorNombre,
+                                fechaMillis = ventaRemota.fechaMillis,
+                                total = ventaRemota.total,
+                                estado = ventaRemota.estado,
+                                metodoPago = ventaRemota.metodoPago
+                            )
+                        ).toInt()
+
+                        ventaDao.insertarDetalles(
+                            ventaRemota.detalles.map { det ->
+                                DetalleVentaEntity(
+                                    ventaId = ventaIdLocal,
+                                    productoId = det.productoId,
+                                    nombreProducto = det.nombreProducto,
+                                    precioUnitario = det.precioUnitario,
+                                    cantidad = det.cantidad,
+                                    subtotal = det.subtotal
+                                )
+                            }
+                        )
+                    }
+
+                    ResultadoCompra(
+                        exito = true,
+                        mensaje = "¡Compra realizada correctamente!",
+                        ventaId = ventaRemota.id,
+                        total = ventaRemota.total
+                    )
+                }
+
+                response.code() == 400 -> {
+                    val errorMsg = response.errorBody()?.string()?.takeIf { it.isNotBlank() }
+                        ?: "No se pudo validar el stock de los productos"
+                    ResultadoCompra(false, errorMsg)
+                }
+
+                else -> ResultadoCompra(false, "No se pudo registrar la compra en el servidor (HTTP ${response.code()}).")
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            ResultadoCompra(false, e.message ?: "No hay conexión con el servidor de la tienda. Intenta nuevamente.")
+        }
     }
+
 }

@@ -8,6 +8,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.sanaesenciaapp.MyApplication
 import com.example.sanaesenciaapp.data.AppState
+import com.example.sanaesenciaapp.data.repository.ResultadoRegistroUsuario
 import com.example.sanaesenciaapp.data.repository.SesionRepository
 import com.example.sanaesenciaapp.utils.validarComuna
 import com.example.sanaesenciaapp.utils.validarEmail
@@ -32,14 +33,15 @@ class AuthViewModel(
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
     private var loginJob: Job? = null
+    private var registroJob: Job? = null
 
-    // ── Actualizar campos ──────────────────────────
+    // ── Actualizar campos (con validación reactiva en tiempo real) ──
 
     fun onNombreChange(nuevoNombre: String) {
         _uiState.update {
             it.copy(
                 nombre = nuevoNombre,
-                errorNombre = null,
+                errorNombre = validarNombre(nuevoNombre),
                 errorGeneral = null
             )
         }
@@ -54,7 +56,7 @@ class AuthViewModel(
         _uiState.update {
             it.copy(
                 email = nuevoEmail,
-                errorEmail = null,
+                errorEmail = validarEmail(nuevoEmail),
                 errorGeneral = null,
                 loginExitoso = false
             )
@@ -72,22 +74,44 @@ class AuthViewModel(
         _uiState.update {
             it.copy(
                 rut = rutNormalizado,
-                errorRut = null
+                errorRut = validarRut(rutNormalizado),
+                errorGeneral = null
             )
         }
     }
 
     fun onTelefonoChange(nuevoTelefono: String) {
         _uiState.update {
-            it.copy(telefono = nuevoTelefono, errorTelefono = null)
+            it.copy(
+                telefono = nuevoTelefono,
+                errorTelefono = validarTelefono(nuevoTelefono),
+                errorGeneral = null
+            )
         }
     }
 
     fun onPasswordChange(nuevaPassword: String) {
+        _uiState.update { state ->
+            val errorConfirm = if (state.confirmPassword.isNotEmpty() && nuevaPassword != state.confirmPassword) {
+                "Las contraseñas no coinciden"
+            } else {
+                null
+            }
+            state.copy(
+                password = nuevaPassword,
+                errorPassword = validarPassword(nuevaPassword),
+                errorConfirmPassword = errorConfirm,
+                errorGeneral = null,
+                loginExitoso = false
+            )
+        }
+    }
+
+    fun onLoginPasswordChange(nuevaPassword: String) {
         _uiState.update {
             it.copy(
                 password = nuevaPassword,
-                errorPassword = null,
+                errorPassword = if (nuevaPassword.isBlank()) "Ingrese su contraseña" else null,
                 errorGeneral = null,
                 loginExitoso = false
             )
@@ -95,10 +119,16 @@ class AuthViewModel(
     }
 
     fun onConfirmPasswordChange(nuevaConfirmacion: String) {
-        _uiState.update {
-            it.copy(
+        _uiState.update { state ->
+            val errorConfirm = when {
+                nuevaConfirmacion.isEmpty() -> "Confirme su contraseña"
+                nuevaConfirmacion != state.password -> "Las contraseñas no coinciden"
+                else -> null
+            }
+            state.copy(
                 confirmPassword = nuevaConfirmacion,
-                errorConfirmPassword = null
+                errorConfirmPassword = errorConfirm,
+                errorGeneral = null
             )
         }
     }
@@ -107,14 +137,19 @@ class AuthViewModel(
         _uiState.update {
             it.copy(
                 fechaNacimiento = nuevaFecha,
-                errorFechaNacimiento = null
+                errorFechaNacimiento = validarFechaNacimiento(nuevaFecha),
+                errorGeneral = null
             )
         }
     }
 
     fun onComunaChange(nuevaComuna: String) {
         _uiState.update {
-            it.copy(comuna = nuevaComuna, errorComuna = null)
+            it.copy(
+                comuna = nuevaComuna,
+                errorComuna = validarComuna(nuevaComuna),
+                errorGeneral = null
+            )
         }
     }
 
@@ -248,16 +283,89 @@ class AuthViewModel(
         }
     }
 
+    fun registrarCuenta(
+        appState: AppState?,
+        mensajeCorreoExistente: String,
+        mensajeErrorBaseDatos: String,
+        onExito: () -> Unit
+    ) {
+        if (_uiState.value.isLoading) return
+        if (!validarRegistro()) return
+
+        if (appState == null) {
+            setErrorGeneral(mensajeErrorBaseDatos)
+            return
+        }
+
+        val state = _uiState.value
+        registroJob?.cancel()
+        registroJob = viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorGeneral = null) }
+            try {
+                when (
+                    val resultado = appState.registrarUsuarioAsync(
+                        nombre = state.nombre,
+                        email = state.email,
+                        password = state.password,
+                        rut = state.rut,
+                        telefono = state.telefono,
+                        fechaNacimiento = state.fechaNacimiento,
+                        comuna = state.comuna,
+                        rol = state.rol
+                    )
+                ) {
+                    ResultadoRegistroUsuario.Registrado -> {
+                        _uiState.update { it.copy(isLoading = false, errorGeneral = null) }
+                        onExito()
+                    }
+                    ResultadoRegistroUsuario.CorreoDuplicado -> {
+                        _uiState.update {
+                            it.copy(isLoading = false, errorGeneral = mensajeCorreoExistente)
+                        }
+                    }
+                    is ResultadoRegistroUsuario.ErrorServidor -> {
+                        _uiState.update {
+                            it.copy(isLoading = false, errorGeneral = resultado.mensaje)
+                        }
+                    }
+                    ResultadoRegistroUsuario.ErrorPersistencia -> {
+                        _uiState.update {
+                            it.copy(isLoading = false, errorGeneral = mensajeErrorBaseDatos)
+                        }
+                    }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorGeneral = e.message ?: mensajeErrorBaseDatos
+                    )
+                }
+            }
+        }
+    }
+
     fun iniciarSesion(
         appState: AppState? = null,
         sesionRepo: SesionRepository? = null
     ) {
+        if (_uiState.value.isLoading) return
         val state = _uiState.value
         val email = state.email.trim()
         val password = state.password
 
-        if (email.isBlank() || password.isBlank()) {
-            setErrorGeneral("Ingrese correo y contraseña")
+        val errorEmail = validarEmail(email)
+        val errorPass = if (password.isBlank()) "Ingrese su contraseña" else null
+        if (errorEmail != null || errorPass != null) {
+            _uiState.update {
+                it.copy(
+                    errorEmail = errorEmail,
+                    errorPassword = errorPass,
+                    errorGeneral = "Revisa los campos obligatorios para iniciar sesión"
+                )
+            }
             return
         }
 

@@ -1,6 +1,7 @@
 package com.example.sanaesenciaapp
 
 import android.app.Application
+import com.example.sanaesenciaapp.data.remote.RetrofitClient
 import com.example.sanaesenciaapp.di.AppContainer
 
 class MyApplication : Application() {
@@ -10,6 +11,7 @@ class MyApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        RetrofitClient.init(this)
         appContainer = AppContainer(this)
     }
 }

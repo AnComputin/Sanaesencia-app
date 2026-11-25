@@ -1,5 +1,6 @@
 package com.sana_esencia.agenda_service.service;
 
+import com.sana_esencia.agenda_service.dto.OcupacionCitaDto;
 import com.sana_esencia.agenda_service.entity.Cita;
 import com.sana_esencia.agenda_service.repository.CitaRepository;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,11 @@ public class CitaService {
     }
 
     @Transactional(readOnly = true)
+    public List<OcupacionCitaDto> listarOcupacionActiva() {
+        return repository.findOcupacionActiva();
+    }
+
+    @Transactional(readOnly = true)
     public Cita obtenerPorId(Integer id) {
         return repository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Cita no encontrada con id: " + id));
@@ -57,15 +63,34 @@ public class CitaService {
             throw new IllegalArgumentException("El horario seleccionado ya no está disponible para este especialista");
         }
 
-        if (modalidadNormalizada.equals("PRESENCIAL") && cita.getBoxAsignado() != null) {
-            boolean ocupadoBox = repository.existeSolapamientoBox(
-                    cita.getBoxAsignado(),
+        if (modalidadNormalizada.equals("PRESENCIAL")) {
+            List<Integer> ocupados = repository.findBoxesOcupados(
                     cita.getInicioMillis(),
                     cita.getFinMillis()
             );
-            if (ocupadoBox) {
-                throw new IllegalArgumentException("El box " + cita.getBoxAsignado() + " ya está ocupado en ese horario");
+            Integer boxSolicitado = cita.getBoxAsignado();
+            if (boxSolicitado != null) {
+                if (boxSolicitado < 1 || boxSolicitado > 8) {
+                    throw new IllegalArgumentException("El box asignado debe estar entre 1 y 8");
+                }
+                if (ocupados.contains(boxSolicitado)) {
+                    throw new IllegalArgumentException("El box " + boxSolicitado + " ya está ocupado en ese horario");
+                }
+            } else {
+                Integer boxLibre = null;
+                for (int b = 1; b <= 8; b++) {
+                    if (!ocupados.contains(b)) {
+                        boxLibre = b;
+                        break;
+                    }
+                }
+                if (boxLibre == null) {
+                    throw new IllegalArgumentException("No hay boxes disponibles en ese horario (8/8 ocupados)");
+                }
+                cita.setBoxAsignado(boxLibre);
             }
+        } else {
+            cita.setBoxAsignado(null);
         }
 
         cita.setId(null);
@@ -76,11 +101,8 @@ public class CitaService {
         cita.setModalidad(modalidadNormalizada);
         cita.setHora(cita.getHora().trim());
 
-        if (cita.getEstado() == null || cita.getEstado().isBlank()) {
-            cita.setEstado("CONFIRMADA");
-        } else {
-            cita.setEstado(cita.getEstado().trim().toUpperCase());
-        }
+        // El estado inicial lo determina el servidor; nunca se acepta desde el cliente.
+        cita.setEstado("CONFIRMADA");
 
         return repository.save(cita);
     }

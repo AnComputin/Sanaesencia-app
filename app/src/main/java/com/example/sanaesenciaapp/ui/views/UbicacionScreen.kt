@@ -4,8 +4,11 @@ import androidx.compose.ui.res.stringResource
 import com.example.sanaesenciaapp.R
 
 import android.Manifest
+import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -25,28 +28,75 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import com.example.sanaesenciaapp.data.remote.ClimaRepository
+import com.example.sanaesenciaapp.data.remote.ClimaSede
 import com.example.sanaesenciaapp.ui.components.SanaButton
 import com.example.sanaesenciaapp.ui.components.SanaCard
+import com.example.sanaesenciaapp.utils.ResultadoUbicacion
 import com.example.sanaesenciaapp.utils.UbicacionHelper
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UbicacionScreen(onBackClick: () -> Unit = {}) {
+fun UbicacionScreen(
+    onBackClick: () -> Unit = {},
+    climaRepository: ClimaRepository = remember { ClimaRepository() }
+) {
     val context = LocalContext.current
     val whatsappMessage = stringResource(R.string.ubicacion_whatsapp_mensaje)
     val scope = rememberCoroutineScope()
-    var distanciaKm by remember { mutableStateOf<Float?>(null) }
+    var ubicacionActual by remember { mutableStateOf<ResultadoUbicacion?>(null) }
+    var cargandoUbicacion by remember { mutableStateOf(false) }
     var mensajePermisoRechazado by remember { mutableStateOf(false) }
+    var mensajeErrorGps by remember { mutableStateOf<String?>(null) }
+
+    var climaSede by remember { mutableStateOf<ClimaSede?>(null) }
+    var cargandoClima by remember { mutableStateOf(true) }
+    var errorClima by remember { mutableStateOf<String?>(null) }
+
+    fun cargarClima() {
+        cargandoClima = true
+        errorClima = null
+        scope.launch {
+            climaRepository.obtenerClimaSede()
+                .onSuccess {
+                    climaSede = it
+                    cargandoClima = false
+                }
+                .onFailure {
+                    errorClima = "No se pudo consultar el clima en línea. Verifica tu conexión."
+                    cargandoClima = false
+                }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        cargarClima()
+    }
+
+    fun consultarUbicacion() {
+        cargandoUbicacion = true
+        mensajeErrorGps = null
+        scope.launch {
+            val resultado = UbicacionHelper.obtenerUbicacionActual(context)
+            cargandoUbicacion = false
+            if (resultado != null) {
+                ubicacionActual = resultado
+            } else {
+                mensajeErrorGps = "No se pudo obtener la ubicación del dispositivo. Verifica que el GPS esté activado e intenta nuevamente."
+            }
+        }
+    }
 
     val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permisos ->
+        val fineGranted = permisos[Manifest.permission.ACCESS_FINE_LOCATION] == true
+        val coarseGranted = permisos[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        if (fineGranted || coarseGranted) {
             mensajePermisoRechazado = false
-            scope.launch {
-                distanciaKm = UbicacionHelper.obtenerDistanciaACentro(context)
-            }
+            consultarUbicacion()
         } else {
             mensajePermisoRechazado = true
         }
@@ -120,35 +170,74 @@ fun UbicacionScreen(onBackClick: () -> Unit = {}) {
                         modifier = Modifier.padding(20.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        if (distanciaKm != null) {
-                            Text(
-                                text = stringResource(R.string.ubicacion_distancia, distanciaKm!!),
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.secondary,
-                                textAlign = TextAlign.Center
-                            )
-                            Spacer(modifier = Modifier.height(10.dp))
-                            if (distanciaKm!! > 30.0f) {
-                                Text(
-                                    text = stringResource(R.string.inicio_sede_lejos),
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.SemiBold,
-                                    textAlign = TextAlign.Center
+                        when {
+                            cargandoUbicacion -> {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(32.dp),
+                                    color = MaterialTheme.colorScheme.primary
                                 )
-                            } else {
+                                Spacer(modifier = Modifier.height(10.dp))
                                 Text(
-                                    text = stringResource(R.string.inicio_sede_cerca),
+                                    text = "Obteniendo ubicación GPS...",
+                                    textAlign = TextAlign.Center,
+                                    color = MaterialTheme.colorScheme.onBackground
+                                )
+                            }
+
+                            ubicacionActual != null -> {
+                                val u = ubicacionActual!!
+                                Text(
+                                    text = stringResource(R.string.ubicacion_distancia, u.distanciaKm),
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.secondary,
                                     textAlign = TextAlign.Center
                                 )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = String.format(
+                                        Locale.US,
+                                        "Coordenadas: %.4f, %.4f",
+                                        u.latitud,
+                                        u.longitud
+                                    ),
+                                    fontSize = 13.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center
+                                )
+                                if (!u.direccionAproximada.isNullOrBlank()) {
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "Tu ubicación: ${u.direccionAproximada}",
+                                        fontSize = 13.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(10.dp))
+                                if (u.distanciaKm > 30.0f) {
+                                    Text(
+                                        text = stringResource(R.string.inicio_sede_lejos),
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.SemiBold,
+                                        textAlign = TextAlign.Center
+                                    )
+                                } else {
+                                    Text(
+                                        text = stringResource(R.string.inicio_sede_cerca),
+                                        color = MaterialTheme.colorScheme.secondary,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
                             }
-                        } else {
-                            Text(
-                                text = stringResource(R.string.inicio_sede_instruccion),
-                                textAlign = TextAlign.Center,
-                                color = MaterialTheme.colorScheme.onBackground
-                            )
+
+                            else -> {
+                                Text(
+                                    text = stringResource(R.string.inicio_sede_instruccion),
+                                    textAlign = TextAlign.Center,
+                                    color = MaterialTheme.colorScheme.onBackground
+                                )
+                            }
                         }
 
                         if (mensajePermisoRechazado) {
@@ -156,8 +245,111 @@ fun UbicacionScreen(onBackClick: () -> Unit = {}) {
                             Text(
                                 text = stringResource(R.string.inicio_sede_permiso_denegado),
                                 color = MaterialTheme.colorScheme.error,
-                                fontSize = 13.sp
+                                fontSize = 13.sp,
+                                textAlign = TextAlign.Center
                             )
+                        }
+
+                        mensajeErrorGps?.let { err ->
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = err,
+                                color = MaterialTheme.colorScheme.error,
+                                fontSize = 13.sp,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                SanaCard {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Clima en Sede Los Vilos",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                            TextButton(
+                                onClick = { cargarClima() },
+                                enabled = !cargandoClima
+                            ) {
+                                Text("Actualizar", fontSize = 13.sp)
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        when {
+                            cargandoClima -> {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(28.dp),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Consultando clima actual (Open-Meteo)...",
+                                    fontSize = 13.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+
+                            climaSede != null -> {
+                                val c = climaSede!!
+                                Text(
+                                    text = "${c.icono} ${String.format(Locale.US, "%.1f", c.temperaturaC)} °C · ${c.descripcion}",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.secondary,
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = String.format(
+                                        Locale.US,
+                                        "Sensación %.1f °C · Humedad %d%% · Viento %.0f km/h",
+                                        c.sensacionTermicaC,
+                                        c.humedadPorcentaje,
+                                        c.vientoKmh
+                                    ),
+                                    fontSize = 13.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = c.recomendacionBienestar,
+                                    fontSize = 13.sp,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+
+                            else -> {
+                                Text(
+                                    text = errorClima ?: "Clima no disponible en este momento.",
+                                    fontSize = 13.sp,
+                                    color = MaterialTheme.colorScheme.error,
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                OutlinedButton(onClick = { cargarClima() }) {
+                                    Text("Reintentar")
+                                }
+                            }
                         }
                     }
                 }
@@ -169,30 +361,51 @@ fun UbicacionScreen(onBackClick: () -> Unit = {}) {
                 // 1. Botón GPS para calcular la distancia
                 SanaButton(
                     text = stringResource(R.string.inicio_btn_distancia_gps),
+                    enabled = !cargandoUbicacion,
                     onClick = {
-                        val permissionCheck = ContextCompat.checkSelfPermission(
+                        val fineGranted = ContextCompat.checkSelfPermission(
                             context, Manifest.permission.ACCESS_FINE_LOCATION
-                        )
-                        if (permissionCheck == android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                            scope.launch {
-                                distanciaKm = UbicacionHelper.obtenerDistanciaACentro(context)
-                            }
+                        ) == PackageManager.PERMISSION_GRANTED
+                        val coarseGranted = ContextCompat.checkSelfPermission(
+                            context, Manifest.permission.ACCESS_COARSE_LOCATION
+                        ) == PackageManager.PERMISSION_GRANTED
+                        if (fineGranted || coarseGranted) {
+                            mensajePermisoRechazado = false
+                            consultarUbicacion()
                         } else {
-                            launcher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                            launcher.launch(
+                                arrayOf(
+                                    Manifest.permission.ACCESS_FINE_LOCATION,
+                                    Manifest.permission.ACCESS_COARSE_LOCATION
+                                )
+                            )
                         }
                     }
                 )
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // 2. Botón para abrir Google Maps de forma nativa
+                // 2. Botón para abrir Google Maps de forma nativa (con respaldo web)
                 Button(
                     onClick = {
-                        val mapUri = Uri.parse("geo:0,0?q=Caupolicán+220,+Los+Vilos,+Coquimbo,+Chile")
+                        val mapUri = Uri.parse(
+                            "geo:${UbicacionHelper.LAT_CENTRO},${UbicacionHelper.LON_CENTRO}?q=Caupolic%C3%A1n+220,+Los+Vilos,+Coquimbo,+Chile"
+                        )
                         val mapIntent = Intent(Intent.ACTION_VIEW, mapUri).apply {
                             setPackage("com.google.android.apps.maps")
                         }
-                        context.startActivity(mapIntent)
+                        try {
+                            context.startActivity(mapIntent)
+                        } catch (_: ActivityNotFoundException) {
+                            val webUri = Uri.parse(
+                                "https://www.google.com/maps/search/?api=1&query=${UbicacionHelper.LAT_CENTRO},${UbicacionHelper.LON_CENTRO}"
+                            )
+                            try {
+                                context.startActivity(Intent(Intent.ACTION_VIEW, webUri))
+                            } catch (_: ActivityNotFoundException) {
+                                Toast.makeText(context, "No se encontró una app de mapas", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -221,7 +434,11 @@ fun UbicacionScreen(onBackClick: () -> Unit = {}) {
                                 .appendQueryParameter("text", whatsappMessage)
                                 .build()
                         )
-                        context.startActivity(intent)
+                        try {
+                            context.startActivity(intent)
+                        } catch (_: ActivityNotFoundException) {
+                            Toast.makeText(context, "No se encontró una aplicación para abrir WhatsApp", Toast.LENGTH_SHORT).show()
+                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth()

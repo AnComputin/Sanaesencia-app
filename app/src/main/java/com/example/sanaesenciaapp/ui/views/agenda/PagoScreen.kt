@@ -51,11 +51,15 @@ fun PagoScreen(
 
     val uiState by citaViewModel.uiState.collectAsState()
     val puedeConfirmar by citaViewModel.puedeContinuar.collectAsState()
+    val mensajeErrorVm by citaViewModel.mensajeErrorReserva.collectAsState()
 
     var errorInicioPago by remember { mutableStateOf(false) }
+    var iniciandoPago by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
+        iniciandoPago = true
         val inicioOk = citaViewModel.iniciarPago(usuarioEmail)
+        iniciandoPago = false
         if (!inicioOk) {
             errorInicioPago = true
         }
@@ -87,7 +91,14 @@ fun PagoScreen(
         mutableStateOf<String?>(null)
     }
 
-    LaunchedEffect(tiempoRestante) {
+    LaunchedEffect(mensajeErrorVm) {
+        if (mensajeErrorVm != null) {
+            errorReserva = mensajeErrorVm
+        }
+    }
+
+    LaunchedEffect(tiempoRestante, errorInicioPago, iniciandoPago) {
+        if (errorInicioPago || iniciandoPago) return@LaunchedEffect
 
         if (tiempoRestante > 0) {
 
@@ -420,14 +431,9 @@ fun PagoScreen(
                     )
 
                     Row(
-                        modifier =
-                            Modifier.fillMaxWidth(),
-
-                        horizontalArrangement =
-                            Arrangement.SpaceBetween,
-
-                        verticalAlignment =
-                            Alignment.CenterVertically
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
 
                         Text(
@@ -436,31 +442,25 @@ fun PagoScreen(
                                     "El tiempo está por finalizar"
                                 else
                                     "Tu horario queda reservado durante los 10 minutos de pago",
-
                             fontSize = 13.sp,
                             color =
                                 MaterialTheme.colorScheme
                                     .onSurface
-                                    .copy(alpha = 0.65f)
+                                    .copy(alpha = 0.65f),
+                            modifier = Modifier.weight(1f)
                         )
 
                         Text(
                             text = tiempoTexto,
                             fontSize = 21.sp,
-                            fontWeight =
-                                FontWeight.Bold,
-
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false,
                             color =
-                                if (
-                                    tiempoRestante < 60
-                                )
-                                    MaterialTheme
-                                        .colorScheme
-                                        .error
+                                if (tiempoRestante < 60)
+                                    MaterialTheme.colorScheme.error
                                 else
-                                    MaterialTheme
-                                        .colorScheme
-                                        .secondary
+                                    MaterialTheme.colorScheme.secondary
                         )
                     }
 
@@ -497,14 +497,15 @@ fun PagoScreen(
                         if (exito) {
                             onPagoExitoso()
                         } else {
-                            errorReserva =
-                                "La hora dejó de estar disponible. Vuelve a seleccionar un horario."
+                            errorReserva = citaViewModel.mensajeErrorReserva.value
+                                ?: "La hora dejó de estar disponible. Vuelve a seleccionar un horario."
                         }
                     }
                 },
 
                 enabled =
-                    !estaExpirado &&
+                    !iniciandoPago &&
+                            !estaExpirado &&
                             tiempoRestante > 0 &&
                             !procesandoPago &&
                             usuarioEmail.isNotBlank() &&
@@ -519,7 +520,11 @@ fun PagoScreen(
             ) {
 
                 Text(
-                    text = if (procesandoPago) "Confirmando reserva..." else "Pagar $35.000",
+                    text = when {
+                        iniciandoPago -> "Preparando reserva..."
+                        procesandoPago -> "Confirmando reserva..."
+                        else -> "Pagar $35.000"
+                    },
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -533,12 +538,25 @@ fun PagoScreen(
                         containerColor = MaterialTheme.colorScheme.errorContainer
                     )
                 ) {
-                    Text(
-                        text = mensaje,
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        fontSize = 13.sp,
-                        modifier = Modifier.padding(14.dp)
-                    )
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = mensaje,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            fontSize = 13.sp
+                        )
+                        androidx.compose.material3.OutlinedButton(
+                            onClick = {
+                                citaViewModel.liberarRetencion()
+                                onExpirado()
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Volver a seleccionar horario")
+                        }
+                    }
                 }
             }
 
@@ -614,7 +632,8 @@ fun PagoScreen(
 
             text = {
                 Text(
-                    "No pudimos reservar tu horario para pagar. Puede que ya esté ocupado; vuelve a seleccionar uno."
+                    mensajeErrorVm
+                        ?: "No pudimos reservar tu horario para pagar. Puede que ya esté ocupado; vuelve a seleccionar uno."
                 )
             },
 

@@ -224,9 +224,9 @@ fun MisCitasScreen(
 
                                         ubicacion =
                                             if (cita.modalidad == com.example.sanaesenciaapp.viewmodel.Modalidad.PRESENCIAL && cita.boxAsignado != null)
-                                                "Presencial · Box ${cita.boxAsignado}"
+                                                "Centro SanaEsencia · Caupolicán 220, Los Vilos · Box ${cita.boxAsignado}"
                                             else
-                                                "Modalidad: ${cita.modalidad.name}"
+                                                "Atención Online · SanaEsencia"
                                     )
 
                                 if (!exito) {

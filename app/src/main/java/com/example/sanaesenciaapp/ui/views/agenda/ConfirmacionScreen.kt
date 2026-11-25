@@ -455,9 +455,9 @@ fun ConfirmacionScreen(
 
                                         ubicacion =
                                             if (cita.modalidad == Modalidad.PRESENCIAL && cita.boxAsignado != null)
-                                                "Presencial · Box ${cita.boxAsignado}"
+                                                "Centro SanaEsencia · Caupolicán 220, Los Vilos · Box ${cita.boxAsignado}"
                                             else
-                                                "Modalidad: ${cita.modalidad.name}"
+                                                "Atención Online · SanaEsencia"
                                     )
 
                             if (!exito) {
