@@ -4,7 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.rememberNavController
@@ -28,8 +27,8 @@ class MainActivity : ComponentActivity() {
         val db = appContainer.database
         val appState = AppState(db, appContainer.sesionRepository, appContainer.usuarioRepository)
 
-        appState.cargarDatos()
         RetrofitClient.init(this)
+        appState.cargarDatos()
 
         setContent {
 
@@ -54,12 +53,9 @@ fun SanaEsenciaApp(
     val navController =
         rememberNavController()
 
-    MaterialTheme {
-
-        AppNavigation(
-            navController = navController,
-            appState = appState,
-            appContainer = appContainer
-        )
-    }
+    AppNavigation(
+        navController = navController,
+        appState = appState,
+        appContainer = appContainer
+    )
 }

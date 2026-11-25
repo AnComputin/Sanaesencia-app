@@ -24,6 +24,7 @@ class CitaRepository(
     }
 
     suspend fun sincronizarCitasDesdeServidor(email: String?) {
+        if (!RetrofitClient.estaInicializado()) return
         try {
             val response = RetrofitClient.agendaApi.listarCitas(email)
             if (response.isSuccessful) {
@@ -43,6 +44,9 @@ class CitaRepository(
 
     /* Reserva cita en agenda-service (:8084) y la guarda en Room; retorna null si el horario no está disponible */
     suspend fun reservarCita(cita: CitaEntity): CitaEntity? {
+        if (!RetrofitClient.estaInicializado()) {
+            return citaDao.reservarSiDisponible(cita)
+        }
         return try {
             val request = CrearCitaRequest(
                 usuarioEmail = cita.usuarioEmail.trim().lowercase(),
@@ -57,7 +61,7 @@ class CitaRepository(
                 pacienteNombre = cita.pacienteNombre,
                 beneficiarioId = cita.beneficiarioId,
                 estado = cita.estado,
-                boxAsignado = cita.boxAsignado
+                boxAsignado = null
             )
             val response = RetrofitClient.agendaApi.reservarCita(request)
 
@@ -66,23 +70,24 @@ class CitaRepository(
                     val guardadaRemota = response.body() ?: cita
                     citaDao.reservarSiDisponible(guardadaRemota) ?: guardadaRemota
                 }
-                response.code() == 400 || response.code() == 409 -> null
-                else -> citaDao.reservarSiDisponible(cita)
+                else -> null
             }
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
-            citaDao.reservarSiDisponible(cita)
+            null
         }
     }
 
     /* Actualiza estado de cita en agenda-service (:8084) y en Room */
     suspend fun actualizarEstadoCita(id: Int, nuevoEstado: String) {
-        try {
-            RetrofitClient.agendaApi.cambiarEstadoCita(id = id, estado = nuevoEstado)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (_: Exception) {
+        if (RetrofitClient.estaInicializado()) {
+            try {
+                RetrofitClient.agendaApi.cambiarEstadoCita(id = id, estado = nuevoEstado)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+            }
         }
         citaDao.actualizarEstado(id, nuevoEstado)
     }

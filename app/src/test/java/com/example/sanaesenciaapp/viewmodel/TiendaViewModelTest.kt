@@ -111,6 +111,56 @@ class TiendaViewModelTest {
         }
     }
 
+    @Test
+    fun operacionesDeCarritoAdminYSimularPagoFuncionanCorrectamente() = runTest(dispatcher) {
+        val repo = FakeTiendaRepository(listOf(producto(1, stock = 3), producto(2, stock = 2)))
+        val store = ViewModelStore()
+        val vm = TiendaViewModel(repo).also { store.put("tienda", it) }
+        try {
+            backgroundScope.launch(dispatcher) { vm.todosProductos.collect() }
+            advanceUntilIdle()
+
+            // Carrito: agregar, aumentar hasta stock, disminuir, quitar, limpiar
+            vm.agregarAlCarrito(producto(1, stock = 3))
+            vm.aumentarCantidad(1)
+            vm.aumentarCantidad(1)
+            vm.aumentarCantidad(1) // no supera stock 3
+            assertEquals(3, vm.carrito.value.single().cantidad)
+
+            vm.disminuirCantidad(1)
+            assertEquals(2, vm.carrito.value.single().cantidad)
+
+            vm.agregarAlCarrito(producto(2, stock = 2))
+            vm.quitarDelCarrito(2)
+            assertEquals(1, vm.carrito.value.size)
+
+            vm.limpiarMensaje()
+            assertEquals(null, vm.mensaje.value)
+
+            // Admin: guardar, actualizarStock, eliminar
+            vm.guardarProducto(producto(5, stock = 4))
+            vm.actualizarStock(1, 5)
+            vm.eliminarProducto(2)
+            advanceUntilIdle()
+            assertFalse(vm.mensaje.value.isNullOrBlank())
+
+            // Pago con carrito vacío y con carrito cargado
+            vm.limpiarCarrito()
+            vm.simularPago("ana@cl.cl", "Ana", "Tarjeta")
+            assertFalse(vm.estadoPago.value.resultado!!.exito)
+
+            vm.limpiarResultadoPago()
+            assertEquals(null, vm.estadoPago.value.resultado)
+
+            vm.agregarAlCarrito(producto(1, stock = 5))
+            vm.simularPago("ana@cl.cl", "Ana", "Tarjeta")
+            advanceUntilIdle()
+            assertEquals(false, vm.estadoPago.value.procesando)
+        } finally {
+            store.clear()
+        }
+    }
+
     private fun producto(id: Int, stock: Int = 4) = ProductoEntity(
         id = id,
         nombre = "Producto $id",

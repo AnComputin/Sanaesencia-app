@@ -183,6 +183,26 @@ class BeneficiarioViewModelModuleTest {
                     assertFalse(viewModel.uiState.value.cargando)
                     assertEquals(listOf(beneficiario), viewModel.uiState.value.beneficiarios)
                     assertEquals(2, lecturas)
+
+                    // Operaciones CRUD delegadas por BeneficiarioViewModel
+                    var resReg: com.example.sanaesenciaapp.data.repository.ResultadoBeneficiario<Nothing>? = null
+                    viewModel.registrar("Hija", "11111111-1", "01/01/2018", "Hija") { resReg = it }
+                    runCurrent()
+                    assertTrue(resReg != null)
+
+                    var resAct: com.example.sanaesenciaapp.data.repository.ResultadoBeneficiario<Nothing>? = null
+                    viewModel.actualizar(1, "Editado", "12345678-5", "01/01/2015", "Hijo") { resAct = it }
+                    runCurrent()
+                    assertTrue(resAct != null)
+
+                    var resReact: com.example.sanaesenciaapp.data.repository.ResultadoBeneficiario<Nothing>? = null
+                    viewModel.reactivar(1) { resReact = it }
+                    runCurrent()
+                    assertTrue(resReact != null)
+
+                    assertTrue(viewModel.obtenerPorId(1) is com.example.sanaesenciaapp.data.repository.ResultadoBeneficiario.NoEncontrado)
+                    // reintentarCarga cuando no hay error es no-op
+                    viewModel.reintentarCarga()
                 } finally {
                     store.clear()
                 }

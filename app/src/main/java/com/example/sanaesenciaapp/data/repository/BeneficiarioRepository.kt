@@ -60,11 +60,30 @@ class BeneficiarioRepository(
         }
 
     suspend fun sincronizarDesdeServidor(email: String) {
+        if (!RetrofitClient.estaInicializado()) return
         try {
             val response = RetrofitClient.usuariosApi.listarBeneficiarios(email)
             if (response.isSuccessful) {
                 response.body()?.forEach { remoto ->
-                    beneficiarioDao.registrarOReactivar(remoto)
+                    val resultado = beneficiarioDao.registrarOReactivar(remoto)
+                    if (resultado == ResultadoRegistroBeneficiario.YA_EXISTE_ACTIVO) {
+                        val existente = beneficiarioDao
+                            .buscarPorRutYPropietario(remoto.propietarioEmail, remoto.rut)
+                            .firstOrNull()
+                        if (existente != null) {
+                            beneficiarioDao.actualizar(
+                                id = existente.id,
+                                email = existente.propietarioEmail,
+                                nombre = remoto.nombre,
+                                rut = remoto.rut,
+                                fechaNacimiento = remoto.fechaNacimiento,
+                                parentesco = remoto.parentesco
+                            )
+                            if (!remoto.activo) {
+                                beneficiarioDao.desactivar(existente.id, existente.propietarioEmail)
+                            }
+                        }
+                    }
                 }
             }
         } catch (cancelacion: CancellationException) {
@@ -119,6 +138,20 @@ class BeneficiarioRepository(
             parentesco = parentesco.trim()
         )
 
+        if (!RetrofitClient.estaInicializado()) {
+            return conManejoPersistencia {
+                when (beneficiarioDao.registrarOReactivar(entidad)) {
+                    ResultadoRegistroBeneficiario.INSERTADO -> ResultadoBeneficiario.Insertado
+                    ResultadoRegistroBeneficiario.REACTIVADO -> ResultadoBeneficiario.Reactivado
+                    ResultadoRegistroBeneficiario.YA_EXISTE_ACTIVO -> ResultadoBeneficiario.YaExisteActivo
+                    ResultadoRegistroBeneficiario.INCONSISTENCIA_DATOS -> ResultadoBeneficiario.InconsistenciaDatos
+                    ResultadoRegistroBeneficiario.CONFLICTO_INSERCION -> ResultadoBeneficiario.ConflictoInsercion
+                    ResultadoRegistroBeneficiario.DATOS_INVALIDOS -> ResultadoBeneficiario.DatosInvalidos
+                    ResultadoRegistroBeneficiario.ERROR -> ResultadoBeneficiario.ErrorOperacion
+                }
+            }
+        }
+
         return try {
             val response = RetrofitClient.usuariosApi.crearBeneficiario(entidad)
             if (!response.isSuccessful) {
@@ -169,6 +202,26 @@ class BeneficiarioRepository(
             parentesco = parentesco.trim()
         )
 
+        if (!RetrofitClient.estaInicializado()) {
+            return conManejoPersistencia {
+                val filas = beneficiarioDao.actualizar(
+                    id = id,
+                    email = email,
+                    nombre = nombre.trim(),
+                    rut = rutNormalizado,
+                    fechaNacimiento = fechaIso,
+                    parentesco = parentesco.trim()
+                )
+                if (filas == 1) {
+                    ResultadoBeneficiario.Actualizado
+                } else {
+                    val existe = beneficiarioDao.obtenerPorIdYPropietario(id, email)
+                    if (existe == null) ResultadoBeneficiario.NoEncontrado
+                    else ResultadoBeneficiario.ConflictoRut
+                }
+            }
+        }
+
         return try {
             val response = RetrofitClient.usuariosApi.actualizarBeneficiario(id, entidad)
             if (!response.isSuccessful) {
@@ -203,6 +256,16 @@ class BeneficiarioRepository(
         val email = emailDeSesion() ?: return ResultadoBeneficiario.SesionNoAutenticada
         if (id <= 0) return ResultadoBeneficiario.DatosInvalidos
 
+        if (!RetrofitClient.estaInicializado()) {
+            return conManejoPersistencia {
+                if (beneficiarioDao.desactivar(id, email) == 1) {
+                    ResultadoBeneficiario.Desactivado
+                } else {
+                    ResultadoBeneficiario.NoEncontrado
+                }
+            }
+        }
+
         return try {
             val response = RetrofitClient.usuariosApi.desactivarBeneficiario(id)
             if (!response.isSuccessful) return ResultadoBeneficiario.NoEncontrado
@@ -224,6 +287,18 @@ class BeneficiarioRepository(
     suspend fun reactivar(id: Int): ResultadoBeneficiario<Nothing> {
         val email = emailDeSesion() ?: return ResultadoBeneficiario.SesionNoAutenticada
         if (id <= 0) return ResultadoBeneficiario.DatosInvalidos
+
+        if (!RetrofitClient.estaInicializado()) {
+            return conManejoPersistencia {
+                if (beneficiarioDao.reactivar(id, email) == 1) {
+                    ResultadoBeneficiario.Reactivado
+                } else if (beneficiarioDao.obtenerPorIdYPropietario(id, email) != null) {
+                    ResultadoBeneficiario.YaExisteActivo
+                } else {
+                    ResultadoBeneficiario.NoEncontrado
+                }
+            }
+        }
 
         return try {
             val response = RetrofitClient.usuariosApi.reactivarBeneficiario(id)

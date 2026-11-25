@@ -2,19 +2,22 @@ package com.example.sanaesenciaapp.data.remote
 
 import android.content.Context
 
-class TokenManager(context: Context) {
+open class TokenManager(context: Context?) {
 
-    private val prefs = context.getSharedPreferences("sana_esencia_auth", Context.MODE_PRIVATE)
+    private val prefs = context?.getSharedPreferences("sana_esencia_auth", Context.MODE_PRIVATE)
+    private var tokenEnMemoria: String? = null
 
-    fun guardarToken(token: String) {
-        prefs.edit().putString("jwt_token", token).apply()
+    open fun guardarToken(token: String) {
+        tokenEnMemoria = token
+        prefs?.edit()?.putString("jwt_token", token)?.apply()
     }
 
-    fun obtenerToken(): String? {
-        return prefs.getString("jwt_token", null)
+    open fun obtenerToken(): String? {
+        return prefs?.getString("jwt_token", null) ?: tokenEnMemoria
     }
 
-    fun limpiarToken() {
-        prefs.edit().remove("jwt_token").apply()
+    open fun limpiarToken() {
+        tokenEnMemoria = null
+        prefs?.edit()?.remove("jwt_token")?.apply()
     }
 }

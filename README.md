@@ -8,15 +8,34 @@ Reunir en una aplicación los flujos de atención del centro y herramientas de b
 
 ## Tecnologías
 
+### Aplicación Android
 - Kotlin, Jetpack Compose y Material 3.
 - MVVM con ViewModels y StateFlow.
 - Kotlin Coroutines.
 - Navigation Compose mediante grafos por módulo.
-- Room/SQLite para persistencia local.
+- Room/SQLite (versión 8) para caché local y respaldo offline.
+- Retrofit 2.11.0 + OkHttp 4.12.0 + Gson para consumo REST de microservicios y API externa.
+- Google Play Services Location + Android Geocoder en módulo de Sede/Ubicación.
+- JaCoCo (`jacocoLogicaReport`) para medición de cobertura unitaria sobre lógica de negocio.
 - Android SDK: compile/target 37; min SDK 24.
 - AGP 9.3.3, Kotlin 2.2.10, Room 2.8.4 (versiones declaradas en el proyecto).
 
-No hay Retrofit ni backend configurados. Las operaciones descritas como simuladas no cobran dinero ni llaman a una pasarela.
+### Backend (Microservicios)
+- Java 21 (compatible con ejecución local en JDK 17 mediante `-Djava.version=17`) + Spring Boot 4.2.0.
+- 5 microservicios independientes con Spring Data JPA (`ddl-auto=validate`), MySQL 8.0, Flyway y seguridad JWT stateless (`JwtEncoder`/`JwtDecoder` HS256):
+  - `usuarios-service` (`:8081`): registro, login, emisión JWT, bootstrap de admin y CRUD de beneficiarios.
+  - `catalogo-service` (`:8082`): CRUD de especialidades y pausa de agenda.
+  - `terapeutas-service` (`:8083`): CRUD de especialistas.
+  - `agenda-service` (`:8084`): reserva y estado de citas con control de solapamiento por especialista y asignación de boxes 1–8.
+  - `tienda-service` (`:8085`): CRUD de productos y registro transaccional de ventas con descuento de stock.
+- Orquestación con Docker Compose (`backend/docker-compose.yml`), `backend/Dockerfile` y reverse proxy Nginx (`backend/nginx/default.conf`).
+- JaCoCo (`jacoco-maven-plugin`) integrado en los 5 servicios.
+
+> **Nota sobre pagos simulados:** Las operaciones de pago de citas y tienda registran la confirmación/venta en los microservicios y Room local, sin pasarela bancaria real.
+
+## Consumo de API Externa
+
+- En `app/src/main/java/com/example/sanaesenciaapp/data/remote/ClimaService.kt` (`OpenMeteoApi` + `ClimaRepository`), la app consume la API REST pública de **Open-Meteo** (`https://api.open-meteo.com/v1/forecast`) para mostrar el clima actual de la sede en Los Vilos (`UbicacionScreen.kt`), con estados de carga, error, reintento y recomendación de bienestar según código WMO.
 
 ## Arquitectura
 
@@ -77,12 +96,11 @@ El portal conserva sus pantallas, pero los datos clínicos están **bloqueados**
 
 ## Persistencia y fuentes de datos
 
-- Room/SQLite local es la fuente de especialidades, especialistas, citas, beneficiarios, productos y ventas.
-- La sesión vive en memoria y no se restaura al reiniciar la aplicación.
-- Beneficiarios se consultan y mutan limitados por el correo titular derivado de la sesión; las consultas del DAO también restringen por propietario.
-- Los productos iniciales se insertan como **datos de demostración** al crear/actualizar la base. No representan una oferta comercial real. No hay imágenes fotográficas ni backend de productos.
-- Las ventas de tienda se guardan localmente; el pago tiene estado simulado. No se almacenan datos bancarios.
-- Las citas se persisten y aplican reglas de solapamiento y boxes dentro de la capa de Agenda.
+- Los 5 microservicios Spring Boot + MySQL 8.0 son la fuente remota principal autenticada mediante JWT (`RetrofitClient`, `AuthInterceptor`, `TokenManager`).
+- Room/SQLite local (versión 8) actúa como caché reactivo sincronizado con el servidor y respaldo de consulta.
+- Beneficiarios se consultan y mutan limitados por el correo titular derivado de la sesión (tanto en `BeneficiarioController` mediante el `subject` del JWT como en las consultas locales del DAO).
+- Las ventas de tienda se registran transaccionalmente en `tienda-service` descontando stock en MySQL y actualizando Room; el pago es simulado sin pasarela bancaria.
+- Las citas se validan contra solapamiento de especialista y capacidad de 8 boxes físicos en `agenda-service` y Room.
 - Las notas clínicas de Terapeuta no se persisten.
 
 ## Autenticación y seguridad
@@ -91,9 +109,9 @@ El portal conserva sus pantallas, pero los datos clínicos están **bloqueados**
 
 ## Estado de implementación
 
-- **Implementados:** Inicio, catálogo terapéutico, Beneficiarios, Juegos y sección de Productos con compra simulada.
+- **Implementados:** Inicio, Sede/Ubicación (GPS + Geocoder + Open-Meteo REST), catálogo terapéutico, Beneficiarios, Agenda con 8 boxes, Juegos, Tienda con ventas transaccionales, Panel Admin y 5 microservicios Spring Boot dockerizados detrás de Nginx.
 - **Parcial / bloqueado por dependencia:** portal Terapeuta. Sus pantallas están presentes, pero la lectura clínica y edición permanecen deshabilitadas hasta tener relación y autorización persistidas.
-- **No integrado:** backend, API comercial, pasarela de pago real e imágenes remotas.
+- **Pagos e imágenes:** pasarela de pago simulada y catálogo visual con iconografía emoji.
 
 ## Instalación y ejecución
 
@@ -109,18 +127,26 @@ Desde PowerShell en la raíz:
 
 El APK debug queda en `app/build/outputs/apk/debug/`.
 
-## Pruebas
+## Pruebas y cobertura
 
-Comandos disponibles:
+Comandos disponibles (Android):
 
 ```powershell
 .\gradlew.bat :app:compileDebugKotlin
 .\gradlew.bat :app:testDebugUnitTest
+.\gradlew.bat :app:jacocoLogicaReport
 .\gradlew.bat :app:assembleDebug
-.\gradlew.bat :app:connectedDebugAndroidTest
 ```
 
-En la validación AL-06 de la rama Ale se ejecutaron compile, suite unitaria y assemble: **204 pruebas unitarias aprobadas, 0 fallidas y 0 omitidas**. Esa cifra corresponde a la ejecución registrada; no implica que cada flujo se haya probado en un dispositivo. Las pruebas instrumentadas requieren emulador/dispositivo conectado.
+El reporte de cobertura JaCoCo de la capa lógica queda en `app/build/reports/jacoco/jacocoLogicaReport/html/index.html`.
+
+Comandos disponibles (Backend, en cada carpeta `backend/<servicio>` con MySQL 8.0 activo):
+
+```powershell
+.\mvnw.cmd "-Djava.version=17" test
+```
+
+El reporte JaCoCo de cada microservicio queda en `backend/<servicio>/target/site/jacoco/index.html`.
 
 ## Contratos e integración
 

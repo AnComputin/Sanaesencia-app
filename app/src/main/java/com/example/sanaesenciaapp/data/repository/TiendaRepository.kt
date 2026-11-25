@@ -6,7 +6,9 @@ import com.example.sanaesenciaapp.data.remote.DetalleVentaItemRequest
 import com.example.sanaesenciaapp.data.remote.RetrofitClient
 import com.example.sanaesenciaapp.data.room.AppDatabase
 import com.example.sanaesenciaapp.data.room.DetalleVentaEntity
+import com.example.sanaesenciaapp.data.room.ProductoDao
 import com.example.sanaesenciaapp.data.room.ProductoEntity
+import com.example.sanaesenciaapp.data.room.VentaDao
 import com.example.sanaesenciaapp.data.room.VentaEntity
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.onStart
@@ -28,6 +30,7 @@ data class ResultadoCompra(
 interface TiendaRepositoryContract {
     val productos: kotlinx.coroutines.flow.Flow<List<ProductoEntity>>
     val todosLosProductos: kotlinx.coroutines.flow.Flow<List<ProductoEntity>>
+    suspend fun sincronizarProductosDesdeServidor() {}
     suspend fun guardarProducto(producto: ProductoEntity)
     suspend fun eliminarProducto(id: Int)
     suspend fun actualizarStock(id: Int, nuevoStock: Int)
@@ -39,11 +42,27 @@ interface TiendaRepositoryContract {
     ): ResultadoCompra
 }
 
-class TiendaRepository(private val database: AppDatabase) : TiendaRepositoryContract {
+class TiendaRepository internal constructor(
+    private val productoDao: ProductoDao,
+    private val ventaDao: VentaDao,
+    private val database: AppDatabase? = null
+) : TiendaRepositoryContract {
 
-    private val productoDao = database.productoDao()
-    private val ventaDao = database.ventaDao()
+    constructor(database: AppDatabase) : this(
+        productoDao = database.productoDao(),
+        ventaDao = database.ventaDao(),
+        database = database
+    )
+
     private val sincronizacionMutex = Mutex()
+
+    private suspend fun ejecutarTransaccion(bloque: suspend () -> Unit) {
+        if (database != null) {
+            database.withTransaction { bloque() }
+        } else {
+            bloque()
+        }
+    }
 
     override val productos = productoDao.obtenerActivosFlow()
         .onStart { sincronizarProductosDesdeServidor() }
@@ -51,12 +70,13 @@ class TiendaRepository(private val database: AppDatabase) : TiendaRepositoryCont
     override val todosLosProductos = productoDao.obtenerTodosFlow()
         .onStart { sincronizarProductosDesdeServidor() }
 
-    suspend fun sincronizarProductosDesdeServidor() = sincronizacionMutex.withLock {
+    override suspend fun sincronizarProductosDesdeServidor() = sincronizacionMutex.withLock {
+        if (!RetrofitClient.estaInicializado()) return@withLock
         try {
             val response = RetrofitClient.tiendaApi.listarProductos(soloActivos = false)
             if (response.isSuccessful) {
                 val catalogoRemoto = response.body().orEmpty().distinctBy { it.id }
-                database.withTransaction {
+                ejecutarTransaccion {
                     productoDao.eliminarTodos()
                     if (catalogoRemoto.isNotEmpty()) productoDao.guardarTodos(catalogoRemoto)
                 }
@@ -69,6 +89,10 @@ class TiendaRepository(private val database: AppDatabase) : TiendaRepositoryCont
     }
 
     override suspend fun guardarProducto(producto: ProductoEntity) {
+        if (!RetrofitClient.estaInicializado()) {
+            productoDao.guardar(producto)
+            return
+        }
         val response = if (producto.id > 0) {
             RetrofitClient.tiendaApi.actualizarProducto(producto.id, producto)
         } else {
@@ -86,6 +110,10 @@ class TiendaRepository(private val database: AppDatabase) : TiendaRepositoryCont
     override suspend fun eliminarProducto(id: Int) {
         val actual = productoDao.obtenerPorId(id)
             ?: throw IllegalStateException("No se encontró el producto que deseas quitar.")
+        if (!RetrofitClient.estaInicializado()) {
+            productoDao.guardar(actual.copy(activo = false))
+            return
+        }
         val response = RetrofitClient.tiendaApi.actualizarProducto(id, actual.copy(activo = false))
         if (!response.isSuccessful) {
             val detalle = response.errorBody()?.string()?.takeIf { it.isNotBlank() }
@@ -98,12 +126,17 @@ class TiendaRepository(private val database: AppDatabase) : TiendaRepositoryCont
     override suspend fun actualizarStock(id: Int, nuevoStock: Int) {
         val actual = productoDao.obtenerPorId(id)
             ?: throw IllegalStateException("No se encontró el producto.")
-        val response = RetrofitClient.tiendaApi.actualizarProducto(id, actual.copy(stock = nuevoStock.coerceAtLeast(0)))
+        val stockSeguro = nuevoStock.coerceAtLeast(0)
+        if (!RetrofitClient.estaInicializado()) {
+            productoDao.actualizarStock(id, stockSeguro)
+            return
+        }
+        val response = RetrofitClient.tiendaApi.actualizarProducto(id, actual.copy(stock = stockSeguro))
         if (!response.isSuccessful) {
             val detalle = response.errorBody()?.string()?.takeIf { it.isNotBlank() }
             throw IllegalStateException("No se pudo actualizar el stock (HTTP ${response.code()}): ${detalle ?: response.message()}")
         }
-        productoDao.guardar(response.body() ?: actual.copy(stock = nuevoStock.coerceAtLeast(0)))
+        productoDao.guardar(response.body() ?: actual.copy(stock = stockSeguro))
     }
 
     override suspend fun registrarCompra(
@@ -136,7 +169,7 @@ class TiendaRepository(private val database: AppDatabase) : TiendaRepositoryCont
                     val ventaRemota = response.body()
                         ?: return ResultadoCompra(false, "Respuesta vacía del servidor")
 
-                    database.withTransaction {
+                    ejecutarTransaccion {
                         for (det in ventaRemota.detalles) {
                             productoDao.descontarStock(det.productoId, det.cantidad)
                         }

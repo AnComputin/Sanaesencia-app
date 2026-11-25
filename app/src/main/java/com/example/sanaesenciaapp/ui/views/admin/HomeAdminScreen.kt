@@ -1,5 +1,6 @@
 package com.example.sanaesenciaapp.ui.views.admin
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -34,11 +36,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.sanaesenciaapp.R
 import com.example.sanaesenciaapp.data.AppState
 import com.example.sanaesenciaapp.data.room.EspecialidadEntity
 import com.example.sanaesenciaapp.ui.views.admin.ProductosAdminContent
@@ -57,9 +61,11 @@ fun HomeAdminScreen(
     navController: NavController,
     appState: AppState,
     tiendaViewModel: TiendaViewModel,
-    adminViewModel: AdminViewModel = viewModel(factory = AdminViewModelFactory(appState.db))
+    adminViewModel: AdminViewModel = viewModel(factory = AdminViewModelFactory(appState.db)),
+    onLogoutCleanup: () -> Unit = {}
 ) {
     val especialidades by adminViewModel.especialidades.collectAsState()
+    val mensajeErrorAdmin by adminViewModel.mensajeError.collectAsState()
     val productos by tiendaViewModel.todosProductos.collectAsState()
     val usuario = appState.usuarioActual
     var pestañaSeleccionada by remember { mutableStateOf(0) }
@@ -69,16 +75,25 @@ fun HomeAdminScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = "🌿 Panel Administrador",
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.secondary
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_sanaesencia_logo),
+                            contentDescription = "SanaEsencia",
+                            modifier = Modifier.size(30.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Panel Administrador",
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                    }
                 },
                 actions = {
                     TextButton(
                         onClick = {
                             tiendaViewModel.limpiarCarrito()
+                            onLogoutCleanup()
                             appState.logout()
                             navController.navigate("home") {
                                 popUpTo("home_admin") { inclusive = true }
@@ -133,13 +148,27 @@ fun HomeAdminScreen(
                     )
                     Tab(
                         selected = pestañaSeleccionada == 1,
-                        onClick = { pestañaSeleccionada = 1 },
+                        onClick = {
+                            pestañaSeleccionada = 1
+                            adminViewModel.refrescarBoxes()
+                        },
                         text = { Text("Boxes") }
                     )
                     Tab(
                         selected = pestañaSeleccionada == 2,
                         onClick = { pestañaSeleccionada = 2 },
                         text = { Text("Productos") }
+                    )
+                }
+
+                if (!mensajeErrorAdmin.isNullOrBlank()) {
+                    Text(
+                        text = mensajeErrorAdmin.orEmpty(),
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 13.sp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 6.dp)
                     )
                 }
 

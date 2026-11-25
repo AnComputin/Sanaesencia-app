@@ -10,6 +10,9 @@ import com.sana_esencia.usuarios_service.service.UsuarioService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -58,7 +61,15 @@ public class UsuarioController {
     }
 
     @GetMapping("/{email}")
-    public ResponseEntity<?> obtenerPorEmail(@PathVariable String email) {
+    public ResponseEntity<?> obtenerPorEmail(
+            @PathVariable String email,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        String rol = jwt.getClaimAsString("rol");
+        boolean esAdmin = "ADMIN".equalsIgnoreCase(rol);
+        if (!esAdmin && !email.trim().equalsIgnoreCase(jwt.getSubject())) {
+            throw new AccessDeniedException("No tienes permiso para consultar otro usuario");
+        }
         try {
             Usuario usuario = usuarioService.obtenerPorEmail(email);
             return ResponseEntity.ok(new UsuarioResponse(usuario));

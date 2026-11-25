@@ -90,13 +90,24 @@ public class CitaController {
     }
 
     @PatchMapping("/{id}/estado")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PACIENTE')")
     public ResponseEntity<?> cambiarEstado(
             @PathVariable Integer id,
             @RequestParam String estado,
-            @RequestParam(required = false) Integer boxAsignado
+            @RequestParam(required = false) Integer boxAsignado,
+            @AuthenticationPrincipal Jwt jwt
     ) {
         try {
+            if ("PACIENTE".equals(rol(jwt))) {
+                Cita actual = service.obtenerPorId(id);
+                if (!esPropietario(actual, jwt)) {
+                    throw new AccessDeniedException("No tienes permiso para modificar esta cita");
+                }
+                if (!"CANCELADA".equalsIgnoreCase(estado.trim())) {
+                    throw new AccessDeniedException("Un paciente solo puede cancelar su propia cita");
+                }
+                return ResponseEntity.ok(service.actualizarEstado(id, "CANCELADA", null));
+            }
             return ResponseEntity.ok(service.actualizarEstado(id, estado, boxAsignado));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

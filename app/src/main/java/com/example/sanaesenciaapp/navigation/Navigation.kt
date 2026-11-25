@@ -1,6 +1,11 @@
 package com.example.sanaesenciaapp.navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -50,7 +55,31 @@ fun AppNavigation(
 
     NavHost(
         navController = navController,
-        startDestination = "splash"
+        startDestination = "splash",
+        enterTransition = {
+            slideIntoContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.Start,
+                animationSpec = tween(280)
+            ) + fadeIn(animationSpec = tween(220))
+        },
+        exitTransition = {
+            slideOutOfContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.Start,
+                animationSpec = tween(280)
+            ) + fadeOut(animationSpec = tween(180))
+        },
+        popEnterTransition = {
+            slideIntoContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.End,
+                animationSpec = tween(280)
+            ) + fadeIn(animationSpec = tween(220))
+        },
+        popExitTransition = {
+            slideOutOfContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.End,
+                animationSpec = tween(280)
+            ) + fadeOut(animationSpec = tween(180))
+        }
     ) {
         composable("splash") {
             SplashScreen(
@@ -88,6 +117,7 @@ fun AppNavigation(
                 onTiendaClick = { navController.navigate("tienda") },
                 onLogoutClick = {
                     tiendaViewModel.limpiarCarrito()
+                    citaViewModel.limpiarSesion()
                     appState.logout()
                     navController.navigate("inicio") {
                         popUpTo("home") { inclusive = true }
@@ -97,17 +127,37 @@ fun AppNavigation(
         }
 
         composable("home_admin") {
+            LaunchedEffect(appState.usuarioActual) {
+                val rol = appState.usuarioActual?.rol
+                if (!rol.equals("ADMIN", ignoreCase = true)) {
+                    navController.navigate(if (appState.usuarioActual == null) "login" else "home") {
+                        popUpTo("home_admin") { inclusive = true }
+                    }
+                }
+            }
             HomeAdminScreen(
                 navController = navController,
                 appState = appState,
-                tiendaViewModel = tiendaViewModel
+                tiendaViewModel = tiendaViewModel,
+                onLogoutCleanup = {
+                    tiendaViewModel.limpiarCarrito()
+                    citaViewModel.limpiarSesion()
+                }
             )
         }
 
         authGraph(navController, appState, appViewModelProvider)
         catalogoGraph(navController, appState, citaViewModel, appViewModelProvider)
         agendaGraph(navController, appState, citaViewModel)
-        terapeutaGraph(navController, appState, terapeutaViewModel)
+        terapeutaGraph(
+            navController = navController,
+            appState = appState,
+            terapeutaViewModel = terapeutaViewModel,
+            onLimpiarSesion = {
+                tiendaViewModel.limpiarCarrito()
+                citaViewModel.limpiarSesion()
+            }
+        )
         juegosGraph(navController)
         tiendaGraph(navController, appState, tiendaViewModel)
     }

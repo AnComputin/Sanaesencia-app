@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.util.List;
 
@@ -52,17 +54,31 @@ public class TiendaController {
         }
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/ventas")
-    public ResponseEntity<?> registrarVenta(@Valid @RequestBody Venta venta) {
+    public ResponseEntity<?> registrarVenta(
+            @Valid @RequestBody Venta venta,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
         try {
+            if (jwt != null && jwt.getSubject() != null && !jwt.getSubject().isBlank()) {
+                venta.setCompradorEmail(jwt.getSubject());
+            }
             return ResponseEntity.status(HttpStatus.CREATED).body(service.registrarCompra(venta));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/ventas")
-    public ResponseEntity<List<Venta>> listarVentas(@RequestParam(required = false) String compradorEmail) {
-        return ResponseEntity.ok(service.listarVentas(compradorEmail));
+    public ResponseEntity<List<Venta>> listarVentas(
+            @RequestParam(required = false) String compradorEmail,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        String rol = jwt != null ? jwt.getClaimAsString("rol") : null;
+        boolean esAdmin = "ADMIN".equalsIgnoreCase(rol);
+        String filtroEmail = esAdmin ? compradorEmail : (jwt != null ? jwt.getSubject() : compradorEmail);
+        return ResponseEntity.ok(service.listarVentas(filtroEmail));
     }
 }

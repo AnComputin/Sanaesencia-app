@@ -5,6 +5,7 @@ import com.sana_esencia.terapeutas_service.service.EspecialistaService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -40,11 +41,13 @@ public class EspecialistaController {
         }
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<Especialista> crear(@Valid @RequestBody Especialista especialista) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.crear(especialista));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<?> actualizar(@PathVariable Integer id, @Valid @RequestBody Especialista datos) {
         try {
@@ -54,6 +57,7 @@ public class EspecialistaController {
         }
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}/activo")
     public ResponseEntity<?> cambiarEstado(@PathVariable Integer id, @RequestParam boolean activo) {
         try {

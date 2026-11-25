@@ -39,4 +39,17 @@ public interface CitaRepository extends JpaRepository<Cita, Integer> {
             @Param("inicioMillis") Long inicioMillis,
             @Param("finMillis") Long finMillis
     );
+
+    @Query("""
+        SELECT DISTINCT c.boxAsignado FROM Cita c
+        WHERE c.modalidad = 'PRESENCIAL'
+          AND c.estado <> 'CANCELADA'
+          AND c.boxAsignado IS NOT NULL
+          AND c.inicioMillis < :finMillis
+          AND c.finMillis > :inicioMillis
+    """)
+    List<Integer> findBoxesOcupados(
+            @Param("inicioMillis") Long inicioMillis,
+            @Param("finMillis") Long finMillis
+    );
 }

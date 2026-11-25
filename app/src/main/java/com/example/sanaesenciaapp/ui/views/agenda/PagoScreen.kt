@@ -51,6 +51,7 @@ fun PagoScreen(
 
     val uiState by citaViewModel.uiState.collectAsState()
     val puedeConfirmar by citaViewModel.puedeContinuar.collectAsState()
+    val mensajeErrorVm by citaViewModel.mensajeErrorReserva.collectAsState()
 
     var errorInicioPago by remember { mutableStateOf(false) }
 
@@ -87,7 +88,8 @@ fun PagoScreen(
         mutableStateOf<String?>(null)
     }
 
-    LaunchedEffect(tiempoRestante) {
+    LaunchedEffect(tiempoRestante, errorInicioPago) {
+        if (errorInicioPago) return@LaunchedEffect
 
         if (tiempoRestante > 0) {
 
@@ -486,8 +488,8 @@ fun PagoScreen(
                         if (exito) {
                             onPagoExitoso()
                         } else {
-                            errorReserva =
-                                "La hora dejó de estar disponible. Vuelve a seleccionar un horario."
+                            errorReserva = mensajeErrorVm
+                                ?: "La hora dejó de estar disponible. Vuelve a seleccionar un horario."
                         }
                     }
                 },
@@ -522,12 +524,25 @@ fun PagoScreen(
                         containerColor = MaterialTheme.colorScheme.errorContainer
                     )
                 ) {
-                    Text(
-                        text = mensaje,
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        fontSize = 13.sp,
-                        modifier = Modifier.padding(14.dp)
-                    )
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = mensaje,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            fontSize = 13.sp
+                        )
+                        androidx.compose.material3.OutlinedButton(
+                            onClick = {
+                                citaViewModel.liberarRetencion()
+                                onExpirado()
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Volver a seleccionar horario")
+                        }
+                    }
                 }
             }
 

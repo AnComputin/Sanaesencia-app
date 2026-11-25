@@ -13,6 +13,7 @@ sealed interface ResultadoRegistroUsuario {
     data object Registrado : ResultadoRegistroUsuario
     data object CorreoDuplicado : ResultadoRegistroUsuario
     data object ErrorPersistencia : ResultadoRegistroUsuario
+    data class ErrorServidor(val mensaje: String) : ResultadoRegistroUsuario
 }
 
 class UsuarioRepository(
@@ -24,6 +25,7 @@ class UsuarioRepository(
         val correoLimpio = email.trim()
         val local = usuarioDao.obtenerPorEmail(correoLimpio)
         if (local != null) return local
+        if (!RetrofitClient.estaInicializado()) return null
 
         return try {
             val response = RetrofitClient.usuariosApi.obtenerPorEmail(correoLimpio.lowercase())
@@ -48,6 +50,8 @@ class UsuarioRepository(
      * y sincroniza el perfil del usuario en Room.
      */
     suspend fun login(email: String, passwordPlano: String): UsuarioEntity? {
+        if (!RetrofitClient.estaInicializado()) return null
+
         return try {
             val response = RetrofitClient.usuariosApi.login(
                 LoginRequest(email = email.trim(), password = passwordPlano)
@@ -69,6 +73,8 @@ class UsuarioRepository(
 
     /**
      * Registra el usuario en MySQL (usuarios-service) y guarda el JWT + caché en Room.
+     * Si RetrofitClient no está inicializado (pruebas unitarias/Room o previews), opera
+     * directamente sobre Room.
      * Si se pasa [passwordPlano], se envía sin doble hash para que Spring Boot lo encripte
      * con Pbkdf2PasswordEncoderCompat.
      */
@@ -76,8 +82,24 @@ class UsuarioRepository(
         usuario: UsuarioEntity,
         passwordPlano: String? = null
     ): ResultadoRegistroUsuario {
+        val correoLimpio = usuario.email.trim()
+
+        if (!RetrofitClient.estaInicializado()) {
+            return try {
+                val rowId = usuarioDao.insertar(usuario.copy(email = correoLimpio))
+                if (rowId == -1L) {
+                    ResultadoRegistroUsuario.CorreoDuplicado
+                } else {
+                    ResultadoRegistroUsuario.Registrado
+                }
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (_: SQLiteException) {
+                ResultadoRegistroUsuario.ErrorPersistencia
+            }
+        }
+
         return try {
-            val correoLimpio = usuario.email.trim()
             val passwordEnviar = passwordPlano ?: usuario.password
 
             val response = RetrofitClient.usuariosApi.registro(
@@ -107,16 +129,21 @@ class UsuarioRepository(
                     }
                 }
                 response.code() == 400 || response.code() == 409 -> {
-                    ResultadoRegistroUsuario.CorreoDuplicado
+                    val detalle = response.errorBody()?.string()?.takeIf { it.isNotBlank() }
+                    if (detalle != null && !detalle.contains("correo", ignoreCase = true)) {
+                        ResultadoRegistroUsuario.ErrorServidor(detalle)
+                    } else {
+                        ResultadoRegistroUsuario.CorreoDuplicado
+                    }
                 }
-                else -> ResultadoRegistroUsuario.ErrorPersistencia
+                else -> ResultadoRegistroUsuario.ErrorServidor("Error del servidor (HTTP ${response.code()})")
             }
         } catch (cancellation: CancellationException) {
             throw cancellation
         } catch (_: SQLiteException) {
             ResultadoRegistroUsuario.ErrorPersistencia
         } catch (_: Exception) {
-            ResultadoRegistroUsuario.ErrorPersistencia
+            ResultadoRegistroUsuario.ErrorServidor("No hay conexión con el servidor. Verifica tu internet e intenta nuevamente.")
         }
     }
 

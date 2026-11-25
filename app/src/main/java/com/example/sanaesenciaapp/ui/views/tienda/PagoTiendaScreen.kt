@@ -1,5 +1,6 @@
 package com.example.sanaesenciaapp.ui.views.tienda
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -27,10 +29,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.sanaesenciaapp.R
 import com.example.sanaesenciaapp.data.AppState
 import com.example.sanaesenciaapp.ui.components.SanaBackground
 import com.example.sanaesenciaapp.viewmodel.TiendaViewModel
@@ -185,7 +189,11 @@ fun CompraConfirmadaScreen(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                 ) {
                     Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text("🌿", fontSize = 48.sp)
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_sanaesencia_logo),
+                            contentDescription = "SanaEsencia",
+                            modifier = Modifier.size(64.dp)
+                        )
                         Text("¡Gracias por tu compra!", fontSize = 25.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                         Text("Tu pago fue registrado en modo de demostración.")
                         Text("Número de pedido: #$ventaId", fontWeight = FontWeight.SemiBold)

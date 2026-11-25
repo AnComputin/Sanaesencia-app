@@ -113,7 +113,9 @@ abstract class CitaDao {
                 finMillis = cita.finMillis
             ).toSet()
 
-            ReglasAgenda.obtenerBoxLibre(ocupados) ?: return null
+            cita.boxAsignado?.takeIf { ReglasAgenda.esBoxValido(it) && it !in ocupados }
+                ?: ReglasAgenda.obtenerBoxLibre(ocupados)
+                ?: return null
         } else {
             null
         }

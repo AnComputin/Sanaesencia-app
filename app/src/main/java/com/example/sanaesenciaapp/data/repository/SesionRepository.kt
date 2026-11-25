@@ -61,9 +61,11 @@ class SesionRepository(
 
         // Si falla el login remoto, descartar cualquier JWT anterior para no reutilizar
         // accidentalmente el token de otra cuenta.
-        try {
-            RetrofitClient.getTokenManager().limpiarToken()
-        } catch (_: Exception) {
+        if (RetrofitClient.estaInicializado()) {
+            try {
+                RetrofitClient.getTokenManager().limpiarToken()
+            } catch (_: Exception) {
+            }
         }
 
         // 2. Respaldo local en Room solo para cuentas no administrativas.
@@ -109,9 +111,11 @@ class SesionRepository(
     }
 
     fun cerrarSesion() {
-        try {
-            RetrofitClient.getTokenManager().limpiarToken()
-        } catch (_: Exception) {
+        if (RetrofitClient.estaInicializado()) {
+            try {
+                RetrofitClient.getTokenManager().limpiarToken()
+            } catch (_: Exception) {
+            }
         }
         _sesionActual.value = null
     }

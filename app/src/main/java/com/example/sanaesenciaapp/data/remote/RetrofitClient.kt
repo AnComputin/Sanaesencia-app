@@ -1,6 +1,7 @@
 package com.example.sanaesenciaapp.data.remote
 
 import android.content.Context
+import androidx.annotation.VisibleForTesting
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -9,16 +10,40 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    private const val HOST = "127.0.0.1"
+    // Cambia USE_REMOTE_BACKEND a true y coloca tu IP/dominio de AWS cuando el backend esté arriba
+    private const val USE_REMOTE_BACKEND = true
+    private const val REMOTE_BASE_URL = "http://3.80.135.51/"
 
-    private const val URL_USUARIOS = "http://$HOST:8081/"
-    private const val URL_CATALOGO = "http://$HOST:8082/"
-    private const val URL_TERAPEUTAS = "http://$HOST:8083/"
-    private const val URL_AGENDA = "http://$HOST:8084/"
-    private const val URL_TIENDA = "http://$HOST:8085/"
+    private const val LOCAL_HOST = "127.0.0.1"
 
+    private var baseUrlOverride: String? = null
+
+    private fun urlUsuarios(): String =
+        baseUrlOverride ?: if (USE_REMOTE_BACKEND) REMOTE_BASE_URL else "http://$LOCAL_HOST:8081/"
+
+    private fun urlCatalogo(): String =
+        baseUrlOverride ?: if (USE_REMOTE_BACKEND) REMOTE_BASE_URL else "http://$LOCAL_HOST:8082/"
+
+    private fun urlTerapeutas(): String =
+        baseUrlOverride ?: if (USE_REMOTE_BACKEND) REMOTE_BASE_URL else "http://$LOCAL_HOST:8083/"
+
+    private fun urlAgenda(): String =
+        baseUrlOverride ?: if (USE_REMOTE_BACKEND) REMOTE_BASE_URL else "http://$LOCAL_HOST:8084/"
+
+    private fun urlTienda(): String =
+        baseUrlOverride ?: if (USE_REMOTE_BACKEND) REMOTE_BASE_URL else "http://$LOCAL_HOST:8085/"
+
+    @Volatile
     private var okHttpClient: OkHttpClient? = null
     private lateinit var tokenManager: TokenManager
+
+    @Volatile private var _usuariosApi: UsuariosApi? = null
+    @Volatile private var _catalogoApi: CatalogoApi? = null
+    @Volatile private var _terapeutasApi: TerapeutasApi? = null
+    @Volatile private var _agendaApi: AgendaApi? = null
+    @Volatile private var _tiendaApi: TiendaApi? = null
+
+    fun estaInicializado(): Boolean = okHttpClient != null
 
     fun init(context: Context) {
         if (okHttpClient != null) return
@@ -37,6 +62,33 @@ object RetrofitClient {
             .build()
     }
 
+    @VisibleForTesting
+    internal fun configurarParaPruebas(
+        baseUrl: String,
+        client: OkHttpClient,
+        tokenManager: TokenManager
+    ) {
+        baseUrlOverride = baseUrl
+        this.tokenManager = tokenManager
+        okHttpClient = client
+        limpiarApisCache()
+    }
+
+    @VisibleForTesting
+    internal fun resetParaPruebas() {
+        baseUrlOverride = null
+        okHttpClient = null
+        limpiarApisCache()
+    }
+
+    private fun limpiarApisCache() {
+        _usuariosApi = null
+        _catalogoApi = null
+        _terapeutasApi = null
+        _agendaApi = null
+        _tiendaApi = null
+    }
+
     fun getTokenManager(): TokenManager = tokenManager
 
     private fun buildRetrofit(baseUrl: String): Retrofit {
@@ -50,9 +102,28 @@ object RetrofitClient {
             .build()
     }
 
-    val usuariosApi: UsuariosApi by lazy { buildRetrofit(URL_USUARIOS).create(UsuariosApi::class.java) }
-    val catalogoApi: CatalogoApi by lazy { buildRetrofit(URL_CATALOGO).create(CatalogoApi::class.java) }
-    val terapeutasApi: TerapeutasApi by lazy { buildRetrofit(URL_TERAPEUTAS).create(TerapeutasApi::class.java) }
-    val agendaApi: AgendaApi by lazy { buildRetrofit(URL_AGENDA).create(AgendaApi::class.java) }
-    val tiendaApi: TiendaApi by lazy { buildRetrofit(URL_TIENDA).create(TiendaApi::class.java) }
+    val usuariosApi: UsuariosApi
+        get() = _usuariosApi ?: buildRetrofit(urlUsuarios()).create(UsuariosApi::class.java).also {
+            _usuariosApi = it
+        }
+
+    val catalogoApi: CatalogoApi
+        get() = _catalogoApi ?: buildRetrofit(urlCatalogo()).create(CatalogoApi::class.java).also {
+            _catalogoApi = it
+        }
+
+    val terapeutasApi: TerapeutasApi
+        get() = _terapeutasApi ?: buildRetrofit(urlTerapeutas()).create(TerapeutasApi::class.java).also {
+            _terapeutasApi = it
+        }
+
+    val agendaApi: AgendaApi
+        get() = _agendaApi ?: buildRetrofit(urlAgenda()).create(AgendaApi::class.java).also {
+            _agendaApi = it
+        }
+
+    val tiendaApi: TiendaApi
+        get() = _tiendaApi ?: buildRetrofit(urlTienda()).create(TiendaApi::class.java).also {
+            _tiendaApi = it
+        }
 }

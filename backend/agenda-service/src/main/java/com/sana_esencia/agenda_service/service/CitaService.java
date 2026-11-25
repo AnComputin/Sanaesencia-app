@@ -57,15 +57,34 @@ public class CitaService {
             throw new IllegalArgumentException("El horario seleccionado ya no está disponible para este especialista");
         }
 
-        if (modalidadNormalizada.equals("PRESENCIAL") && cita.getBoxAsignado() != null) {
-            boolean ocupadoBox = repository.existeSolapamientoBox(
-                    cita.getBoxAsignado(),
+        if (modalidadNormalizada.equals("PRESENCIAL")) {
+            List<Integer> ocupados = repository.findBoxesOcupados(
                     cita.getInicioMillis(),
                     cita.getFinMillis()
             );
-            if (ocupadoBox) {
-                throw new IllegalArgumentException("El box " + cita.getBoxAsignado() + " ya está ocupado en ese horario");
+            Integer boxSolicitado = cita.getBoxAsignado();
+            if (boxSolicitado != null) {
+                if (boxSolicitado < 1 || boxSolicitado > 8) {
+                    throw new IllegalArgumentException("El box asignado debe estar entre 1 y 8");
+                }
+                if (ocupados.contains(boxSolicitado)) {
+                    throw new IllegalArgumentException("El box " + boxSolicitado + " ya está ocupado en ese horario");
+                }
+            } else {
+                Integer boxLibre = null;
+                for (int b = 1; b <= 8; b++) {
+                    if (!ocupados.contains(b)) {
+                        boxLibre = b;
+                        break;
+                    }
+                }
+                if (boxLibre == null) {
+                    throw new IllegalArgumentException("No hay boxes disponibles en ese horario (8/8 ocupados)");
+                }
+                cita.setBoxAsignado(boxLibre);
             }
+        } else {
+            cita.setBoxAsignado(null);
         }
 
         cita.setId(null);

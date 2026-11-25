@@ -90,6 +90,18 @@ interface CatalogoApi {
 
     @POST("api/especialidades")
     suspend fun crearEspecialidad(@Body especialidad: CrearEspecialidadRequest): Response<EspecialidadEntity>
+
+    @PUT("api/especialidades/{id}")
+    suspend fun actualizarEspecialidad(
+        @Path("id") id: Int,
+        @Body especialidad: EspecialidadEntity
+    ): Response<EspecialidadEntity>
+
+    @PATCH("api/especialidades/{id}/agenda-pausada")
+    suspend fun cambiarEstadoAgenda(
+        @Path("id") id: Int,
+        @Query("pausada") pausada: Boolean
+    ): Response<EspecialidadEntity>
 }
 
 // --- 3. terapeutas-service (:8083) ---

@@ -99,6 +99,9 @@ class CitaViewModel(
     private val _ultimaCita = MutableStateFlow<CitaItem?>(null)
     val ultimaCita: StateFlow<CitaItem?> = _ultimaCita.asStateFlow()
 
+    private val _mensajeErrorReserva = MutableStateFlow<String?>(null)
+    val mensajeErrorReserva: StateFlow<String?> = _mensajeErrorReserva.asStateFlow()
+
     val horarios: StateFlow<List<Horario>> = combine(_uiState, citas) { estado, listaCitas ->
         calcularHorarios(estado, listaCitas)
     }.stateIn(
@@ -128,6 +131,7 @@ class CitaViewModel(
     )
 
     suspend fun iniciarPago(usuarioEmail: String): Boolean {
+        _mensajeErrorReserva.value = null
         if (pagoInicioMillis == null) {
             pagoInicioMillis = System.currentTimeMillis()
         }
@@ -161,6 +165,13 @@ class CitaViewModel(
 
     fun reiniciarPago() {
         pagoInicioMillis = null
+    }
+
+    fun limpiarSesion() {
+        liberarRetencion()
+        _mensajeErrorReserva.value = null
+        _ultimaCita.value = null
+        _uiState.value = CitaUiState()
     }
 
     fun liberarRetencion() {
@@ -279,6 +290,7 @@ class CitaViewModel(
         usuarioEmail: String,
         onResultado: (Boolean) -> Unit = {}
     ) {
+        _mensajeErrorReserva.value = null
         val dao = citaDao
         val repo = citaRepository
         val idRetencion = retencionId
@@ -295,10 +307,13 @@ class CitaViewModel(
                     retencionId = null
                     retencion = null
                     _uiState.update { it.copy(hora = null) }
+                    _mensajeErrorReserva.value = "La reserva temporal expiró. Vuelve a seleccionar un horario."
                     onResultado(false)
                     return@launch
                 }
 
+                // Se envía boxAsignado = null para que agenda-service asigne automáticamente
+                // un box disponible (1..8) según la ocupación real del servidor.
                 val requestRemoto = CrearCitaRequest(
                     usuarioEmail = existe.usuarioEmail.trim().lowercase(),
                     especialidadId = existe.especialidadId,
@@ -312,50 +327,68 @@ class CitaViewModel(
                     pacienteNombre = existe.pacienteNombre,
                     beneficiarioId = existe.beneficiarioId,
                     estado = ReglasAgenda.ESTADO_CONFIRMADA,
-                    boxAsignado = existe.boxAsignado
+                    boxAsignado = null
                 )
 
                 var guardadaFinal: CitaEntity? = null
-                var rechazadaPorServidor = false
+                var rechazadaPorCupo = false
+                var errorServidor: String? = null
 
-                try {
-                    val response = RetrofitClient.agendaApi.reservarCita(requestRemoto)
-                    when {
-                        response.isSuccessful -> {
-                            guardadaFinal = response.body() ?: existe.copy(estado = ReglasAgenda.ESTADO_CONFIRMADA)
-                        }
-                        response.code() == 400 || response.code() == 409 -> {
-                            rechazadaPorServidor = true
-                        }
-                        else -> {
-                            guardadaFinal = existe.copy(estado = ReglasAgenda.ESTADO_CONFIRMADA)
-                        }
-                    }
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (_: Exception) {
-                    // Sin conexión: se confirma en Room localmente
+                if (!RetrofitClient.estaInicializado()) {
                     guardadaFinal = existe.copy(estado = ReglasAgenda.ESTADO_CONFIRMADA)
+                } else {
+                    try {
+                        val response = RetrofitClient.agendaApi.reservarCita(requestRemoto)
+                        when {
+                            response.isSuccessful -> {
+                                guardadaFinal = response.body() ?: existe.copy(estado = ReglasAgenda.ESTADO_CONFIRMADA)
+                            }
+                            response.code() == 400 || response.code() == 409 -> {
+                                rechazadaPorCupo = true
+                                errorServidor = response.errorBody()?.string()?.takeIf { it.isNotBlank() }
+                                    ?: "La hora dejó de estar disponible. Vuelve a seleccionar un horario."
+                            }
+                            response.code() == 401 -> {
+                                errorServidor = "Tu sesión expiró en el servidor. Vuelve a iniciar sesión para confirmar tu cita."
+                            }
+                            response.code() == 403 -> {
+                                errorServidor = "Solo las cuentas con rol Paciente pueden reservar citas."
+                            }
+                            else -> {
+                                errorServidor = "No se pudo confirmar la reserva en el servidor (HTTP ${response.code()}). Intenta nuevamente."
+                            }
+                        }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (_: Exception) {
+                        errorServidor = "Sin conexión con el servidor de agenda. Intenta nuevamente."
+                    }
                 }
 
-                if (rechazadaPorServidor || guardadaFinal == null) {
-                    runCatching { dao.eliminar(idRetencion) }
-                    retencionId = null
-                    retencion = null
-                    _uiState.update { it.copy(hora = null) }
+                if (errorServidor != null || guardadaFinal == null) {
+                    _mensajeErrorReserva.value = errorServidor
+                        ?: "La hora dejó de estar disponible. Vuelve a seleccionar un horario."
+                    if (rechazadaPorCupo || guardadaFinal == null && errorServidor == null) {
+                        runCatching { dao.eliminar(idRetencion) }
+                        retencionId = null
+                        retencion = null
+                        _uiState.update { it.copy(hora = null) }
+                    }
                     onResultado(false)
                     return@launch
                 }
 
-                // Reemplaza la retención temporal por la cita confirmada (con el ID real de MySQL)
+                // Reemplaza la retención temporal por la cita confirmada (evitando colisión de PK local)
+                var guardadaLocal: CitaEntity? = null
                 runCatching {
                     dao.eliminar(idRetencion)
-                    dao.reservarSiDisponible(guardadaFinal)
+                    guardadaLocal = dao.reservarSiDisponible(guardadaFinal)
+                        ?: dao.reservarSiDisponible(guardadaFinal.copy(id = 0))
                 }
 
                 retencionId = null
                 retencion = null
-                _ultimaCita.value = guardadaFinal.toItem()
+                _ultimaCita.value = (guardadaLocal ?: guardadaFinal).toItem()
                 limpiarFormularioTrasReserva()
                 onResultado(true)
             }

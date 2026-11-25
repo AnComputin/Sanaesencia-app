@@ -4,6 +4,7 @@ import com.sana_esencia.catalogo_service.entity.Especialidad;
 import com.sana_esencia.catalogo_service.service.EspecialidadService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -33,11 +34,13 @@ public class EspecialidadController {
         }
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<Especialidad> crear(@RequestBody Especialidad especialidad) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.crear(especialidad));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<?> actualizar(@PathVariable Integer id, @RequestBody Especialidad especialidad) {
         try {
@@ -47,6 +50,7 @@ public class EspecialidadController {
         }
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}/agenda-pausada")
     public ResponseEntity<?> pausarAgenda(@PathVariable Integer id, @RequestParam boolean pausada) {
         try {
@@ -56,6 +60,7 @@ public class EspecialidadController {
         }
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> eliminar(@PathVariable Integer id) {
         try {
